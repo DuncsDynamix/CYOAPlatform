@@ -1,5 +1,5 @@
 import { db } from "@/lib/db/prisma"
-import { generateNode, generateEndpointSummary } from "./generator"
+import { generateNode, generateEndpointSummary, generateScaffold } from "./generator"
 import { getFromCache, writeToCache } from "./cache"
 import { updateSessionState, getSession, markSessionComplete, appendNarrativeHistory } from "./session"
 import { buildArcAwareness } from "./arc"
@@ -165,14 +165,23 @@ async function resolveNodeContent(
       if (cached) return { type: "prose", content: cached, fromCache: true }
 
       const generated = await generateNode(generatedNode, session, experience, apiKey)
-      await writeToCache(session.id, node.id, generated)
-      await saveGeneratedNode(session.id, node.id, generated, session)
 
-      await appendNarrativeHistory(session.id, {
-        nodeId: node.id,
-        content: generated,
-        generatedAt: new Date().toISOString(),
-      })
+      // Run cache write, DB save, and scaffold generation concurrently.
+      // Do not block returning prose to the reader on scaffold completion.
+      const scaffoldPromise = generateScaffold(generated, generatedNode, session, apiKey)
+
+      await Promise.all([
+        writeToCache(session.id, node.id, generated),
+        saveGeneratedNode(session.id, node.id, generated, session),
+        scaffoldPromise.then((scaffold) =>
+          appendNarrativeHistory(session.id, {
+            nodeId: node.id,
+            content: generated,
+            scaffold,
+            generatedAt: new Date().toISOString(),
+          })
+        ),
+      ])
 
       return { type: "prose", content: generated }
     }

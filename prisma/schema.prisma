@@ -104,8 +104,9 @@ model ExperienceSession {
   // State (JSONB — accumulated choice history, flags, scores)
   state Json @default("{}")
 
-  // Full narrative history (JSONB array of generated content)
-  // Each entry: { nodeId, content, generatedAt, choiceMade }
+  // Each entry is a NarrativeHistoryEntry — see types/session.ts
+  // content field is full prose (reader display only)
+  // scaffold field is structured context (used in generation prompts)
   narrativeHistory Json @default("[]")
 
   // Choices made (JSONB array)

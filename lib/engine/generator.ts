@@ -5,9 +5,10 @@ import { USE_CASE_PACKS } from "./usecases"
 import { generationQueue } from "./queue"
 import { trackEvent } from "@/lib/analytics"
 import type { GeneratedNode, EndpointNode, Experience, ExperienceContextPack, GroundTruthSource } from "@/types/experience"
-import type { ExperienceSession, NarrativeHistoryEntry, ChoiceHistoryEntry } from "@/types/session"
+import type { ExperienceSession, NarrativeHistoryEntry, ChoiceHistoryEntry, NarrativeScaffold } from "@/types/session"
 
 const MODEL = "claude-sonnet-4-5"
+const SCAFFOLD_MODEL = "claude-haiku-4-5-20251001"
 
 function getAnthropicClient(apiKey?: string): Anthropic {
   return new Anthropic({
@@ -58,6 +59,72 @@ export async function generateNode(
   })
 
   return content
+}
+
+/**
+ * Extracts a compact NarrativeScaffold from generated prose.
+ * Uses Haiku (fast, cheap) — this is structured extraction, not creative generation.
+ * Never throws: returns a fallback scaffold if the API call or JSON parse fails.
+ */
+export async function generateScaffold(
+  prose: string,
+  node: GeneratedNode,
+  session: ExperienceSession,
+  apiKey?: string
+): Promise<NarrativeScaffold> {
+  const fallback: NarrativeScaffold = {
+    nodeId: node.id,
+    nodeLabel: node.label,
+    beatAchieved: node.beatInstruction,
+    keyFactsEstablished: [],
+    stateSnapshot: session.state.flags,
+  }
+
+  try {
+    const anthropic = getAnthropicClient(apiKey)
+
+    const userPrompt = `Node: ${node.label}
+Beat instruction (what this scene was meant to achieve): ${node.beatInstruction}
+Current session flags: ${JSON.stringify(session.state.flags)}
+
+Prose generated:
+${prose}
+
+Return a JSON object with exactly these fields:
+{
+  "beatAchieved": "one sentence describing what dramatic or emotional state this scene actually reached",
+  "keyFactsEstablished": ["array of strings", "each a concrete fact about the world, characters, or situation established in this prose that future scenes must respect"]
+}
+
+Do not include choiceMade — that is added separately when the reader makes their choice.`
+
+    const message = await generationQueue.add(() =>
+      anthropic.messages.create({
+        model: SCAFFOLD_MODEL,
+        max_tokens: 300,
+        system:
+          "You are a story state tracker. Extract structured information from the provided narrative prose. Respond only with valid JSON matching the schema provided. No markdown fences, no explanation — just the JSON object.",
+        messages: [{ role: "user", content: userPrompt }],
+      })
+    )
+
+    if (!message) return fallback
+
+    const raw = message.content[0].type === "text" ? message.content[0].text.trim() : ""
+    const parsed = JSON.parse(raw) as { beatAchieved: string; keyFactsEstablished: string[] }
+
+    return {
+      nodeId: node.id,
+      nodeLabel: node.label,
+      beatAchieved: parsed.beatAchieved ?? fallback.beatAchieved,
+      keyFactsEstablished: Array.isArray(parsed.keyFactsEstablished)
+        ? parsed.keyFactsEstablished
+        : [],
+      stateSnapshot: session.state.flags,
+    }
+  } catch {
+    return fallback
+  }
 }
 
 export async function generateEndpointSummary(

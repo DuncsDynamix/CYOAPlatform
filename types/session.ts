@@ -15,12 +15,36 @@ export interface SessionState {
   generationTimings: Record<string, number>
 }
 
+// ─── NARRATIVE SCAFFOLD ───────────────────────────────────────
+// Lightweight structured context stored alongside each prose entry.
+// Used by generation prompts — never sent to the reader.
+
+export interface NarrativeScaffold {
+  nodeId: string
+  nodeLabel: string
+  /** One sentence — what dramatic/emotional state the scene actually achieved. */
+  beatAchieved: string
+  /** Concrete facts future scenes must respect. Empty array if none established. */
+  keyFactsEstablished: string[]
+  /** Populated after the reader makes their choice at the subsequent CHOICE node. */
+  choiceMade?: {
+    label: string        // the option text the reader chose
+    consequence: string  // one sentence on what this choice meant for the story
+  }
+  /** Session flags at the point this node was generated. */
+  stateSnapshot: Record<string, string | number | boolean>
+}
+
 // ─── NARRATIVE HISTORY ────────────────────────────────────────
 
 export interface NarrativeHistoryEntry {
   nodeId: string
+  /** Full generated prose — for reader display only, never used in generation prompts. */
   content: string
+  /** Lightweight structured context — used in generation prompts, not displayed. */
+  scaffold: NarrativeScaffold
   generatedAt: string
+  /** @deprecated Use scaffold.choiceMade going forward. */
   choiceMade?: string
 }
 

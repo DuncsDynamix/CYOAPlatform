@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { arriveAtNode, findNode, getAllNodes } from "@/lib/engine/executor"
-import { getSession, incrementChoiceCount, appendChoiceHistory } from "@/lib/engine/session"
+import { getSession, incrementChoiceCount, appendChoiceHistory, appendNarrativeHistory, updateLastScaffoldChoice } from "@/lib/engine/session"
 import { resolveOpenChoiceRouting } from "@/lib/engine/router"
-import { applyStateChanges, appendNarrativeHistory } from "@/lib/engine/session"
+import { applyStateChanges } from "@/lib/engine/session"
 import { getExperienceById } from "@/lib/db/queries/experience"
 import { requireAuth, getAnthropicKey, canAccessSession } from "@/lib/auth"
 import { checkEngineLimit } from "@/lib/security/ratelimit"
 import { trackEvent } from "@/lib/analytics"
 import { SubmitChoiceSchema } from "@/lib/validation"
-import { generateNode } from "@/lib/engine/generator"
+import { generateNode, generateScaffold } from "@/lib/engine/generator"
 import { writeToCache } from "@/lib/engine/cache"
 import { db } from "@/lib/db/prisma"
 import type { ChoiceNode, GeneratedNode } from "@/types/experience"
@@ -113,6 +113,19 @@ export async function POST(req: NextRequest) {
     responseType: currentNode.responseType,
   })
 
+  // Back-fill scaffold.choiceMade on the most recent narrative history entry
+  // so generation context for the next node includes what the reader chose.
+  const consequence = currentNode.responseType === "closed"
+    ? (() => {
+        const option = currentNode.options?.find((o) => o.nextNodeId === nextNodeId)
+        return option?.stateChanges
+          ? `Reader chose to ${choiceLabel.toLowerCase()}, resulting in: ${Object.entries(option.stateChanges).map(([k, v]) => `${k}=${v}`).join(", ")}.`
+          : `Reader chose to ${choiceLabel.toLowerCase()}.`
+      })()
+    : `Reader responded: "${choiceLabel}".`
+
+  await updateLastScaffoldChoice(sessionId, { label: choiceLabel, consequence })
+
   const apiKey = getAnthropicKey(user)
 
   // If the chosen branch requires fresh generation, generate it synchronously
@@ -123,25 +136,33 @@ export async function POST(req: NextRequest) {
     if (nextNode?.type === "GENERATED") {
       const freshSession = await getSession(sessionId)
       if (freshSession) {
-        const generated = await generateNode(nextNode as GeneratedNode, freshSession, experience, apiKey)
-        await writeToCache(sessionId, nextNodeId, generated)
-        await db.generatedNode.upsert({
-          where: { sessionId_nodeId: { sessionId, nodeId: nextNodeId } },
-          create: {
-            sessionId,
-            nodeId: nextNodeId,
-            content: generated,
-            stateSnapshot: freshSession.state as object,
-            generationMs: null,
-            tokenCount: null,
-          },
-          update: { content: generated },
-        })
-        await appendNarrativeHistory(sessionId, {
-          nodeId: nextNodeId,
-          content: generated,
-          generatedAt: new Date().toISOString(),
-        })
+        const generatedNode = nextNode as GeneratedNode
+        const generated = await generateNode(generatedNode, freshSession, experience, apiKey)
+        const scaffoldPromise = generateScaffold(generated, generatedNode, freshSession, apiKey)
+
+        await Promise.all([
+          writeToCache(sessionId, nextNodeId, generated),
+          db.generatedNode.upsert({
+            where: { sessionId_nodeId: { sessionId, nodeId: nextNodeId } },
+            create: {
+              sessionId,
+              nodeId: nextNodeId,
+              content: generated,
+              stateSnapshot: freshSession.state as object,
+              generationMs: null,
+              tokenCount: null,
+            },
+            update: { content: generated },
+          }),
+          scaffoldPromise.then((scaffold) =>
+            appendNarrativeHistory(sessionId, {
+              nodeId: nextNodeId,
+              content: generated,
+              scaffold,
+              generatedAt: new Date().toISOString(),
+            })
+          ),
+        ])
       }
     }
   }

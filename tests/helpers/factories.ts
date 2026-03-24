@@ -1,5 +1,5 @@
 import type { Experience, ExperienceContextPack, ShapeDefinition, Node, ChoiceOption } from "@/types/experience"
-import type { ExperienceSession, SessionState } from "@/types/session"
+import type { ExperienceSession, SessionState, NarrativeHistoryEntry, NarrativeScaffold } from "@/types/session"
 import { USE_CASE_PACKS } from "@/lib/engine/usecases"
 
 export function createTestShape(overrides: Partial<ShapeDefinition> = {}): ShapeDefinition {
@@ -213,6 +213,32 @@ export function createTestSessionWithChoices(choicesMade: number): ExperienceSes
     },
     choiceCount: choicesMade,
   })
+}
+
+export function createTestScaffold(overrides: Partial<NarrativeScaffold> = {}): NarrativeScaffold {
+  return {
+    nodeId: "node-1",
+    nodeLabel: "Opening",
+    beatAchieved: "Atmosphere established. Reader oriented to the world.",
+    keyFactsEstablished: ["The letter arrived on a Tuesday", "No return address"],
+    choiceMade: {
+      label: "Go to the police",
+      consequence: "Reader chose to go to the police, setting path = official.",
+    },
+    stateSnapshot: { path: "official" },
+    ...overrides,
+  }
+}
+
+export function createTestNarrativeHistory(): NarrativeHistoryEntry[] {
+  return [
+    {
+      nodeId: "node-1",
+      content: "You stand at the entrance of a dark forest, letter in hand.",
+      scaffold: createTestScaffold(),
+      generatedAt: new Date().toISOString(),
+    },
+  ]
 }
 
 export function createDepthGatedOptions(): ChoiceOption[] {

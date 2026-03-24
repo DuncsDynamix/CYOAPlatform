@@ -88,9 +88,23 @@ export function buildGenerationPrompt(
           .join("\n")}`
       : ""
 
-  const narrativeHistory = (session.narrativeHistory as NarrativeHistoryEntry[])
-    .map((entry) => entry.content)
-    .join("\n\n")
+  const entries = session.narrativeHistory as NarrativeHistoryEntry[]
+
+  const scaffoldContext = entries.length === 0
+    ? "(This is the opening scene — the story has not yet begun.)"
+    : entries.map((e) => {
+        const lines = [
+          `[${e.scaffold.nodeLabel}]`,
+          `What happened: ${e.scaffold.beatAchieved}`,
+        ]
+        if (e.scaffold.keyFactsEstablished.length > 0) {
+          lines.push(`Facts established: ${e.scaffold.keyFactsEstablished.join("; ")}`)
+        }
+        if (e.scaffold.choiceMade) {
+          lines.push(`Reader chose: ${e.scaffold.choiceMade.label} — ${e.scaffold.choiceMade.consequence}`)
+        }
+        return lines.join("\n")
+      }).join("\n\n")
 
   const constraints = [
     `- Length: ${node.constraints.lengthMin}-${node.constraints.lengthMax} words`,
@@ -100,8 +114,8 @@ export function buildGenerationPrompt(
   ].join("\n")
 
   return `
-STORY SO FAR:
-${narrativeHistory || "(This is the opening scene — the story has not yet begun.)"}
+STORY SO FAR (STRUCTURED SUMMARY):
+${scaffoldContext}
 
 ${resolvedGroundTruth ? `GROUND TRUTH — facts you must treat as authoritative:\n${resolvedGroundTruth}` : ""}
 

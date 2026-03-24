@@ -171,3 +171,31 @@ export async function markSessionComplete(
     },
   })
 }
+
+/**
+ * After a reader makes a choice, back-fills scaffold.choiceMade on the most
+ * recent NarrativeHistoryEntry. No AI call needed — data comes from the choice.
+ */
+export async function updateLastScaffoldChoice(
+  sessionId: string,
+  choiceMade: { label: string; consequence: string }
+): Promise<void> {
+  const session = await db.experienceSession.findUnique({
+    where: { id: sessionId },
+    select: { narrativeHistory: true },
+  })
+  if (!session) return
+
+  const history = (session.narrativeHistory as unknown as NarrativeHistoryEntry[]) ?? []
+  if (history.length === 0) return
+
+  const updated = [...history]
+  const last = { ...updated[updated.length - 1] }
+  last.scaffold = { ...last.scaffold, choiceMade }
+  updated[updated.length - 1] = last
+
+  await db.experienceSession.update({
+    where: { id: sessionId },
+    data: { narrativeHistory: updated as object[] },
+  })
+}
