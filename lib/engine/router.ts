@@ -59,6 +59,13 @@ Reply with ONLY the option ID (e.g. "opt-police"), nothing else.
 
   const matched = options.find((o) => o.id === chosenId)
 
-  // Fall back to first option if routing returns an unrecognised ID
+  if (!matched) {
+    const validIds = options.map((o) => o.id).join(", ")
+    console.warn(
+      `[router] Claude returned unrecognised option ID "${chosenId}" for node ${currentNode.id}. ` +
+      `Valid IDs: [${validIds}]. Falling back to first option "${options[0].id}".`
+    )
+  }
+
   return matched?.nextNodeId ?? options[0].nextNodeId
 }

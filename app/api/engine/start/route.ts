@@ -70,5 +70,6 @@ export async function POST(req: NextRequest) {
     sessionId: session.id,
     node: arrival.node,
     content: arrival.content,
+    experienceTitle: experience.title,
   })
 }

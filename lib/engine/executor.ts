@@ -2,6 +2,7 @@ import { db } from "@/lib/db/prisma"
 import { generateNode, generateEndpointSummary } from "./generator"
 import { getFromCache, writeToCache } from "./cache"
 import { updateSessionState, getSession, markSessionComplete, appendNarrativeHistory } from "./session"
+import { buildArcAwareness } from "./arc"
 import { trackEvent } from "@/lib/analytics"
 import type {
   Node,
@@ -56,9 +57,14 @@ export async function arriveAtNode(
 
   const content = await resolveNodeContent(node, session, experience, apiKey)
 
+  const arc = buildArcAwareness(node, session, experience)
+  const depthPercentage = Math.min(100, Math.round((session.state.choicesMade / Math.max(experience.shape.totalDepthMax, 1)) * 100))
+
   await updateSessionState(sessionId, {
     currentNodeId: nodeId,
     nodesVisited: [...session.state.nodesVisited, nodeId],
+    depthPercentage,
+    pacingInstruction: arc.instruction,
   })
 
   trackEvent("node_reached", {
@@ -275,8 +281,11 @@ function buildOutcomeCard(
   experience: Experience
 ): OutcomeCardData {
   const shape = experience.shape
-  const totalDepthMid = (shape.totalDepthMin + shape.totalDepthMax) / 2
-  const depthPct = Math.round((session.state.choicesMade / totalDepthMid) * 100)
+  // Use the endpoint's maxChoicesToReach if defined, otherwise fall back to
+  // totalDepthMax. This gives an accurate depth % for asymmetric branching.
+  const endpointShape = shape.endpoints?.find((e) => e.id === node.endpointId)
+  const depthDenominator = endpointShape?.maxChoicesToReach ?? shape.totalDepthMax
+  const depthPct = Math.min(100, Math.round((session.state.choicesMade / Math.max(depthDenominator, 1)) * 100))
   const durationSeconds = Math.round(
     (Date.now() - new Date(session.startedAt).getTime()) / 1000
   )

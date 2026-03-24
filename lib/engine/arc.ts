@@ -1,5 +1,5 @@
 import type { ArcAwareness, ArcPhase } from "@/types/engine"
-import type { GeneratedNode } from "@/types/experience"
+import type { Node } from "@/types/experience"
 import type { ExperienceSession } from "@/types/session"
 import type { Experience } from "@/types/experience"
 import type { ShapeDefinition } from "@/types/experience"
@@ -14,7 +14,7 @@ const pacingInstructions: Record<ArcPhase, string> = {
 }
 
 export function buildArcAwareness(
-  node: GeneratedNode,
+  node: Node,
   session: ExperienceSession,
   experience: Experience
 ): ArcAwareness {

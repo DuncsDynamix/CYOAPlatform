@@ -42,7 +42,12 @@ export async function getSession(sessionId: string): Promise<ExperienceSession |
 
 export async function updateSessionState(
   sessionId: string,
-  updates: Partial<{ currentNodeId: string; nodesVisited: string[]; status: string }>
+  updates: Partial<{
+    currentNodeId: string
+    nodesVisited: string[]
+    depthPercentage: number
+    pacingInstruction: string
+  }>
 ): Promise<void> {
   const session = await db.experienceSession.findUnique({
     where: { id: sessionId },
@@ -60,6 +65,8 @@ export async function updateSessionState(
       state: {
         ...currentState,
         ...(updates.nodesVisited ? { nodesVisited: updates.nodesVisited } : {}),
+        ...(updates.depthPercentage !== undefined ? { depthPercentage: updates.depthPercentage } : {}),
+        ...(updates.pacingInstruction ? { pacingInstruction: updates.pacingInstruction } : {}),
       } as object,
     },
   })

@@ -212,7 +212,7 @@ export default function StoryPage({ params }: { params: Promise<{ id: string }> 
   if (status.type === "advancing" || status.type === "submitting") {
     return (
       <div style={{ paddingBottom: "3rem" }}>
-        <BookPage content="" isLoading />
+        <BookPage content={lastProse} isLoading />
       </div>
     )
   }
