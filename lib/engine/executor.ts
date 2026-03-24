@@ -1,0 +1,317 @@
+import { db } from "@/lib/db/prisma"
+import { generateNode, generateEndpointSummary } from "./generator"
+import { getFromCache, writeToCache } from "./cache"
+import { updateSessionState, getSession, markSessionComplete, appendNarrativeHistory } from "./session"
+import { trackEvent } from "@/lib/analytics"
+import type {
+  Node,
+  FixedNode,
+  GeneratedNode,
+  ChoiceNode,
+  CheckpointNode,
+  EndpointNode,
+  ChoiceOption,
+  Experience,
+  Segment,
+} from "@/types/experience"
+import type { ExperienceSession } from "@/types/session"
+import type { ArrivalResult, ResolvedContent, OutcomeCardData } from "@/types/engine"
+
+// ─── NODE RESOLUTION ─────────────────────────────────────────
+
+/**
+ * Returns ALL nodes for an experience by flattening segments.
+ * If segments exist, concatenates all segment nodes (sorted by order).
+ * Otherwise falls back to the flat experience.nodes array.
+ * Segments are an authoring-only concept — the engine always sees one flat graph.
+ */
+export function getAllNodes(experience: Experience): Node[] {
+  const segments = (experience.segments ?? []) as Segment[]
+  if (segments.length > 0) {
+    return [...segments]
+      .sort((a, b) => a.order - b.order)
+      .flatMap((s) => s.nodes)
+  }
+  return experience.nodes ?? []
+}
+
+// ─── PUBLIC API ───────────────────────────────────────────────
+
+/**
+ * Called when the reader arrives at any node.
+ * Resolves content, updates session, fires parallel pre-generation.
+ */
+export async function arriveAtNode(
+  sessionId: string,
+  nodeId: string,
+  experience: Experience,
+  apiKey?: string
+): Promise<ArrivalResult> {
+  const session = await getSession(sessionId)
+  if (!session) throw new Error(`Session ${sessionId} not found`)
+
+  const nodes = getAllNodes(experience)
+  const node = findNode(nodes, nodeId)
+  if (!node) throw new Error(`Node ${nodeId} not found in experience ${experience.id}`)
+
+  const content = await resolveNodeContent(node, session, experience, apiKey)
+
+  await updateSessionState(sessionId, {
+    currentNodeId: nodeId,
+    nodesVisited: [...session.state.nodesVisited, nodeId],
+  })
+
+  trackEvent("node_reached", {
+    sessionId,
+    nodeId,
+    nodeType: node.type,
+    experienceId: experience.id,
+    choicesMade: session.state.choicesMade,
+    fromCache: content.type === "prose" ? content.fromCache ?? false : false,
+  })
+
+  // Fire-and-forget: pre-generate all GENERATED children
+  generateChildrenInParallel(node, nodes, session, experience, apiKey).catch(console.error)
+
+  return { node, content, session }
+}
+
+/**
+ * Filters choice options blocked by depth gates.
+ */
+export function applyDepthGates(
+  options: ChoiceOption[],
+  choicesMade: number
+): ChoiceOption[] {
+  return options.filter((option) => {
+    if (!option.depthGate) return true
+    if (choicesMade >= option.depthGate.minChoicesMade) return true
+    return option.depthGate.ifNotMet !== "suppress_option"
+  })
+}
+
+/**
+ * Find a node by id in a node array.
+ */
+export function findNode(nodes: Node[], nodeId: string): Node | undefined {
+  return nodes.find((n) => n.id === nodeId)
+}
+
+/**
+ * Find the first node of an experience (first FIXED or GENERATED node).
+ */
+export function findFirstNodeId(experience: Experience): string {
+  const nodes = getAllNodes(experience)
+  const first = nodes.find((n) => n.type === "FIXED" || n.type === "GENERATED")
+  if (!first) throw new Error(`Experience ${experience.id} has no starting node`)
+  return first.id
+}
+
+/**
+ * Returns the GENERATED nodes reachable from a given node that are safe to
+ * pre-generate. Nodes reached via a ChoiceOption with requiresFreshGeneration
+ * are excluded — those must be generated at choice-time with fresh session state.
+ */
+export function getReachableGeneratedChildren(
+  node: Node,
+  nodes: Node[]
+): GeneratedNode[] {
+  const directChildIds = getImmediateChildIds(node)
+  const results: GeneratedNode[] = []
+
+  for (const childId of directChildIds) {
+    const child = findNode(nodes, childId)
+    if (!child) continue
+
+    if (child.type === "GENERATED") {
+      results.push(child as GeneratedNode)
+    } else if (child.type === "CHOICE") {
+      const options = (child as ChoiceNode).options ?? []
+      for (const option of options) {
+        if (option.requiresFreshGeneration) continue
+        const gc = findNode(nodes, option.nextNodeId)
+        if (gc?.type === "GENERATED") results.push(gc as GeneratedNode)
+      }
+    } else if (child.type === "CHECKPOINT") {
+      const grandchild = findNode(nodes, (child as CheckpointNode).nextNodeId)
+      if (grandchild?.type === "GENERATED") results.push(grandchild as GeneratedNode)
+    }
+  }
+
+  return results
+}
+
+// ─── PRIVATE HELPERS ──────────────────────────────────────────
+
+async function resolveNodeContent(
+  node: Node,
+  session: ExperienceSession,
+  experience: Experience,
+  apiKey?: string
+): Promise<ResolvedContent> {
+  switch (node.type) {
+    case "FIXED":
+      return { type: "prose", content: (node as FixedNode).content }
+
+    case "GENERATED": {
+      const generatedNode = node as GeneratedNode
+      const cached = await getFromCache(session.id, node.id)
+      if (cached) return { type: "prose", content: cached, fromCache: true }
+
+      const generated = await generateNode(generatedNode, session, experience, apiKey)
+      await writeToCache(session.id, node.id, generated)
+      await saveGeneratedNode(session.id, node.id, generated, session)
+
+      await appendNarrativeHistory(session.id, {
+        nodeId: node.id,
+        content: generated,
+        generatedAt: new Date().toISOString(),
+      })
+
+      return { type: "prose", content: generated }
+    }
+
+    case "CHOICE": {
+      const choiceNode = node as ChoiceNode
+      const options = applyDepthGates(choiceNode.options ?? [], session.state.choicesMade)
+      return { type: "choice", options }
+    }
+
+    case "CHECKPOINT": {
+      const checkpointNode = node as CheckpointNode
+      await applyCheckpoint(checkpointNode, session)
+      return {
+        type: "checkpoint",
+        visible: checkpointNode.visible,
+        content: checkpointNode.visible ? checkpointNode.visibleContent : null,
+      }
+    }
+
+    case "ENDPOINT": {
+      const endpointNode = node as EndpointNode
+      const summary = await generateEndpointSummary(endpointNode, session, experience, apiKey)
+      await markSessionComplete(session.id, endpointNode.endpointId)
+
+      trackEvent("session_completed", {
+        sessionId: session.id,
+        experienceId: experience.id,
+        userId: session.userId,
+        endpointId: endpointNode.endpointId,
+        totalChoices: session.state.choicesMade,
+        durationSeconds: Math.round(
+          (Date.now() - new Date(session.startedAt).getTime()) / 1000
+        ),
+      })
+
+      return {
+        type: "endpoint",
+        closingLine: endpointNode.closingLine,
+        summary,
+        outcomeCard: buildOutcomeCard(endpointNode, session, experience),
+      }
+    }
+  }
+}
+
+async function generateChildrenInParallel(
+  node: Node,
+  nodes: Node[],
+  session: ExperienceSession,
+  experience: Experience,
+  apiKey?: string
+): Promise<void> {
+  const children = getReachableGeneratedChildren(node, nodes)
+
+  await Promise.allSettled(
+    children.map(async (childNode) => {
+      const existing = await getFromCache(session.id, childNode.id)
+      if (existing) return
+
+      const generated = await generateNode(childNode, session, experience, apiKey)
+      await writeToCache(session.id, childNode.id, generated)
+      await saveGeneratedNode(session.id, childNode.id, generated, session)
+    })
+  )
+}
+
+function getImmediateChildIds(node: Node): string[] {
+  switch (node.type) {
+    case "FIXED":
+      return [(node as FixedNode).nextNodeId]
+    case "GENERATED":
+      return [(node as GeneratedNode).nextNodeId]
+    case "CHOICE":
+      return (node as ChoiceNode).options?.map((o) => o.nextNodeId) ?? []
+    case "CHECKPOINT":
+      return [(node as CheckpointNode).nextNodeId]
+    case "ENDPOINT":
+      return []
+  }
+}
+
+async function applyCheckpoint(
+  node: CheckpointNode,
+  session: ExperienceSession
+): Promise<void> {
+  if (node.unlocks.length > 0) {
+    const currentState = session.state
+    const unlockFlags = Object.fromEntries(node.unlocks.map((u) => [u, true]))
+
+    await db.experienceSession.update({
+      where: { id: session.id },
+      data: {
+        state: {
+          ...currentState,
+          flags: { ...currentState.flags, ...unlockFlags },
+        } as object,
+      },
+    })
+  }
+}
+
+function buildOutcomeCard(
+  node: EndpointNode,
+  session: ExperienceSession,
+  experience: Experience
+): OutcomeCardData {
+  const shape = experience.shape
+  const totalDepthMid = (shape.totalDepthMin + shape.totalDepthMax) / 2
+  const depthPct = Math.round((session.state.choicesMade / totalDepthMid) * 100)
+  const durationSeconds = Math.round(
+    (Date.now() - new Date(session.startedAt).getTime()) / 1000
+  )
+
+  return {
+    outcomeLabel: node.outcomeLabel,
+    closingLine: node.closingLine,
+    summary: "",
+    shareable: node.outcomeCard.shareable,
+    showChoiceStats: node.outcomeCard.showChoiceStats,
+    showDepthStats: node.outcomeCard.showDepthStats,
+    showReadingTime: node.outcomeCard.showReadingTime,
+    depthPercentage: depthPct,
+    readingTimeSeconds: durationSeconds,
+  }
+}
+
+async function saveGeneratedNode(
+  sessionId: string,
+  nodeId: string,
+  content: string,
+  session: ExperienceSession,
+  generationMs?: number,
+  tokenCount?: number
+): Promise<void> {
+  await db.generatedNode.upsert({
+    where: { sessionId_nodeId: { sessionId, nodeId } },
+    create: {
+      sessionId,
+      nodeId,
+      content,
+      stateSnapshot: session.state as object,
+      generationMs: generationMs ?? null,
+      tokenCount: tokenCount ?? null,
+    },
+    update: { content },
+  })
+}

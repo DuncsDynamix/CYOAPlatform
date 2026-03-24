@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── USERS & AUTH ───────────────────────────────────────────
+
+model User {
+  id        String  @id @default(uuid())
+  email     String  @unique
+  name      String?
+  avatarUrl String?
+
+  // Subscription
+  stripeCustomerId   String?   @unique
+  subscriptionStatus String? // active, canceled, past_due, trialing
+  subscriptionTier   String? // free, subscriber, operator_creator, operator_studio, operator_enterprise
+  subscriptionId     String?   @unique
+  currentPeriodEnd   DateTime?
+
+  // Operator settings (B2B)
+  isOperator         Boolean @default(false)
+  operatorApiKey     String? // encrypted — their Anthropic key if BYOK
+  operatorApiKeyHint String? // last 4 chars for display only
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  experiences     Experience[]
+  sessions        ExperienceSession[]
+  analyticsEvents AnalyticsEvent[]
+
+  @@map("users")
+}
+
+// ─── EXPERIENCES ─────────────────────────────────────────────
+
+model Experience {
+  id       String @id @default(uuid())
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  // Identity
+  title         String
+  slug          String  @unique
+  description   String?
+  coverImageUrl String?
+  genre         String? // adventure, mystery, sci-fi, horror, romance, fantasy
+
+  // Status
+  status      String    @default("draft") // draft, preview, published, archived
+  publishedAt DateTime?
+
+  // Configuration
+  type           String @default("cyoa_story") // cyoa_story, l_and_d, education, publisher_ip
+  renderingTheme String @default("retro-book") // retro-book, modern, corporate, minimal
+
+  // Use Case Pack (platform-owned behaviour — See Section 5.1)
+  useCasePack Json @default("{}")
+
+  // Experience Context Pack (author-owned content — See Section 5.2)
+  contextPack Json // See Section 5 for structure
+
+  // Shape Definition (stored as JSONB)
+  shape Json // See Section 5 for structure
+
+  // Node Graph (stored as JSONB array) — legacy flat list
+  nodes Json // Array of node objects
+
+  // Segments (stored as JSONB array) — each segment has its own node graph
+  segments Json @default("[]")
+
+  // Analytics summary (denormalised for quick access)
+  totalSessions    Int    @default(0)
+  totalCompletions Int    @default(0)
+  avgDepthReached  Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions ExperienceSession[]
+
+  @@map("experiences")
+}
+
+// ─── SESSIONS ────────────────────────────────────────────────
+
+model ExperienceSession {
+  id           String     @id @default(uuid())
+  experienceId String
+  experience   Experience @relation(fields: [experienceId], references: [id])
+  userId       String? // null for anonymous sessions
+  user         User?      @relation(fields: [userId], references: [id])
+
+  // Progress
+  status        String  @default("active") // active, completed, abandoned
+  currentNodeId String?
+
+  // State (JSONB — accumulated choice history, flags, scores)
+  state Json @default("{}")
+
+  // Full narrative history (JSONB array of generated content)
+  // Each entry: { nodeId, content, generatedAt, choiceMade }
+  narrativeHistory Json @default("[]")
+
+  // Choices made (JSONB array)
+  // Each entry: { nodeId, choiceIndex, choiceLabel, timestamp }
+  choiceHistory Json @default("[]")
+
+  // Depth tracking
+  choiceCount     Int     @default(0)
+  endpointReached String? // endpoint node id if completed
+
+  // Timing
+  startedAt    DateTime  @default(now())
+  lastActiveAt DateTime  @default(now())
+  completedAt  DateTime?
+
+  generatedNodes GeneratedNode[]
+
+  @@map("experience_sessions")
+}
+
+// ─── GENERATED NODE CACHE ────────────────────────────────────
+
+model GeneratedNode {
+  id        String            @id @default(uuid())
+  sessionId String
+  session   ExperienceSession @relation(fields: [sessionId], references: [id])
+
+  nodeId  String // The node definition id from the experience
+  content String // The generated prose
+
+  // State snapshot at generation time
+  stateSnapshot Json // What the session state was when this was generated
+
+  // Performance
+  generationMs Int? // How long generation took
+  tokenCount   Int? // Tokens used
+
+  createdAt DateTime @default(now())
+
+  @@unique([sessionId, nodeId])
+  @@map("generated_nodes")
+}
+
+// ─── ANALYTICS ───────────────────────────────────────────────
+
+model AnalyticsEvent {
+  id           String  @id @default(uuid())
+  userId       String?
+  user         User?   @relation(fields: [userId], references: [id])
+  sessionId    String?
+  experienceId String?
+
+  eventType String // session_started, choice_made, node_reached,
+  // session_completed, session_abandoned,
+  // subscription_started, subscription_cancelled,
+  // story_shared
+
+  properties Json @default("{}")
+
+  createdAt DateTime @default(now())
+
+  @@index([experienceId, eventType])
+  @@index([userId, eventType])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
+
+// ─── SUBSCRIPTIONS / STRIPE ──────────────────────────────────
+
+model StripeEvent {
+  id        String  @id // Stripe event id
+  type      String
+  processed Boolean @default(false)
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@map("stripe_events")
+}
