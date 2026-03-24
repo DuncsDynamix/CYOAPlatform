@@ -198,7 +198,10 @@ export default function StoryPage({ params }: { params: Promise<{ id: string }> 
         <BookPage content={status.content} />
         <div style={{ maxWidth: "680px", margin: "1.5rem auto 0", padding: "0 1rem" }}>
           <button
-            onClick={() => advanceToNextNode(status.sessionId, status.choicesMade)}
+            onClick={() => {
+              setLastProse("")
+              advanceToNextNode(status.sessionId, status.choicesMade)
+            }}
             className="choice-submit"
             style={{ width: "100%" }}
           >
