@@ -25,7 +25,7 @@ export function buildSystemPrompt(
       ? `\nTHE PEOPLE IN THIS WORLD:\n${contextPack.actors
           .map(
             (a) =>
-              `${a.name} (${a.role}): ${a.personality}. Speaks: ${a.speech}. Knows: ${a.knowledge}.`
+              `${a.name} (${a.role}): ${a.personality}. Speaks: ${a.speech}. Knows: ${a.knowledge}. Relationship to protagonist: ${a.relationshipToProtagonist}.`
           )
           .join("\n")}`
       : ""
