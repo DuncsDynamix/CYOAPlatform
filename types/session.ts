@@ -13,6 +13,39 @@ export interface SessionState {
 
   // Performance tracking
   generationTimings: Record<string, number>
+
+  // Phase 2: active dialogue loop (null when no dialogue in progress)
+  dialogue: DialogueSessionState | null
+
+  // Phase 2: cumulative competency assessment results
+  competencyProfile: CompetencyResult[]
+}
+
+// ─── DIALOGUE STATE ───────────────────────────────────────────
+
+export interface DialogueTurn {
+  role: "participant" | "character"
+  content: string
+  timestamp: string
+}
+
+export interface DialogueSessionState {
+  nodeId: string
+  actorName: string
+  turns: DialogueTurn[]
+  breakthroughAchieved: boolean
+  turnCount: number
+}
+
+// ─── COMPETENCY RESULT ────────────────────────────────────────
+
+export interface CompetencyResult {
+  nodeId: string
+  rubricCriterionId: string
+  criterionLabel: string
+  passed: boolean
+  evidence: string
+  weight: "critical" | "major" | "minor"
 }
 
 // ─── NARRATIVE SCAFFOLD ───────────────────────────────────────

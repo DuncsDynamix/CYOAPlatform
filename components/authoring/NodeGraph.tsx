@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useRef, useState, useCallback } from "react"
-import type { Node, ChoiceNode, FixedNode, GeneratedNode, CheckpointNode } from "@/types/experience"
+import type { Node, ChoiceNode, FixedNode, GeneratedNode, CheckpointNode, DialogueNode, EvaluativeNode } from "@/types/experience"
 
 // ─── COLOURS ─────────────────────────────────────────────────
 
@@ -11,6 +11,8 @@ const TYPE_COLOURS: Record<string, { bg: string; border: string; text: string }>
   CHOICE:     { bg: "#422006", border: "#F59E0B", text: "#FCD34D" },
   CHECKPOINT: { bg: "#064E3B", border: "#10B981", text: "#6EE7B7" },
   ENDPOINT:   { bg: "#450A0A", border: "#EF4444", text: "#FCA5A5" },
+  DIALOGUE:   { bg: "#0C1A2E", border: "#06B6D4", text: "#67E8F9" },
+  EVALUATIVE: { bg: "#2E0A1A", border: "#EC4899", text: "#F9A8D4" },
 }
 
 // Dark mode base colours for SVG elements
@@ -32,6 +34,8 @@ const TYPE_ICONS: Record<string, string> = {
   CHOICE: "?",
   CHECKPOINT: "✓",
   ENDPOINT: "●",
+  DIALOGUE: "D",
+  EVALUATIVE: "E",
 }
 
 // ─── VERTICAL LAYOUT ─────────────────────────────────────────
@@ -72,6 +76,14 @@ function getChildIds(node: Node): { id: string; label?: string }[] {
     }
     case "ENDPOINT":
       return []
+    case "DIALOGUE": {
+      const d = node as DialogueNode
+      const children = [{ id: d.nextNodeId, label: "breakthrough" }]
+      if (d.failureNodeId) children.push({ id: d.failureNodeId, label: "max turns" })
+      return children
+    }
+    case "EVALUATIVE":
+      return [{ id: (node as EvaluativeNode).nextNodeId }]
   }
 }
 
@@ -321,7 +333,7 @@ interface NodeGraphProps {
   onAdd: (type: Node["type"]) => void
 }
 
-const NODE_TYPES: Node["type"][] = ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT"]
+const NODE_TYPES: Node["type"][] = ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT", "DIALOGUE", "EVALUATIVE"]
 
 export function NodeGraph({ nodes, selectedId, onSelect, onAdd }: NodeGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)

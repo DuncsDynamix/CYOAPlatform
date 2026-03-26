@@ -50,6 +50,8 @@ export interface ExperienceContextPack {
   }
   groundTruth: GroundTruthSource[]
   scripts: ContextScript[]
+  // Training-specific (optional — stored here to avoid schema change)
+  learningObjectives?: string[]
 }
 
 export interface Actor {
@@ -110,9 +112,9 @@ export interface EndpointShape {
 
 // ─── NODE TYPES ───────────────────────────────────────────────
 
-export type NodeType = "FIXED" | "GENERATED" | "CHOICE" | "CHECKPOINT" | "ENDPOINT"
+export type NodeType = "FIXED" | "GENERATED" | "CHOICE" | "CHECKPOINT" | "ENDPOINT" | "DIALOGUE" | "EVALUATIVE"
 
-export type Node = FixedNode | GeneratedNode | ChoiceNode | CheckpointNode | EndpointNode
+export type Node = FixedNode | GeneratedNode | ChoiceNode | CheckpointNode | EndpointNode | DialogueNode | EvaluativeNode
 
 interface BaseNode {
   id: string
@@ -163,6 +165,10 @@ export interface ChoiceOption {
     ifNotMet: "suppress_option" | "show_disabled"
   }
   stateChanges?: Record<string, number | string | boolean>
+  // Training-specific (optional — ignored by Turn To Page renderer)
+  trainingFeedback?: string
+  competencySignal?: string
+  feedbackTone?: "positive" | "developmental" | "neutral"
 }
 
 export interface CheckpointNode extends BaseNode {
@@ -186,6 +192,37 @@ export interface EndpointNode extends BaseNode {
     showDepthStats: boolean
     showReadingTime: boolean
   }
+}
+
+export interface DialogueNode extends BaseNode {
+  type: "DIALOGUE"
+  /** Must match an Actor.name in contextPack.actors */
+  actorId: string
+  /** If omitted, AI generates the opening line */
+  openingLine?: string
+  /** What constitutes a successful breakthrough — evaluated by AI each turn */
+  breakthroughCriteria: string
+  /** Maximum participant turns before dialogue ends */
+  maxTurns: number
+  /** Where to go on breakthrough */
+  nextNodeId: string
+  /** Where to go if maxTurns exceeded without breakthrough — defaults to nextNodeId */
+  failureNodeId?: string
+}
+
+export interface RubricCriterion {
+  id: string
+  label: string
+  description: string
+  weight: "critical" | "major" | "minor"
+}
+
+export interface EvaluativeNode extends BaseNode {
+  type: "EVALUATIVE"
+  rubric: RubricCriterion[]
+  /** Node IDs whose scaffold context to use for assessment (CB-003) */
+  assessesNodeIds: string[]
+  nextNodeId: string
 }
 
 // ─── SEGMENTS ────────────────────────────────────────────────

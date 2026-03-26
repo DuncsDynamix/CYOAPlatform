@@ -1,7 +1,7 @@
 import { db } from "@/lib/db/prisma"
-import { generateNode, generateEndpointSummary, generateScaffold } from "./generator"
+import { generateNode, generateEndpointSummary, generateScaffold, generateDialogueOpener, generateEvaluativeAssessment } from "./generator"
 import { getFromCache, writeToCache } from "./cache"
-import { updateSessionState, getSession, markSessionComplete, appendNarrativeHistory } from "./session"
+import { updateSessionState, getSession, markSessionComplete, appendNarrativeHistory, initDialogueState, appendCompetencyResult } from "./session"
 import { buildArcAwareness } from "./arc"
 import { trackEvent } from "@/lib/analytics"
 import type {
@@ -11,11 +11,14 @@ import type {
   ChoiceNode,
   CheckpointNode,
   EndpointNode,
+  DialogueNode,
+  EvaluativeNode,
   ChoiceOption,
   Experience,
   Segment,
+  ExperienceContextPack,
 } from "@/types/experience"
-import type { ExperienceSession } from "@/types/session"
+import type { ExperienceSession, NarrativeHistoryEntry } from "@/types/session"
 import type { ArrivalResult, ResolvedContent, OutcomeCardData } from "@/types/engine"
 
 // ─── NODE RESOLUTION ─────────────────────────────────────────
@@ -225,6 +228,74 @@ async function resolveNodeContent(
         outcomeCard: buildOutcomeCard(endpointNode, session, experience),
       }
     }
+
+    case "DIALOGUE": {
+      const dialogueNode = node as DialogueNode
+      const cp = experience.contextPack as ExperienceContextPack
+      const actor = cp.actors?.find((a) => a.name === dialogueNode.actorId)
+      if (!actor) throw new Error(`Actor "${dialogueNode.actorId}" not found in context pack`)
+
+      // Resume existing dialogue for this node if still in progress
+      const existingDialogue = session.state.dialogue
+      if (
+        existingDialogue &&
+        existingDialogue.nodeId === node.id &&
+        !existingDialogue.breakthroughAchieved &&
+        existingDialogue.turnCount < dialogueNode.maxTurns
+      ) {
+        const lastCharTurn = [...existingDialogue.turns].reverse().find((t) => t.role === "character")
+        return {
+          type: "dialogue",
+          actorName: actor.name,
+          actorRole: actor.role,
+          characterLine: lastCharTurn?.content ?? "",
+          turnCount: existingDialogue.turnCount,
+          maxTurns: dialogueNode.maxTurns,
+        }
+      }
+
+      // New dialogue — generate or use fixed opener
+      const openingLine = dialogueNode.openingLine?.trim()
+        || await generateDialogueOpener(dialogueNode, actor, session, experience, apiKey)
+
+      await initDialogueState(session.id, node.id, actor.name, openingLine)
+
+      return {
+        type: "dialogue",
+        actorName: actor.name,
+        actorRole: actor.role,
+        characterLine: openingLine,
+        turnCount: 0,
+        maxTurns: dialogueNode.maxTurns,
+      }
+    }
+
+    case "EVALUATIVE": {
+      const evalNode = node as EvaluativeNode
+      const relevantScaffolds = (session.narrativeHistory as NarrativeHistoryEntry[])
+        .filter((h) => evalNode.assessesNodeIds.includes(h.nodeId))
+
+      const { results, feedback } = await generateEvaluativeAssessment(
+        evalNode,
+        relevantScaffolds,
+        session,
+        experience,
+        apiKey
+      )
+
+      await appendCompetencyResult(session.id, results)
+
+      const criticalCriteria = results.filter((r) => r.weight === "critical")
+      const passed = criticalCriteria.length === 0 || criticalCriteria.every((r) => r.passed)
+
+      return {
+        type: "evaluative",
+        passed,
+        results,
+        feedback,
+        nextNodeId: evalNode.nextNodeId,
+      }
+    }
   }
 }
 
@@ -261,6 +332,12 @@ function getImmediateChildIds(node: Node): string[] {
       return [(node as CheckpointNode).nextNodeId]
     case "ENDPOINT":
       return []
+    case "DIALOGUE": {
+      const d = node as DialogueNode
+      return d.failureNodeId ? [d.nextNodeId, d.failureNodeId] : [d.nextNodeId]
+    }
+    case "EVALUATIVE":
+      return [(node as EvaluativeNode).nextNodeId]
   }
 }
 

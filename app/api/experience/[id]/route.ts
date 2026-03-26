@@ -39,7 +39,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { title, description, genre, type, coverImageUrl, contextPack, shape, nodes, segments } = parsed.data
+  const { title, description, genre, type, renderingTheme, coverImageUrl, contextPack, shape, nodes, segments } = parsed.data
 
   const updated = await db.experience.update({
     where: { id },
@@ -48,6 +48,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       ...(description !== undefined && { description }),
       ...(genre !== undefined && { genre }),
       ...(type !== undefined && { type }),
+      ...(renderingTheme !== undefined && { renderingTheme }),
       ...(coverImageUrl !== undefined && { coverImageUrl }),
       ...(contextPack !== undefined && { contextPack: contextPack as object }),
       ...(shape !== undefined && { shape: shape as object }),

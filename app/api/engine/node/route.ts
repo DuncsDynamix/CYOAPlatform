@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSession } from "@/lib/engine/session"
-import { arriveAtNode, findNode } from "@/lib/engine/executor"
+import { arriveAtNode, findNode, getAllNodes } from "@/lib/engine/executor"
 import { getExperienceById } from "@/lib/db/queries/experience"
 import { requireAuth, getAnthropicKey, canAccessSession } from "@/lib/auth"
 import { checkEngineLimit } from "@/lib/security/ratelimit"
-import type { GeneratedNode, FixedNode, CheckpointNode } from "@/types/experience"
+import type { GeneratedNode, FixedNode, CheckpointNode, DialogueNode, EvaluativeNode } from "@/types/experience"
 
 // GET /api/engine/node?sessionId=...
 // Advances from the current prose node to the next node (usually a CHOICE).
@@ -43,16 +43,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Experience not found" }, { status: 404 })
   }
 
-  const currentNode = findNode(experience.nodes, session.currentNodeId)
+  const allNodes = getAllNodes(experience)
+  const currentNode = findNode(allNodes, session.currentNodeId)
   if (!currentNode) {
     return NextResponse.json({ error: "Current node not found" }, { status: 404 })
   }
 
-  // Get the next node id (the node after the current prose/checkpoint node)
+  // Get the next node id (the node after the current prose/checkpoint/evaluative/dialogue node)
   let nextNodeId: string | undefined
   if (currentNode.type === "FIXED") nextNodeId = (currentNode as FixedNode).nextNodeId
   else if (currentNode.type === "GENERATED") nextNodeId = (currentNode as GeneratedNode).nextNodeId
   else if (currentNode.type === "CHECKPOINT") nextNodeId = (currentNode as CheckpointNode).nextNodeId
+  else if (currentNode.type === "EVALUATIVE") nextNodeId = (currentNode as EvaluativeNode).nextNodeId
+  else if (currentNode.type === "DIALOGUE") {
+    const dialogueNode = currentNode as DialogueNode
+    const dialogue = session.state.dialogue
+    // Use failureNodeId if maxTurns reached without breakthrough, otherwise nextNodeId
+    const usedFailurePath = dialogue &&
+      !dialogue.breakthroughAchieved &&
+      dialogue.turnCount >= dialogueNode.maxTurns
+    nextNodeId = (usedFailurePath && dialogueNode.failureNodeId) ? dialogueNode.failureNodeId : dialogueNode.nextNodeId
+  }
 
   if (!nextNodeId) {
     return NextResponse.json({ error: "No next node from current position" }, { status: 400 })

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db/prisma"
-import type { ExperienceSession, SessionState, NarrativeHistoryEntry, ChoiceHistoryEntry } from "@/types/session"
+import type { ExperienceSession, SessionState, NarrativeHistoryEntry, ChoiceHistoryEntry, DialogueTurn, DialogueSessionState, CompetencyResult } from "@/types/session"
 
 const DEFAULT_STATE: SessionState = {
   flags: {},
@@ -10,6 +10,8 @@ const DEFAULT_STATE: SessionState = {
   distanceToNearestEndpoint: 0,
   pacingInstruction: "",
   generationTimings: {},
+  dialogue: null,
+  competencyProfile: [],
 }
 
 export async function createSession({
@@ -168,6 +170,139 @@ export async function markSessionComplete(
       status: "completed",
       endpointReached: endpointId,
       completedAt: new Date(),
+    },
+  })
+}
+
+// ─── DIALOGUE HELPERS ─────────────────────────────────────────
+
+export async function initDialogueState(
+  sessionId: string,
+  nodeId: string,
+  actorName: string,
+  openingLine: string
+): Promise<void> {
+  const session = await db.experienceSession.findUnique({
+    where: { id: sessionId },
+    select: { state: true },
+  })
+  if (!session) return
+
+  const currentState = session.state as unknown as SessionState
+  const openingTurn: DialogueTurn = {
+    role: "character",
+    content: openingLine,
+    timestamp: new Date().toISOString(),
+  }
+  const dialogueState: DialogueSessionState = {
+    nodeId,
+    actorName,
+    turns: [openingTurn],
+    breakthroughAchieved: false,
+    turnCount: 0,
+  }
+
+  await db.experienceSession.update({
+    where: { id: sessionId },
+    data: {
+      state: { ...currentState, dialogue: dialogueState } as object,
+    },
+  })
+}
+
+export async function appendDialogueTurn(
+  sessionId: string,
+  turn: DialogueTurn
+): Promise<DialogueSessionState | null> {
+  const session = await db.experienceSession.findUnique({
+    where: { id: sessionId },
+    select: { state: true },
+  })
+  if (!session) return null
+
+  const currentState = session.state as unknown as SessionState
+  if (!currentState.dialogue) return null
+
+  const updatedDialogue: DialogueSessionState = {
+    ...currentState.dialogue,
+    turns: [...currentState.dialogue.turns, turn],
+    turnCount: turn.role === "participant"
+      ? currentState.dialogue.turnCount + 1
+      : currentState.dialogue.turnCount,
+  }
+
+  await db.experienceSession.update({
+    where: { id: sessionId },
+    data: {
+      state: { ...currentState, dialogue: updatedDialogue } as object,
+    },
+  })
+
+  return updatedDialogue
+}
+
+export async function setDialogueBreakthrough(sessionId: string): Promise<void> {
+  const session = await db.experienceSession.findUnique({
+    where: { id: sessionId },
+    select: { state: true },
+  })
+  if (!session) return
+
+  const currentState = session.state as unknown as SessionState
+  if (!currentState.dialogue) return
+
+  await db.experienceSession.update({
+    where: { id: sessionId },
+    data: {
+      state: {
+        ...currentState,
+        dialogue: { ...currentState.dialogue, breakthroughAchieved: true },
+      } as object,
+    },
+  })
+}
+
+export async function clearDialogueState(sessionId: string): Promise<void> {
+  const session = await db.experienceSession.findUnique({
+    where: { id: sessionId },
+    select: { state: true },
+  })
+  if (!session) return
+
+  const currentState = session.state as unknown as SessionState
+
+  await db.experienceSession.update({
+    where: { id: sessionId },
+    data: {
+      state: { ...currentState, dialogue: null } as object,
+    },
+  })
+}
+
+// ─── COMPETENCY HELPERS ───────────────────────────────────────
+
+export async function appendCompetencyResult(
+  sessionId: string,
+  results: CompetencyResult[]
+): Promise<void> {
+  if (results.length === 0) return
+
+  const session = await db.experienceSession.findUnique({
+    where: { id: sessionId },
+    select: { state: true },
+  })
+  if (!session) return
+
+  const currentState = session.state as unknown as SessionState
+  const existing = currentState.competencyProfile ?? []
+
+  await db.experienceSession.update({
+    where: { id: sessionId },
+    data: {
+      state: {
+        ...currentState,
+        competencyProfile: [...existing, ...results],
+      } as object,
     },
   })
 }

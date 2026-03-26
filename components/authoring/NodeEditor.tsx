@@ -1,12 +1,61 @@
 "use client"
 
 import { useState } from "react"
-import type { Node, ChoiceOption } from "@/types/experience"
+import type { Node, ChoiceOption, RubricCriterion } from "@/types/experience"
 
 interface NodeEditorProps {
   node: Node
   onChange: (updated: Node) => void
+  allNodes?: Node[]
+  renderingTheme?: string
 }
+
+// ─── NODE ID SELECT ────────────────────────────────────────────
+// Renders a dropdown when allNodes is available; falls back to text input.
+
+function NodeIdSelect({
+  value,
+  onChange,
+  allNodes,
+  excludeId,
+  placeholder = "Select target node",
+}: {
+  value: string
+  onChange: (id: string) => void
+  allNodes?: Node[]
+  excludeId?: string
+  placeholder?: string
+}) {
+  if (!allNodes || allNodes.length === 0) {
+    return (
+      <input
+        className="auth-input"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Node ID"
+      />
+    )
+  }
+
+  const options = allNodes.filter((n) => n.id !== excludeId)
+
+  return (
+    <select
+      className="auth-select"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">{placeholder}</option>
+      {options.map((n) => (
+        <option key={n.id} value={n.id}>
+          [{n.type}] {n.label || "(unnamed)"}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+// ─── TAG INPUT ─────────────────────────────────────────────────
 
 function TagInput({
   values,
@@ -64,12 +113,16 @@ function TagInput({
   )
 }
 
+// ─── NODE TYPE FORMS ───────────────────────────────────────────
+
 function FixedNodeForm({
   node,
   onChange,
+  allNodes,
 }: {
   node: Extract<Node, { type: "FIXED" }>
   onChange: (n: Node) => void
+  allNodes?: Node[]
 }) {
   return (
     <>
@@ -83,11 +136,12 @@ function FixedNodeForm({
         />
       </label>
       <label className="auth-label">
-        Next Node ID
-        <input
-          className="auth-input"
+        Next node
+        <NodeIdSelect
           value={node.nextNodeId}
-          onChange={(e) => onChange({ ...node, nextNodeId: e.target.value })}
+          onChange={(id) => onChange({ ...node, nextNodeId: id })}
+          allNodes={allNodes}
+          excludeId={node.id}
         />
       </label>
       <label className="auth-label auth-label--inline">
@@ -105,17 +159,19 @@ function FixedNodeForm({
 function GeneratedNodeForm({
   node,
   onChange,
+  allNodes,
 }: {
   node: Extract<Node, { type: "GENERATED" }>
   onChange: (n: Node) => void
+  allNodes?: Node[]
 }) {
   return (
     <>
       <label className="auth-label">
-        Beat Instruction
+        Beat instruction
         <textarea
           className="auth-textarea"
-          rows={4}
+          rows={5}
           value={node.beatInstruction}
           onChange={(e) => onChange({ ...node, beatInstruction: e.target.value })}
           placeholder="Describe what this AI-generated section should accomplish..."
@@ -152,7 +208,7 @@ function GeneratedNodeForm({
         </label>
       </div>
       <label className="auth-label">
-        Must end at (scene/moment)
+        Must end at
         <input
           className="auth-input"
           value={node.constraints.mustEndAt}
@@ -162,6 +218,7 @@ function GeneratedNodeForm({
               constraints: { ...node.constraints, mustEndAt: e.target.value },
             })
           }
+          placeholder="Describe the moment or beat this scene must end on"
         />
       </label>
       <label className="auth-label">
@@ -191,11 +248,12 @@ function GeneratedNodeForm({
         />
       </label>
       <label className="auth-label">
-        Next Node ID
-        <input
-          className="auth-input"
+        Next node
+        <NodeIdSelect
           value={node.nextNodeId}
-          onChange={(e) => onChange({ ...node, nextNodeId: e.target.value })}
+          onChange={(id) => onChange({ ...node, nextNodeId: id })}
+          allNodes={allNodes}
+          excludeId={node.id}
         />
       </label>
     </>
@@ -206,50 +264,95 @@ function ChoiceOptionRow({
   option,
   onChange,
   onDelete,
+  allNodes,
+  isTraining,
 }: {
   option: ChoiceOption
   onChange: (o: ChoiceOption) => void
   onDelete: () => void
+  allNodes?: Node[]
+  isTraining?: boolean
 }) {
   return (
     <div className="auth-choice-option">
-      <div className="auth-row">
+      <div className="auth-row" style={{ alignItems: "flex-end" }}>
         <label className="auth-label auth-label--fill">
           Label
           <input
             className="auth-input"
             value={option.label}
             onChange={(e) => onChange({ ...option, label: e.target.value })}
+            placeholder="What the participant sees..."
           />
         </label>
-        <label className="auth-label auth-label--fill">
-          Next Node ID
-          <input
-            className="auth-input"
-            value={option.nextNodeId}
-            onChange={(e) => onChange({ ...option, nextNodeId: e.target.value })}
-          />
-        </label>
-        <button type="button" onClick={onDelete} className="auth-btn-danger auth-btn--sm">
+        <button type="button" onClick={onDelete} className="auth-btn-danger" style={{ flexShrink: 0, height: "32px" }}>
           ×
         </button>
       </div>
-      <label className="auth-label auth-label--inline">
-        <input
-          type="checkbox"
-          checked={option.isLoadBearing}
-          onChange={(e) => onChange({ ...option, isLoadBearing: e.target.checked })}
+      <label className="auth-label" style={{ marginTop: "0.5rem" }}>
+        Goes to
+        <NodeIdSelect
+          value={option.nextNodeId}
+          onChange={(id) => onChange({ ...option, nextNodeId: id })}
+          allNodes={allNodes}
+          placeholder="Select destination node"
         />
-        Load-bearing choice
       </label>
-      <label className="auth-label auth-label--inline">
-        <input
-          type="checkbox"
-          checked={option.requiresFreshGeneration ?? false}
-          onChange={(e) => onChange({ ...option, requiresFreshGeneration: e.target.checked })}
-        />
-        Requires fresh generation (skip pre-generation; generate at choice-time)
-      </label>
+      <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+        <label className="auth-label auth-label--inline">
+          <input
+            type="checkbox"
+            checked={option.isLoadBearing}
+            onChange={(e) => onChange({ ...option, isLoadBearing: e.target.checked })}
+          />
+          Load-bearing
+        </label>
+        <label className="auth-label auth-label--inline">
+          <input
+            type="checkbox"
+            checked={option.requiresFreshGeneration ?? false}
+            onChange={(e) => onChange({ ...option, requiresFreshGeneration: e.target.checked })}
+          />
+          Fresh generation
+        </label>
+      </div>
+      {isTraining && (
+        <div style={{ marginTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <label className="auth-label">
+            Feedback note
+            <textarea
+              className="auth-textarea"
+              rows={3}
+              value={option.trainingFeedback ?? ""}
+              onChange={(e) => onChange({ ...option, trainingFeedback: e.target.value })}
+              placeholder="Coaching note shown after this choice is made (1–3 sentences)…"
+            />
+          </label>
+          <div className="auth-row">
+            <label className="auth-label">
+              Feedback tone
+              <select
+                className="auth-select"
+                value={option.feedbackTone ?? "neutral"}
+                onChange={(e) => onChange({ ...option, feedbackTone: e.target.value as "positive" | "developmental" | "neutral" })}
+              >
+                <option value="positive">Positive</option>
+                <option value="developmental">Developmental</option>
+                <option value="neutral">Neutral</option>
+              </select>
+            </label>
+            <label className="auth-label">
+              Competency signal
+              <input
+                className="auth-input"
+                value={option.competencySignal ?? ""}
+                onChange={(e) => onChange({ ...option, competencySignal: e.target.value })}
+                placeholder="e.g. Active Listening"
+              />
+            </label>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -257,9 +360,13 @@ function ChoiceOptionRow({
 function ChoiceNodeForm({
   node,
   onChange,
+  allNodes,
+  isTraining,
 }: {
   node: Extract<Node, { type: "CHOICE" }>
   onChange: (n: Node) => void
+  allNodes?: Node[]
+  isTraining?: boolean
 }) {
   function addOption() {
     const newOpt: ChoiceOption = {
@@ -301,7 +408,7 @@ function ChoiceNodeForm({
       {node.responseType === "open" ? (
         <>
           <label className="auth-label">
-            Open Prompt
+            Prompt
             <input
               className="auth-input"
               value={node.openPrompt ?? ""}
@@ -320,13 +427,15 @@ function ChoiceNodeForm({
         </>
       ) : (
         <>
-          <div className="auth-section-label">Options</div>
+          <div className="auth-section-label" style={{ marginBottom: "0.5rem" }}>Options</div>
           {(node.options ?? []).map((opt, i) => (
             <ChoiceOptionRow
               key={opt.id}
               option={opt}
               onChange={(updated) => updateOption(i, updated)}
               onDelete={() => deleteOption(i)}
+              allNodes={allNodes}
+              isTraining={isTraining}
             />
           ))}
           <button type="button" onClick={addOption} className="auth-btn auth-btn--sm">
@@ -341,9 +450,11 @@ function ChoiceNodeForm({
 function CheckpointNodeForm({
   node,
   onChange,
+  allNodes,
 }: {
   node: Extract<Node, { type: "CHECKPOINT" }>
   onChange: (n: Node) => void
+  allNodes?: Node[]
 }) {
   return (
     <>
@@ -384,11 +495,12 @@ function CheckpointNodeForm({
         />
       </label>
       <label className="auth-label">
-        Next Node ID
-        <input
-          className="auth-input"
+        Next node
+        <NodeIdSelect
           value={node.nextNodeId}
-          onChange={(e) => onChange({ ...node, nextNodeId: e.target.value })}
+          onChange={(id) => onChange({ ...node, nextNodeId: id })}
+          allNodes={allNodes}
+          excludeId={node.id}
         />
       </label>
     </>
@@ -442,10 +554,10 @@ function EndpointNodeForm({
           placeholder="Write a 2-sentence summary of the participant's journey..."
         />
       </label>
-      <div className="auth-section-label">Outcome card settings</div>
+      <div className="auth-section-label" style={{ marginBottom: "0.5rem" }}>Outcome card</div>
       {(
         [
-          ["shareable", "Shareable (show share button)"],
+          ["shareable", "Shareable"],
           ["showChoiceStats", "Show choice stats"],
           ["showDepthStats", "Show depth stats"],
           ["showReadingTime", "Show reading time"],
@@ -469,7 +581,189 @@ function EndpointNodeForm({
   )
 }
 
-export function NodeEditor({ node, onChange }: NodeEditorProps) {
+function DialogueNodeForm({
+  node,
+  onChange,
+  allNodes,
+}: {
+  node: Extract<Node, { type: "DIALOGUE" }>
+  onChange: (n: Node) => void
+  allNodes?: Node[]
+}) {
+  return (
+    <>
+      <label className="auth-label">
+        Actor ID
+        <input
+          className="auth-input"
+          value={node.actorId}
+          onChange={(e) => onChange({ ...node, actorId: e.target.value })}
+          placeholder="Must match an Actor name in the Context Pack"
+        />
+      </label>
+      <label className="auth-label">
+        Opening line (optional — AI generates if blank)
+        <textarea
+          className="auth-textarea"
+          rows={3}
+          value={node.openingLine ?? ""}
+          onChange={(e) => onChange({ ...node, openingLine: e.target.value || undefined })}
+          placeholder="Leave blank to let the AI generate the opening line…"
+        />
+      </label>
+      <label className="auth-label">
+        Breakthrough criteria
+        <textarea
+          className="auth-textarea"
+          rows={3}
+          value={node.breakthroughCriteria}
+          onChange={(e) => onChange({ ...node, breakthroughCriteria: e.target.value })}
+          placeholder="Describe what constitutes a successful outcome in this dialogue…"
+        />
+      </label>
+      <label className="auth-label">
+        Max turns
+        <input
+          type="number"
+          className="auth-input"
+          value={node.maxTurns}
+          min={1}
+          max={20}
+          onChange={(e) => onChange({ ...node, maxTurns: Number(e.target.value) })}
+        />
+      </label>
+      <label className="auth-label">
+        On breakthrough → next node
+        <NodeIdSelect
+          value={node.nextNodeId}
+          onChange={(id) => onChange({ ...node, nextNodeId: id })}
+          allNodes={allNodes}
+          excludeId={node.id}
+          placeholder="Select node for breakthrough path"
+        />
+      </label>
+      <label className="auth-label">
+        On max turns (no breakthrough) → node
+        <NodeIdSelect
+          value={node.failureNodeId ?? ""}
+          onChange={(id) => onChange({ ...node, failureNodeId: id || undefined })}
+          allNodes={allNodes}
+          excludeId={node.id}
+          placeholder="Defaults to breakthrough path if not set"
+        />
+      </label>
+    </>
+  )
+}
+
+function EvaluativeNodeForm({
+  node,
+  onChange,
+  allNodes,
+}: {
+  node: Extract<Node, { type: "EVALUATIVE" }>
+  onChange: (n: Node) => void
+  allNodes?: Node[]
+}) {
+  function addCriterion() {
+    const newC: RubricCriterion = {
+      id: crypto.randomUUID(),
+      label: "",
+      description: "",
+      weight: "major",
+    }
+    onChange({ ...node, rubric: [...node.rubric, newC] })
+  }
+
+  function updateCriterion(idx: number, updated: RubricCriterion) {
+    const rubric = [...node.rubric]
+    rubric[idx] = updated
+    onChange({ ...node, rubric })
+  }
+
+  function deleteCriterion(idx: number) {
+    onChange({ ...node, rubric: node.rubric.filter((_, i) => i !== idx) })
+  }
+
+  return (
+    <>
+      <label className="auth-label">
+        Assesses node IDs (scaffold context)
+        <TagInput
+          values={node.assessesNodeIds}
+          onChange={(v) => onChange({ ...node, assessesNodeIds: v })}
+          placeholder="Node ID and press Enter"
+        />
+        <span style={{ fontSize: "0.75rem", color: "#6b7280", marginTop: "0.25rem", display: "block" }}>
+          Add the IDs of GENERATED/FIXED nodes whose scaffold context to use for assessment
+        </span>
+      </label>
+      <div className="auth-section-label" style={{ marginBottom: "0.5rem" }}>Rubric criteria</div>
+      {node.rubric.map((c, i) => (
+        <div key={c.id} className="auth-choice-option">
+          <div className="auth-row" style={{ alignItems: "flex-end" }}>
+            <label className="auth-label auth-label--fill">
+              Label
+              <input
+                className="auth-input"
+                value={c.label}
+                onChange={(e) => updateCriterion(i, { ...c, label: e.target.value })}
+                placeholder="e.g. Active Listening"
+              />
+            </label>
+            <label className="auth-label" style={{ flexShrink: 0 }}>
+              Weight
+              <select
+                className="auth-select"
+                value={c.weight}
+                onChange={(e) => updateCriterion(i, { ...c, weight: e.target.value as RubricCriterion["weight"] })}
+              >
+                <option value="critical">Critical</option>
+                <option value="major">Major</option>
+                <option value="minor">Minor</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => deleteCriterion(i)}
+              className="auth-btn-danger"
+              style={{ flexShrink: 0, height: "32px" }}
+            >
+              ×
+            </button>
+          </div>
+          <label className="auth-label" style={{ marginTop: "0.5rem" }}>
+            Description
+            <textarea
+              className="auth-textarea"
+              rows={2}
+              value={c.description}
+              onChange={(e) => updateCriterion(i, { ...c, description: e.target.value })}
+              placeholder="What does meeting this criterion look like?"
+            />
+          </label>
+        </div>
+      ))}
+      <button type="button" onClick={addCriterion} className="auth-btn auth-btn--sm">
+        + Add criterion
+      </button>
+      <label className="auth-label" style={{ marginTop: "1rem" }}>
+        Next node (auto-advances after result)
+        <NodeIdSelect
+          value={node.nextNodeId}
+          onChange={(id) => onChange({ ...node, nextNodeId: id })}
+          allNodes={allNodes}
+          excludeId={node.id}
+        />
+      </label>
+    </>
+  )
+}
+
+// ─── MAIN EXPORT ──────────────────────────────────────────────
+
+export function NodeEditor({ node, onChange, allNodes, renderingTheme }: NodeEditorProps) {
+  const isTraining = renderingTheme === "training"
   return (
     <div className="auth-node-editor">
       <label className="auth-label">
@@ -485,34 +779,25 @@ export function NodeEditor({ node, onChange }: NodeEditorProps) {
       <hr className="auth-divider" />
 
       {node.type === "FIXED" && (
-        <FixedNodeForm
-          node={node}
-          onChange={onChange}
-        />
+        <FixedNodeForm node={node} onChange={onChange} allNodes={allNodes} />
       )}
       {node.type === "GENERATED" && (
-        <GeneratedNodeForm
-          node={node}
-          onChange={onChange}
-        />
+        <GeneratedNodeForm node={node} onChange={onChange} allNodes={allNodes} />
       )}
       {node.type === "CHOICE" && (
-        <ChoiceNodeForm
-          node={node}
-          onChange={onChange}
-        />
+        <ChoiceNodeForm node={node} onChange={onChange} allNodes={allNodes} isTraining={isTraining} />
       )}
       {node.type === "CHECKPOINT" && (
-        <CheckpointNodeForm
-          node={node}
-          onChange={onChange}
-        />
+        <CheckpointNodeForm node={node} onChange={onChange} allNodes={allNodes} />
       )}
       {node.type === "ENDPOINT" && (
-        <EndpointNodeForm
-          node={node}
-          onChange={onChange}
-        />
+        <EndpointNodeForm node={node} onChange={onChange} />
+      )}
+      {node.type === "DIALOGUE" && (
+        <DialogueNodeForm node={node} onChange={onChange} allNodes={allNodes} />
+      )}
+      {node.type === "EVALUATIVE" && (
+        <EvaluativeNodeForm node={node} onChange={onChange} allNodes={allNodes} />
       )}
     </div>
   )

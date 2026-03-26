@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { db } from "@/lib/db/prisma"
+import { getOverviewStats } from "@/lib/analytics/queries"
 
 async function getExperiences(authorId: string) {
   return db.experience.findMany({
@@ -21,20 +22,49 @@ async function getExperiences(authorId: string) {
 const DEV_AUTHOR_ID = "00000000-0000-0000-0000-000000000001"
 
 export default async function DashboardPage() {
-  const experiences = await getExperiences(DEV_AUTHOR_ID)
+  const [experiences, stats] = await Promise.all([
+    getExperiences(DEV_AUTHOR_ID),
+    getOverviewStats(),
+  ])
 
   return (
     <div className="auth-page">
       <div className="auth-page-header">
-        <h1 className="auth-page-title">My Experiences</h1>
+        <h1 className="auth-page-title">Overview</h1>
         <Link href="/experience/new" className="auth-btn auth-btn--primary">
           + New experience
         </Link>
       </div>
 
+      <div className="console-stat-grid">
+        <div className="console-stat-card">
+          <div className="console-stat-value">{stats.totalExperiences}</div>
+          <div className="console-stat-label">Experiences</div>
+        </div>
+        <div className="console-stat-card">
+          <div className="console-stat-value">{stats.totalSessions.toLocaleString()}</div>
+          <div className="console-stat-label">Sessions started</div>
+        </div>
+        <div className="console-stat-card">
+          <div className="console-stat-value">{stats.totalCompletions.toLocaleString()}</div>
+          <div className="console-stat-label">Completions</div>
+        </div>
+        <div className="console-stat-card">
+          <div className="console-stat-value">${stats.monthlyCostUSD.toFixed(2)}</div>
+          <div className="console-stat-label">AI cost this month</div>
+        </div>
+      </div>
+
+      <div className="console-section-header">
+        <h2 className="console-section-title">Experiences</h2>
+        <Link href="/dashboard/experiences" className="auth-btn auth-btn--sm">
+          View all →
+        </Link>
+      </div>
+
       {experiences.length === 0 ? (
         <div className="auth-empty-state">
-          <p>You haven't created any experiences yet.</p>
+          <p>You haven&apos;t created any experiences yet.</p>
           <Link href="/experience/new" className="auth-btn auth-btn--primary">
             Create your first
           </Link>
@@ -49,9 +79,7 @@ export default async function DashboardPage() {
             >
               <div className="auth-experience-card-title">{exp.title}</div>
               <div className="auth-experience-card-meta">
-                <span
-                  className={`auth-status-badge auth-status-badge--${exp.status}`}
-                >
+                <span className={`auth-status-badge auth-status-badge--${exp.status}`}>
                   {exp.status}
                 </span>
                 <span className="auth-experience-card-stats">

@@ -14,6 +14,7 @@ export type EventType =
   | "subscription_reactivated"
   | "page_view"
   | "generation_metric"
+  | "dialogue_turn"
   | "error"
 
 // Typed properties per event — used for callsite type safety
@@ -90,6 +91,13 @@ export interface EventProperties {
     outputTokens: number
     model: string
     fromCache: false
+  }
+  dialogue_turn: {
+    sessionId: string
+    experienceId: string
+    nodeId: string
+    turnCount: number
+    breakthrough: boolean
   }
   error: {
     message: string

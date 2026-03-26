@@ -179,6 +179,8 @@ export function createTestSession(
     distanceToNearestEndpoint: 0,
     pacingInstruction: "",
     generationTimings: {},
+    dialogue: null,
+    competencyProfile: [],
   }
 
   return {
@@ -210,6 +212,8 @@ export function createTestSessionWithChoices(choicesMade: number): ExperienceSes
       distanceToNearestEndpoint: 0,
       pacingInstruction: "",
       generationTimings: {},
+      dialogue: null,
+      competencyProfile: [],
     },
     choiceCount: choicesMade,
   })

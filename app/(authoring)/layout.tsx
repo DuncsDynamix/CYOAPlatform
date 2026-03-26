@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Authoring — Turn To Page",
+  title: "Console — Turn To Page",
 }
 
 export default function AuthoringLayout({ children }: { children: React.ReactNode }) {
@@ -13,10 +13,16 @@ export default function AuthoringLayout({ children }: { children: React.ReactNod
         </a>
         <nav className="auth-header-nav">
           <a href="/dashboard" className="auth-header-link">
-            Dashboard
+            Overview
           </a>
-          <a href="/account" className="auth-header-link">
-            Account
+          <a href="/dashboard/experiences" className="auth-header-link">
+            Experiences
+          </a>
+          <a href="/dashboard/costs" className="auth-header-link">
+            Costs
+          </a>
+          <a href="/dashboard/sessions" className="auth-header-link">
+            Sessions
           </a>
         </nav>
       </header>

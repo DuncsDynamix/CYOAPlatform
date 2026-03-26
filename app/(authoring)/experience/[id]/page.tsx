@@ -23,6 +23,10 @@ function makeNode(type: Node["type"]): Node {
       return { id, type, label: "", visible: false, marksCompletionOf: "", unlocks: [], nextNodeId: "" }
     case "ENDPOINT":
       return { id, type, label: "", endpointId: "", outcomeLabel: "", closingLine: "", summaryInstruction: "", outcomeCard: { shareable: true, showChoiceStats: true, showDepthStats: true, showReadingTime: true } }
+    case "DIALOGUE":
+      return { id, type, label: "", actorId: "", breakthroughCriteria: "", maxTurns: 5, nextNodeId: "" }
+    case "EVALUATIVE":
+      return { id, type, label: "", rubric: [], assessesNodeIds: [], nextNodeId: "" }
   }
 }
 
@@ -73,6 +77,7 @@ export default function ExperienceEditorPage() {
             description: updated.description,
             genre: updated.genre,
             type: updated.type,
+            renderingTheme: updated.renderingTheme,
             contextPack: updated.contextPack,
             nodes: updated.nodes,
             segments: updated.segments,
@@ -111,7 +116,11 @@ export default function ExperienceEditorPage() {
 
   function addSegment() {
     if (!experience) return
+    const defaultName = `Segment ${segments.length + 1}`
+    const name = prompt("Segment name:", defaultName)
+    if (name === null) return // cancelled
     const seg = makeSegment(segments.length)
+    seg.label = name.trim() || defaultName
     const updated = { ...experience, segments: [...segments, seg] }
     setExperience(updated)
     setActiveSegmentId(seg.id)
@@ -269,6 +278,7 @@ export default function ExperienceEditorPage() {
               description: experience.description ?? "",
               genre: experience.genre ?? "",
               type: experience.type,
+              renderingTheme: experience.renderingTheme ?? "retro-book",
             }}
             onChange={(d) => updateExperience(d)}
           />
@@ -291,18 +301,26 @@ export default function ExperienceEditorPage() {
                     <span className="seg-tab seg-tab--active">All nodes</span>
                   )}
                   {segments.map((seg) => (
-                    <button
+                    <div
                       key={seg.id}
                       className={`seg-tab ${activeSegmentId === seg.id ? "seg-tab--active" : ""}`}
                       onClick={() => { setActiveSegmentId(seg.id); setSelectedNodeId(null) }}
-                      onDoubleClick={() => {
-                        const name = prompt("Rename segment:", seg.label)
-                        if (name?.trim()) renameSegment(seg.id, name.trim())
-                      }}
                     >
                       {seg.label}
                       <span className="seg-tab-count">{seg.nodes.length}</span>
-                    </button>
+                      <button
+                        type="button"
+                        className="seg-rename-btn"
+                        title="Rename segment"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const name = prompt("Rename segment:", seg.label)
+                          if (name?.trim()) renameSegment(seg.id, name.trim())
+                        }}
+                      >
+                        ✎
+                      </button>
+                    </div>
                   ))}
                 </div>
                 <div className="seg-actions">
@@ -341,7 +359,7 @@ export default function ExperienceEditorPage() {
                     </div>
                   </div>
                   <div className="ng-panel-body">
-                    <NodeEditor node={selectedNode} onChange={updateNode} />
+                    <NodeEditor node={selectedNode} onChange={updateNode} allNodes={displayNodes} renderingTheme={experience.renderingTheme ?? "retro-book"} />
                   </div>
                 </>
               ) : (
@@ -361,6 +379,7 @@ function getTypeColour(type: string): string {
   const map: Record<string, string> = {
     FIXED: "#3B82F6", GENERATED: "#8B5CF6", CHOICE: "#F59E0B",
     CHECKPOINT: "#10B981", ENDPOINT: "#EF4444",
+    DIALOGUE: "#06B6D4", EVALUATIVE: "#EC4899",
   }
   return map[type] ?? "#94A3B8"
 }
