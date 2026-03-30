@@ -37,7 +37,7 @@ export function GeneratingScreen({ sessionId, onReady }: GeneratingScreenProps) 
   const [message, setMessage] = useState(LOADING_MESSAGES[0])
 
   useEffect(() => {
-    const evtSource = new EventSource(`/api/engine/stream?sessionId=${sessionId}`)
+    const evtSource = new EventSource(`/api/v1/engine/stream?sessionId=${sessionId}`)
 
     evtSource.onmessage = (e) => {
       const data = JSON.parse(e.data) as {

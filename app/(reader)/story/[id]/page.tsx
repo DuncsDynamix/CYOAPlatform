@@ -8,7 +8,7 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
   // Route training experiences to the Training Player
   const experience = await getExperience(id)
   if (experience?.renderingTheme === "training") {
-    redirect(`/module/${id}`)
+    redirect(`/scenario/${id}`)
   }
 
   return <BookReader id={id} />

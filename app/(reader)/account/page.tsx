@@ -31,7 +31,7 @@ export default function AccountPage() {
       }
 
       // Fetch subscription status from our DB via a simple user endpoint
-      const res = await fetch("/api/account")
+      const res = await fetch("/api/v1/account")
       if (res.ok) {
         setAccount(await res.json())
       } else {

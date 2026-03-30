@@ -37,7 +37,7 @@ export default async function StoryLibraryPage() {
             marginBottom: "0.5rem",
           }}
         >
-          Turn To Page
+          TraverseStories
         </h1>
         <p
           style={{

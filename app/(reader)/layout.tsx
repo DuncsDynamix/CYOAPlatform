@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next"
 
 export const metadata: Metadata = {
-  title: "Turn To Page",
-  description: "Choose your own adventure for grown-ups",
+  title: "TraverseStories",
+  description: "Your story, written as you read it.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Turn To Page",
+    title: "TraverseStories",
   },
 }
 
@@ -46,7 +46,7 @@ export default function ReaderLayout({ children }: { children: React.ReactNode }
             letterSpacing: "0.05em",
           }}
         >
-          Turn To Page
+          TraverseStories
         </a>
         <a
           href="/account"

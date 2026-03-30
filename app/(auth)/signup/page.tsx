@@ -59,7 +59,7 @@ export default function SignupPage() {
   return (
     <div className="bg-white rounded-lg shadow-md p-8">
       <div className="text-center mb-8">
-        <h1 className="font-display text-3xl text-gray-900">Turn To Page</h1>
+        <h1 className="font-display text-3xl text-gray-900">TraverseStories</h1>
         <p className="text-gray-500 mt-1 font-body">Create your account</p>
       </div>
 

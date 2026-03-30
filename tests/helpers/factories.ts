@@ -2,6 +2,37 @@ import type { Experience, ExperienceContextPack, ShapeDefinition, Node, ChoiceOp
 import type { ExperienceSession, SessionState, NarrativeHistoryEntry, NarrativeScaffold } from "@/types/session"
 import { USE_CASE_PACKS } from "@/lib/engine/usecases"
 
+export interface TestOrg {
+  id: string
+  name: string
+  slug: string
+  trainingTier: string | null
+  studioTier: string | null
+  stripeCustomerId: string | null
+  isOperator: boolean
+  operatorApiKey: string | null
+  operatorApiKeyHint: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export function createTestOrg(overrides: Partial<TestOrg> = {}): TestOrg {
+  return {
+    id: "550e8400-e29b-41d4-a716-446655440100",
+    name: "Test Organisation",
+    slug: "test-org",
+    trainingTier: "training_pilot",
+    studioTier: null,
+    stripeCustomerId: null,
+    isOperator: false,
+    operatorApiKey: null,
+    operatorApiKeyHint: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  }
+}
+
 export function createTestShape(overrides: Partial<ShapeDefinition> = {}): ShapeDefinition {
   return {
     totalDepthMin: 6,
@@ -140,7 +171,7 @@ export function createTestNodeGraph(): Node[] {
   ]
 }
 
-export function createTestExperience(overrides: Partial<Experience> = {}): Experience {
+export function createTestExperience(overrides: Partial<Experience & { orgId?: string }> = {}): Experience {
   return {
     id: "550e8400-e29b-41d4-a716-446655440001",
     authorId: "550e8400-e29b-41d4-a716-446655440002",

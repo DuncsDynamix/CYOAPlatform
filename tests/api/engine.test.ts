@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { NextRequest } from "next/server"
-import { POST as startSession } from "@/app/api/engine/start/route"
-import { POST as submitChoice } from "@/app/api/engine/choose/route"
+import { POST as startSession } from "@/app/api/v1/engine/start/route"
+import { POST as submitChoice } from "@/app/api/v1/engine/choose/route"
 
 // Additional mocks needed for API route tests
 vi.mock("@/lib/db/queries/experience", () => ({
@@ -49,9 +49,9 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe("POST /api/engine/start", () => {
+describe("POST /api/v1/engine/start", () => {
   it("returns 400 when no experienceId or slug provided", async () => {
-    const req = new NextRequest("http://localhost/api/engine/start", {
+    const req = new NextRequest("http://localhost/api/v1/engine/start", {
       method: "POST",
       body: JSON.stringify({}),
       headers: { "Content-Type": "application/json" },
@@ -64,7 +64,7 @@ describe("POST /api/engine/start", () => {
   it("returns 404 for non-existent experience", async () => {
     mockGetExperience.mockResolvedValue(null)
 
-    const req = new NextRequest("http://localhost/api/engine/start", {
+    const req = new NextRequest("http://localhost/api/v1/engine/start", {
       method: "POST",
       body: JSON.stringify({ experienceId: "00000000-0000-0000-0000-000000000000" }),
       headers: { "Content-Type": "application/json" },
@@ -87,7 +87,7 @@ describe("POST /api/engine/start", () => {
       session,
     })
 
-    const req = new NextRequest("http://localhost/api/engine/start", {
+    const req = new NextRequest("http://localhost/api/v1/engine/start", {
       method: "POST",
       body: JSON.stringify({ experienceId: experience.id }),
       headers: { "Content-Type": "application/json" },
@@ -103,7 +103,7 @@ describe("POST /api/engine/start", () => {
   })
 
   it("returns 400 for invalid JSON body", async () => {
-    const req = new NextRequest("http://localhost/api/engine/start", {
+    const req = new NextRequest("http://localhost/api/v1/engine/start", {
       method: "POST",
       body: "not-json",
       headers: { "Content-Type": "application/json" },
@@ -114,11 +114,11 @@ describe("POST /api/engine/start", () => {
   })
 })
 
-describe("POST /api/engine/choose", () => {
+describe("POST /api/v1/engine/choose", () => {
   it("returns 404 when session not found", async () => {
     mockGetSession.mockResolvedValue(null)
 
-    const req = new NextRequest("http://localhost/api/engine/choose", {
+    const req = new NextRequest("http://localhost/api/v1/engine/choose", {
       method: "POST",
       body: JSON.stringify({
         sessionId: "00000000-0000-0000-0000-000000000000",
@@ -141,7 +141,7 @@ describe("POST /api/engine/choose", () => {
     const { findNode } = await import("@/lib/engine/executor")
     vi.mocked(findNode).mockReturnValue(experience.nodes[0]) // FIXED node
 
-    const req = new NextRequest("http://localhost/api/engine/choose", {
+    const req = new NextRequest("http://localhost/api/v1/engine/choose", {
       method: "POST",
       body: JSON.stringify({
         sessionId: session.id,
@@ -155,7 +155,7 @@ describe("POST /api/engine/choose", () => {
   })
 
   it("returns 400 for invalid schema", async () => {
-    const req = new NextRequest("http://localhost/api/engine/choose", {
+    const req = new NextRequest("http://localhost/api/v1/engine/choose", {
       method: "POST",
       body: JSON.stringify({ sessionId: "not-a-uuid" }),
       headers: { "Content-Type": "application/json" },

@@ -21,7 +21,7 @@ const TYPES = [
 ]
 
 const RENDERING_THEMES = [
-  { value: "retro-book", label: "Story (Turn To Page)" },
+  { value: "retro-book", label: "Story (TraverseStories)" },
   { value: "training", label: "Training (Scenario Player)" },
 ]
 

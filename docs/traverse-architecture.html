@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traverse Platform — Architecture Overview</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0b0b10;
+  --bg2:      #111118;
+  --bg3:      #18181f;
+  --fg:       #f0ece0;
+  --fg2:      #a09a8c;
+  --fg3:      #5a554e;
+  --border:   rgba(255,255,255,0.07);
+  --borderHi: rgba(255,255,255,0.14);
+
+  --engine:   #e8960a;
+  --engineBg: rgba(232,150,10,0.10);
+  --studio:   #22c9a5;
+  --studioBg: rgba(34,201,165,0.10);
+  --stories:  #e84468;
+  --storiesBg:rgba(232,68,104,0.10);
+  --training: #4a90e0;
+  --trainingBg:rgba(74,144,224,0.10);
+}
+
+html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--fg); font-family:'Trebuchet MS','Gill Sans',system-ui,sans-serif; }
+
+/* ── SLIDE SYSTEM ── */
+#deck { position:relative; width:100%; height:100%; }
+
+.slide {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  padding:52px 72px;
+  opacity:0; pointer-events:none;
+  transition:opacity .45s ease, transform .45s ease;
+  transform:translateY(16px);
+}
+.slide.active   { opacity:1; transform:translateY(0); pointer-events:all; }
+.slide.prev     { opacity:0; transform:translateY(-16px); }
+
+.inner { width:100%; max-width:1100px; }
+
+/* ── GRID BG ── */
+.gridbg {
+  position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+  background-size:64px 64px;
+}
+
+/* ── TYPE ── */
+.overline { font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--fg3); margin-bottom:14px; }
+h1 { font-family:Georgia,'Times New Roman',serif; font-size:clamp(44px,5.5vw,76px); font-weight:normal; line-height:1.08; letter-spacing:-.025em; }
+h2 { font-family:Georgia,'Times New Roman',serif; font-size:clamp(28px,3.5vw,48px); font-weight:normal; line-height:1.18; letter-spacing:-.015em; margin-bottom:8px; }
+p  { font-size:17px; line-height:1.72; color:rgba(240,236,224,.72); max-width:58ch; }
+.large { font-size:clamp(18px,2vw,22px); line-height:1.65; }
+strong { color:var(--fg); font-weight:600; }
+
+/* ── ACCENT BAR ── */
+.bar { height:3px; border-radius:2px; margin-bottom:22px; }
+
+/* ── BADGE ── */
+.badge {
+  display:inline-block; padding:4px 11px; border-radius:100px;
+  font-size:10px; letter-spacing:.14em; text-transform:uppercase; font-weight:700;
+  margin-bottom:18px;
+}
+.badge-engine   { background:var(--engineBg);  color:var(--engine);  border:1px solid rgba(232,150,10,.3); }
+.badge-studio   { background:var(--studioBg);  color:var(--studio);  border:1px solid rgba(34,201,165,.3); }
+.badge-stories  { background:var(--storiesBg); color:var(--stories); border:1px solid rgba(232,68,104,.3); }
+.badge-training { background:var(--trainingBg);color:var(--training);border:1px solid rgba(74,144,224,.3); }
+.badge-platform { background:rgba(255,255,255,0.06); color:var(--fg2); border:1px solid var(--borderHi); }
+
+/* ── SPLIT LAYOUT ── */
+.split   { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:start; }
+.split-w { display:grid; grid-template-columns:3fr 2fr; gap:56px; align-items:start; }
+
+/* ── TIER STACK (slide 2) ── */
+.tier-stack { display:flex; flex-direction:column; gap:2px; }
+.tier-row { animation:fadeUp .5s ease forwards; opacity:0; }
+.tier-row:nth-child(1){animation-delay:.05s}
+.tier-row:nth-child(2){animation-delay:.15s}
+.tier-row:nth-child(3){animation-delay:.25s}
+.tier-row:nth-child(4){animation-delay:.35s}
+.tier-row:nth-child(5){animation-delay:.45s}
+.tier-row:nth-child(6){animation-delay:.55s}
+
+.tier-block {
+  padding:22px 28px; border-radius:3px;
+  position:relative; cursor:default;
+  transition:transform .2s;
+}
+.tier-block:hover { transform:translateX(4px); }
+
+.tier-tag  { font-size:9px; letter-spacing:.18em; text-transform:uppercase; margin-bottom:4px; opacity:.55; }
+.tier-name { font-family:Georgia,serif; font-size:24px; font-weight:normal; margin-bottom:2px; }
+.tier-sub  { font-size:13px; opacity:.6; }
+
+.tier-engine   { background:var(--engineBg);   border-left:3px solid var(--engine);   border:1px solid rgba(232,150,10,.25);  border-left-width:3px; }
+.tier-studio   { background:var(--studioBg);   border-left:3px solid var(--studio);   border:1px solid rgba(34,201,165,.2);   border-left-width:3px; }
+.tier-stories  { background:var(--storiesBg);  border-left:3px solid var(--stories);  border:1px solid rgba(232,68,104,.2);   border-left-width:3px; }
+.tier-training { background:var(--trainingBg); border-left:3px solid var(--training); border:1px solid rgba(74,144,224,.2);   border-left-width:3px; }
+
+.conn { text-align:center; color:var(--fg3); font-size:18px; padding:3px 0; }
+.render-pair { display:grid; grid-template-columns:1fr 1fr; gap:2px; }
+
+/* ── FEATURE LIST ── */
+ul.flist { list-style:none; display:flex; flex-direction:column; gap:13px; margin-top:22px; }
+ul.flist li { display:flex; align-items:flex-start; gap:11px; font-size:16px; color:rgba(240,236,224,.72); line-height:1.55; }
+ul.flist li::before { content:'→'; flex-shrink:0; margin-top:1px; }
+.engine-slide  ul.flist li::before { color:var(--engine); }
+.studio-slide  ul.flist li::before { color:var(--studio); }
+.stories-slide ul.flist li::before { color:var(--stories); }
+.training-slide ul.flist li::before { color:var(--training); }
+
+.slide.active ul.flist li { animation:slideIn .4s ease forwards; opacity:0; }
+.slide.active ul.flist li:nth-child(1){animation-delay:.08s}
+.slide.active ul.flist li:nth-child(2){animation-delay:.16s}
+.slide.active ul.flist li:nth-child(3){animation-delay:.24s}
+.slide.active ul.flist li:nth-child(4){animation-delay:.32s}
+.slide.active ul.flist li:nth-child(5){animation-delay:.40s}
+.slide.active ul.flist li:nth-child(6){animation-delay:.48s}
+
+/* ── NODE CHIPS (slide 5) ── */
+.node-grid { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }
+.nchip {
+  padding:10px 20px; border-radius:100px;
+  font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  display:flex; align-items:center; gap:8px;
+  cursor:default; transition:transform .15s;
+}
+.nchip:hover { transform:scale(1.04); }
+.nd { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+.nc-fixed    { background:rgba(160,154,140,.1); border:1px solid rgba(160,154,140,.35); color:#a09a8c; }
+.nc-fixed .nd    { background:#a09a8c; }
+.nc-gen      { background:var(--engineBg);  border:1px solid rgba(232,150,10,.35);  color:var(--engine); }
+.nc-gen .nd      { background:var(--engine); }
+.nc-choice   { background:rgba(160,100,220,.1); border:1px solid rgba(160,100,220,.35); color:#c090e8; }
+.nc-choice .nd   { background:#c090e8; }
+.nc-check    { background:rgba(100,180,80,.1); border:1px solid rgba(100,180,80,.35); color:#78c858; }
+.nc-check .nd    { background:#78c858; }
+.nc-endpoint { background:var(--storiesBg);  border:1px solid rgba(232,68,104,.35);  color:var(--stories); }
+.nc-endpoint .nd { background:var(--stories); }
+.nc-dialogue { background:var(--studioBg);   border:1px solid rgba(34,201,165,.35);  color:var(--studio); }
+.nc-dialogue .nd { background:var(--studio); }
+.nc-eval     { background:var(--trainingBg); border:1px solid rgba(74,144,224,.35);  color:var(--training); }
+.nc-eval .nd     { background:var(--training); }
+
+.slide.active .nchip { animation:popIn .3s ease forwards; opacity:0; }
+.slide.active .nchip:nth-child(1){animation-delay:.06s}
+.slide.active .nchip:nth-child(2){animation-delay:.12s}
+.slide.active .nchip:nth-child(3){animation-delay:.18s}
+.slide.active .nchip:nth-child(4){animation-delay:.24s}
+.slide.active .nchip:nth-child(5){animation-delay:.30s}
+.slide.active .nchip:nth-child(6){animation-delay:.36s}
+.slide.active .nchip:nth-child(7){animation-delay:.42s}
+
+/* ── CALLOUT ── */
+.callout {
+  background:rgba(232,150,10,.07); border:1px solid rgba(232,150,10,.22);
+  border-radius:5px; padding:18px 22px; margin-top:22px;
+  font-size:15px; line-height:1.65; color:var(--fg);
+}
+.callout.studio   { background:var(--studioBg);   border-color:rgba(34,201,165,.22); }
+.callout.stories  { background:var(--storiesBg);  border-color:rgba(232,68,104,.22); }
+.callout.training { background:var(--trainingBg); border-color:rgba(74,144,224,.22); }
+
+/* ── VISUAL PANEL ── */
+.vpanel {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:6px; padding:28px;
+  display:flex; flex-direction:column; gap:16px;
+}
+
+/* ── SUMMARY GRID ── */
+.sum-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:28px; }
+.sum-card {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:5px; padding:20px 22px;
+}
+.sum-card h4 { font-size:13px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; margin-bottom:8px; }
+.sum-card p  { font-size:14px; color:var(--fg2); max-width:none; line-height:1.6; }
+
+/* ── FLOW DIAGRAM ── */
+.flow-row { display:flex; align-items:center; gap:0; margin-top:28px; }
+.flow-node {
+  flex:1; padding:18px 16px; text-align:center;
+  border-radius:4px; border:1px solid var(--border);
+  background:var(--bg2);
+}
+.flow-node .fn-label { font-size:9px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:4px; opacity:.5; }
+.flow-node .fn-name  { font-size:15px; font-weight:600; }
+.flow-node .fn-sub   { font-size:12px; margin-top:3px; opacity:.55; }
+.flow-arrow { color:var(--fg3); font-size:20px; padding:0 6px; flex-shrink:0; }
+.flow-node.fn-engine   { border-color:rgba(232,150,10,.3);  background:var(--engineBg); }
+.flow-node.fn-studio   { border-color:rgba(34,201,165,.3);  background:var(--studioBg); }
+.flow-node.fn-stories  { border-color:rgba(232,68,104,.3);  background:var(--storiesBg); }
+.flow-node.fn-training { border-color:rgba(74,144,224,.3);  background:var(--trainingBg); }
+.flow-node.fn-author   { border-color:var(--borderHi); background:var(--bg3); }
+.flow-node.fn-reader   { border-color:var(--borderHi); background:var(--bg3); }
+
+/* ── NAV ── */
+#nav {
+  position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:14px; z-index:100;
+}
+.ndots { display:flex; gap:7px; }
+.ndot {
+  width:5px; height:5px; border-radius:50%; background:var(--fg3);
+  cursor:pointer; transition:all .25s;
+}
+.ndot.on { background:var(--fg); transform:scale(1.6); }
+.nbtn {
+  width:34px; height:34px; border-radius:50%;
+  background:none; border:1px solid var(--borderHi); color:var(--fg2);
+  cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;
+  transition:all .2s;
+}
+.nbtn:hover { border-color:var(--fg); color:var(--fg); }
+.nctr { font-size:11px; color:var(--fg3); letter-spacing:.1em; min-width:44px; text-align:center; }
+
+.kbhint {
+  position:fixed; bottom:28px; right:52px;
+  font-size:10px; color:var(--fg3); letter-spacing:.1em;
+  display:flex; align-items:center; gap:5px;
+}
+.k {
+  display:inline-block; padding:1px 5px;
+  border:1px solid var(--fg3); border-radius:2px;
+  font-size:9px;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideIn { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+@keyframes popIn   { from{opacity:0;transform:scale(.88)} to{opacity:1;transform:scale(1)} }
+
+/* ── TITLE GLOW ── */
+.glow-e { color:var(--engine);   text-shadow:0 0 40px rgba(232,150,10,.4); }
+.glow-s { color:var(--studio);   text-shadow:0 0 40px rgba(34,201,165,.4); }
+.glow-r { color:var(--stories);  text-shadow:0 0 40px rgba(232,68,104,.4); }
+.glow-t { color:var(--training); text-shadow:0 0 40px rgba(74,144,224,.4); }
+
+/* ── ARCH SVG PANEL ── */
+.arch-wrap { position:relative; }
+
+/* ── STAT PILLS ── */
+.pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+.pill {
+  padding:6px 14px; border-radius:100px;
+  font-size:12px; font-weight:600; letter-spacing:.05em;
+  background:var(--bg3); border:1px solid var(--borderHi); color:var(--fg2);
+}
+
+/* slide 1 title decorative lines */
+.deco-lines { display:flex; flex-direction:column; gap:6px; margin-bottom:32px; }
+.deco-line  { height:2px; border-radius:1px; }
+
+</style>
+</head>
+<body>
+
+<div class="kbhint"><span class="k">←</span><span class="k">→</span> navigate</div>
+
+<div id="deck">
+  <div class="gridbg"></div>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 1 — TITLE
+  ════════════════════════════════════════ -->
+  <div class="slide active" data-slide="0">
+    <div class="inner">
+      <div class="split" style="align-items:center">
+        <div>
+          <div class="deco-lines">
+            <div class="deco-line" style="width:48px;background:var(--engine)"></div>
+            <div class="deco-line" style="width:32px;background:var(--studio)"></div>
+            <div class="deco-line" style="width:20px;background:var(--stories)"></div>
+          </div>
+          <div class="overline">Platform Architecture · Overview</div>
+          <h1>Traverse</h1>
+          <p class="large" style="margin-top:20px;max-width:42ch">
+            One shared AI engine. Four distinct products. A single platform for interactive narrative and learning experiences.
+          </p>
+          <div class="pills" style="margin-top:32px">
+            <span class="pill" style="color:var(--engine);border-color:rgba(232,150,10,.3);background:var(--engineBg)">TraverseEngine</span>
+            <span class="pill" style="color:var(--studio);border-color:rgba(34,201,165,.3);background:var(--studioBg)">TraverseStudio</span>
+            <span class="pill" style="color:var(--stories);border-color:rgba(232,68,104,.3);background:var(--storiesBg)">TraverseStories</span>
+            <span class="pill" style="color:var(--training);border-color:rgba(74,144,224,.3);background:var(--trainingBg)">TraverseTraining</span>
+          </div>
+        </div>
+        <div>
+          <!-- Architecture illustration SVG -->
+          <svg viewBox="0 0 420 480" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:380px">
+            <!-- Studio block -->
+            <rect x="20" y="20" width="380" height="80" rx="4" fill="rgba(34,201,165,0.08)" stroke="rgba(34,201,165,0.35)" stroke-width="1"/>
+            <rect x="20" y="20" width="4" height="80" rx="2" fill="#22c9a5"/>
+            <text x="42" y="50" fill="rgba(34,201,165,0.55)" font-size="9" font-family="Trebuchet MS,sans-serif" letter-spacing="2" text-transform="uppercase">AUTHORING LAYER</text>
+            <text x="42" y="74" fill="#f0ece0" font-size="20" font-family="Georgia,serif">TraverseStudio</text>
+            <text x="42" y="90" fill="rgba(240,236,224,0.45)" font-size="12" font-family="Trebuchet MS,sans-serif">Authors build node graphs here</text>
+
+            <!-- Arrow down -->
+            <line x1="210" y1="100" x2="210" y2="148" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4 3"/>
+            <polygon points="210,154 205,144 215,144" fill="rgba(255,255,255,0.2)"/>
+
+            <!-- Engine block -->
+            <rect x="20" y="156" width="380" height="100" rx="4" fill="rgba(232,150,10,0.12)" stroke="rgba(232,150,10,0.5)" stroke-width="1.5"/>
+            <rect x="20" y="156" width="4" height="100" rx="2" fill="#e8960a"/>
+            <text x="42" y="182" fill="rgba(232,150,10,0.6)" font-size="9" font-family="Trebuchet MS,sans-serif" letter-spacing="2">SHARED ENGINE LAYER</text>
+            <text x="42" y="206" fill="#f0ece0" font-size="22" font-family="Georgia,serif">TraverseEngine</text>
+            <text x="42" y="226" fill="rgba(240,236,224,0.45)" font-size="12" font-family="Trebuchet MS,sans-serif">AI generation · Node execution · Sessions</text>
+            <!-- Pulse dot -->
+            <circle cx="382" cy="206" r="6" fill="rgba(232,150,10,0.3)" stroke="#e8960a" stroke-width="1.5"/>
+            <circle cx="382" cy="206" r="3" fill="#e8960a"/>
+
+            <!-- Arrow down split -->
+            <line x1="130" y1="256" x2="130" y2="298" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4 3"/>
+            <polygon points="130,304 125,294 135,294" fill="rgba(255,255,255,0.18)"/>
+            <line x1="290" y1="256" x2="290" y2="298" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4 3"/>
+            <polygon points="290,304 285,294 295,294" fill="rgba(255,255,255,0.18)"/>
+            <line x1="130" y1="256" x2="290" y2="256" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+            <!-- Stories block -->
+            <rect x="20" y="306" width="180" height="80" rx="4" fill="rgba(232,68,104,0.08)" stroke="rgba(232,68,104,0.3)" stroke-width="1"/>
+            <rect x="20" y="306" width="4" height="80" rx="2" fill="#e84468"/>
+            <text x="36" y="328" fill="rgba(232,68,104,0.55)" font-size="9" font-family="Trebuchet MS,sans-serif" letter-spacing="1.5">READER LAYER · B2C</text>
+            <text x="36" y="352" fill="#f0ece0" font-size="17" font-family="Georgia,serif">TraverseStories</text>
+            <text x="36" y="372" fill="rgba(240,236,224,0.42)" font-size="11" font-family="Trebuchet MS,sans-serif">CYOA reader</text>
+
+            <!-- Training block -->
+            <rect x="220" y="306" width="180" height="80" rx="4" fill="rgba(74,144,224,0.08)" stroke="rgba(74,144,224,0.3)" stroke-width="1"/>
+            <rect x="220" y="306" width="4" height="80" rx="2" fill="#4a90e0"/>
+            <text x="236" y="328" fill="rgba(74,144,224,0.55)" font-size="9" font-family="Trebuchet MS,sans-serif" letter-spacing="1.5">TRAINING LAYER · B2B</text>
+            <text x="236" y="352" fill="#f0ece0" font-size="17" font-family="Georgia,serif">TraverseTraining</text>
+            <text x="236" y="372" fill="rgba(240,236,224,0.42)" font-size="11" font-family="Trebuchet MS,sans-serif">L&amp;D platform</text>
+
+            <!-- Label: "powers" -->
+            <text x="190" y="273" fill="rgba(255,255,255,0.2)" font-size="10" font-family="Trebuchet MS,sans-serif" text-anchor="middle">powers</text>
+
+            <!-- Label: "configures" -->
+            <text x="275" y="138" fill="rgba(255,255,255,0.2)" font-size="10" font-family="Trebuchet MS,sans-serif">configures</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 2 — THE BIG PICTURE
+  ════════════════════════════════════════ -->
+  <div class="slide" data-slide="1">
+    <div class="inner">
+      <div class="split-w">
+        <div>
+          <div class="overline">The Architecture</div>
+          <h2>One engine,<br>three surfaces</h2>
+          <p style="margin-top:12px">
+            Everything runs on a single shared engine. Authors use <strong>Studio</strong> to build experiences once — then the engine delivers them through whichever surface the end-user is on.
+          </p>
+          <div class="callout" style="margin-top:20px">
+            The key insight: <strong>Stories</strong> and <strong>Training</strong> are not separate systems — they are different visual skins on the same underlying engine. The same node graph can power a consumer story or a corporate learning module.
+          </div>
+        </div>
+        <div>
+          <div class="tier-stack">
+            <div class="tier-row">
+              <div class="tier-block tier-studio">
+                <div class="tier-tag">Authoring · B2B</div>
+                <div class="tier-name" style="color:var(--studio)">TraverseStudio</div>
+                <div class="tier-sub">Where authors design experiences</div>
+              </div>
+            </div>
+            <div class="tier-row" style="text-align:center;padding:2px 0;color:var(--fg3);font-size:16px">↓ <span style="font-size:10px;letter-spacing:.1em;vertical-align:middle"> configures</span></div>
+            <div class="tier-row">
+              <div class="tier-block tier-engine">
+                <div class="tier-tag">Shared Infrastructure</div>
+                <div class="tier-name" style="color:var(--engine)">TraverseEngine</div>
+                <div class="tier-sub">AI core · runs at reader time</div>
+              </div>
+            </div>
+            <div class="tier-row" style="text-align:center;padding:2px 0;color:var(--fg3);font-size:16px">↓ <span style="font-size:10px;letter-spacing:.1em;vertical-align:middle"> powers</span></div>
+            <div class="tier-row">
+              <div class="render-pair">
+                <div class="tier-block tier-stories">
+                  <div class="tier-tag">B2C</div>
+                  <div class="tier-name" style="color:var(--stories);font-size:18px">TraverseStories</div>
+                  <div class="tier-sub">CYOA reader</div>
+                </div>
+                <div class="tier-block tier-training" style="margin-left:2px">
+                  <div class="tier-tag">B2B</div>
+                  <div class="tier-name" style="color:var(--training);font-size:18px">TraverseTraining</div>
+                  <div class="tier-sub">L&amp;D platform</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 3 — TRAVERSEENGINE
+  ════════════════════════════════════════ -->
+  <div class="slide engine-slide" data-slide="2">
+    <div class="inner">
+      <div class="split">
+        <div>
+          <div class="bar" style="width:44px;background:var(--engine)"></div>
+          <span class="badge badge-engine">Shared Infrastructure</span>
+          <h2>TraverseEngine</h2>
+          <p>The AI core that sits beneath everything. It never faces end-users directly — instead it's the engine that drives all the products.</p>
+          <ul class="flist">
+            <li>Executes the node graph an author has built, one step at a time</li>
+            <li>Calls Claude (Anthropic's AI) to generate unique prose at the moment a reader arrives at each scene</li>
+            <li>Tracks session state — what choices a user has made, what flags have been set, how far through the story they are</li>
+            <li>Routes free-text responses into the correct branch using AI classification</li>
+            <li>Caches generated content so repeated visits are instant</li>
+            <li>Provides a single API that both Stories and Training consume</li>
+          </ul>
+        </div>
+        <div>
+          <div class="vpanel">
+            <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);margin-bottom:12px">What the engine handles</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:12px 14px">
+                <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--engine);margin-bottom:4px">Node Execution</div>
+                <div style="font-size:13px;color:var(--fg2);line-height:1.5">Walks the graph, resolving each node type in sequence</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:12px 14px">
+                <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--engine);margin-bottom:4px">AI Generation</div>
+                <div style="font-size:13px;color:var(--fg2);line-height:1.5">Unique prose per user, shaped by context &amp; pacing arc</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:12px 14px">
+                <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--engine);margin-bottom:4px">Session State</div>
+                <div style="font-size:13px;color:var(--fg2);line-height:1.5">Persistent memory of choices, flags &amp; competency data</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:12px 14px">
+                <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--engine);margin-bottom:4px">Narrative Scaffolding</div>
+                <div style="font-size:13px;color:var(--fg2);line-height:1.5">Summaries of each scene feed forward as context, not raw prose</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 4 — TRAVERSESTUDIO
+  ════════════════════════════════════════ -->
+  <div class="slide studio-slide" data-slide="3">
+    <div class="inner">
+      <div class="split">
+        <div>
+          <div class="bar" style="width:44px;background:var(--studio)"></div>
+          <span class="badge badge-studio">Authoring Tool · B2B</span>
+          <h2>TraverseStudio</h2>
+          <p>The tool authors use to build experiences. It has a clean, professional UI designed for content designers, learning developers, and narrative authors — not engineers.</p>
+          <ul class="flist">
+            <li>Build node graphs visually — connect scenes, choices, and checkpoints</li>
+            <li>Configure what the AI should generate at each step via beat instructions</li>
+            <li>Set the world, characters, tone, and learning objectives in the context pack</li>
+            <li>Define choices and branching logic without writing code</li>
+            <li>Publish experiences that deploy instantly to Stories or Training</li>
+          </ul>
+          <div class="callout studio" style="margin-top:20px">
+            Authors work in Studio once. The engine runs what they built — repeatedly, for every user, generating fresh content each time.
+          </div>
+        </div>
+        <div>
+          <div class="vpanel" style="gap:20px">
+            <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3)">Studio produces</div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:3px">
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--studio);flex-shrink:0"></div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--fg)">Experience Configuration</div>
+                <div style="font-size:12px;color:var(--fg2)">The node graph + context pack</div>
+              </div>
+            </div>
+            <div style="text-align:center;color:var(--fg3);font-size:16px">↓ <span style="font-size:10px;letter-spacing:.1em"> published to engine</span></div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--engineBg);border:1px solid rgba(232,150,10,.25);border-radius:3px">
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--engine);flex-shrink:0"></div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--fg)">Engine executes it</div>
+                <div style="font-size:12px;color:var(--fg2)">For every reader/learner session</div>
+              </div>
+            </div>
+            <div style="text-align:center;color:var(--fg3);font-size:16px">↓</div>
+            <div style="display:flex;gap:8px">
+              <div style="flex:1;padding:10px 14px;background:var(--storiesBg);border:1px solid rgba(232,68,104,.25);border-radius:3px;font-size:12px;color:var(--stories);font-weight:600">Stories</div>
+              <div style="flex:1;padding:10px 14px;background:var(--trainingBg);border:1px solid rgba(74,144,224,.25);border-radius:3px;font-size:12px;color:var(--training);font-weight:600">Training</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 5 — THE NODE GRAPH
+  ════════════════════════════════════════ -->
+  <div class="slide" data-slide="4">
+    <div class="inner">
+      <div class="overline">How experiences are structured</div>
+      <h2>The Node Graph</h2>
+      <p style="max-width:70ch">Every experience is a directed graph of nodes. Authors connect them in Studio; the engine traverses them at runtime. There are seven node types, each with a distinct purpose.</p>
+
+      <div class="node-grid">
+        <div class="nchip nc-fixed"><div class="nd"></div>Fixed</div>
+        <div class="nchip nc-gen"><div class="nd"></div>Generated</div>
+        <div class="nchip nc-choice"><div class="nd"></div>Choice</div>
+        <div class="nchip nc-check"><div class="nd"></div>Checkpoint</div>
+        <div class="nchip nc-endpoint"><div class="nd"></div>Endpoint</div>
+        <div class="nchip nc-dialogue"><div class="nd"></div>Dialogue</div>
+        <div class="nchip nc-eval"><div class="nd"></div>Evaluative</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px">
+        <div style="padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:4px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a09a8c;margin-bottom:5px">Fixed</div>
+          <div style="font-size:13px;color:var(--fg2);line-height:1.5">Static prose — identical for every user</div>
+        </div>
+        <div style="padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:4px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--engine);margin-bottom:5px">Generated</div>
+          <div style="font-size:13px;color:var(--fg2);line-height:1.5">AI writes unique prose per user from the beat instruction</div>
+        </div>
+        <div style="padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:4px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#c090e8;margin-bottom:5px">Choice</div>
+          <div style="font-size:13px;color:var(--fg2);line-height:1.5">Presents options; open or closed; routes the user to different branches</div>
+        </div>
+        <div style="padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:4px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#78c858;margin-bottom:5px">Checkpoint</div>
+          <div style="font-size:13px;color:var(--fg2);line-height:1.5">Invisible to the user; sets state flags, unlocks branches</div>
+        </div>
+        <div style="padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:4px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--stories);margin-bottom:5px">Endpoint</div>
+          <div style="font-size:13px;color:var(--fg2);line-height:1.5">Terminal node; AI generates a closing summary of the journey</div>
+        </div>
+        <div style="padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:4px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--studio);margin-bottom:5px">Dialogue</div>
+          <div style="font-size:13px;color:var(--fg2);line-height:1.5">Multi-turn conversation with an AI actor; detects breakthrough moments</div>
+        </div>
+        <div style="padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:4px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--training);margin-bottom:5px">Evaluative</div>
+          <div style="font-size:13px;color:var(--fg2);line-height:1.5">Assesses the user's performance against a rubric using prior context</div>
+        </div>
+        <div style="padding:14px 16px;background:rgba(232,150,10,0.05);border:1px solid rgba(232,150,10,0.2);border-radius:4px;display:flex;align-items:center">
+          <div style="font-size:13px;color:rgba(240,236,224,0.6);line-height:1.5;font-style:italic">Authors connect these freely to build any narrative or training structure</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 6 — TRAVERSESTORIES
+  ════════════════════════════════════════ -->
+  <div class="slide stories-slide" data-slide="5">
+    <div class="inner">
+      <div class="split">
+        <div>
+          <div class="bar" style="width:44px;background:var(--stories)"></div>
+          <span class="badge badge-stories">Consumer Product · B2C</span>
+          <h2>TraverseStories</h2>
+          <p>The reader-facing product. A book-style CYOA experience where every reader gets a unique, AI-generated story based on the choices they make.</p>
+          <ul class="flist">
+            <li>Retro book visual identity — feels like reading a novel, not using software</li>
+            <li>Each scene's prose is freshly generated by Claude when the reader arrives</li>
+            <li>Readers make choices (predefined options or free text) that branch the narrative</li>
+            <li>The engine pre-generates upcoming scenes in the background for instant page turns</li>
+            <li>Every playthrough is genuinely different — not just different endings, but different prose throughout</li>
+          </ul>
+          <div class="callout stories" style="margin-top:20px">
+            From the reader's perspective: an intimate, beautifully designed book. Behind the scenes: a live AI engine generating their unique story in real time.
+          </div>
+        </div>
+        <div>
+          <div class="vpanel">
+            <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);margin-bottom:16px">Reader experience</div>
+            <!-- Book mockup -->
+            <div style="background:var(--bg);border:1px solid rgba(232,68,104,0.2);border-radius:6px;padding:20px;font-family:Georgia,serif">
+              <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(232,68,104,0.5);margin-bottom:12px;text-align:center">Chapter IV</div>
+              <div style="font-size:14px;color:rgba(240,236,224,0.75);line-height:1.7;margin-bottom:16px">
+                The alley narrowed as you pressed forward, the city's noise fading behind the dripping walls. A door — ajar, amber light bleeding through — waited at the end…
+              </div>
+              <div style="border-top:1px solid var(--border);padding-top:14px">
+                <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3);margin-bottom:10px">What do you do?</div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <div style="padding:8px 12px;background:rgba(232,68,104,0.08);border:1px solid rgba(232,68,104,0.25);border-radius:3px;font-size:13px;color:var(--fg)">→ Push the door open</div>
+                  <div style="padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:3px;font-size:13px;color:var(--fg2)">→ Listen at the door first</div>
+                  <div style="padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:3px;font-size:13px;color:var(--fg2)">→ Turn back</div>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:12px;font-size:12px;color:var(--fg3);text-align:center;letter-spacing:.05em">Generated live by the engine for this reader</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 7 — TRAVERSETRAINING
+  ════════════════════════════════════════ -->
+  <div class="slide training-slide" data-slide="6">
+    <div class="inner">
+      <div class="split">
+        <div>
+          <div class="bar" style="width:44px;background:var(--training)"></div>
+          <span class="badge badge-training">Enterprise Product · B2B</span>
+          <h2>TraverseTraining</h2>
+          <p>The L&amp;D render layer. Organisations deploy training scenarios to learners — the same engine, a completely different visual identity and purpose.</p>
+          <ul class="flist">
+            <li>Professional, corporate visual identity — clean interface suited to workplace settings</li>
+            <li>Learners work through realistic workplace scenarios powered by the same node engine</li>
+            <li>Dialogue nodes enable practice conversations with AI-powered characters</li>
+            <li>Evaluative nodes assess performance against rubrics using the full conversation context</li>
+            <li>Competency profiles track learner progress across a session</li>
+            <li>Organisations can deploy their own branded training modules via Studio</li>
+          </ul>
+          <div class="callout training" style="margin-top:20px">
+            Same engine as Stories. Different visual skin, different use case, different buyer — but the author workflow in Studio is identical.
+          </div>
+        </div>
+        <div>
+          <div class="vpanel">
+            <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);margin-bottom:16px">Learner experience</div>
+            <!-- Training mockup -->
+            <div style="background:var(--bg);border:1px solid rgba(74,144,224,0.2);border-radius:6px;padding:20px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:32px;height:32px;border-radius:50%;background:var(--trainingBg);border:1px solid rgba(74,144,224,.35);display:flex;align-items:center;justify-content:center;font-size:14px">👤</div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:var(--fg)">Sarah Chen</div>
+                  <div style="font-size:11px;color:var(--fg3)">Senior Manager · ClearConnect</div>
+                </div>
+                <div style="margin-left:auto;padding:3px 10px;background:var(--trainingBg);border:1px solid rgba(74,144,224,.3);border-radius:100px;font-size:10px;color:var(--training);font-weight:700">DIALOGUE</div>
+              </div>
+              <div style="font-size:13px;color:rgba(240,236,224,.7);line-height:1.6;margin-bottom:14px">"I understand this has been a difficult quarter for your team. Before we discuss targets, can you walk me through what's been happening from your perspective?"</div>
+              <div style="padding:10px 14px;background:var(--trainingBg);border:1px solid rgba(74,144,224,.25);border-radius:3px">
+                <div style="font-size:11px;color:rgba(74,144,224,.7);margin-bottom:4px;letter-spacing:.1em;text-transform:uppercase">Your response</div>
+                <div style="font-size:13px;color:var(--fg2)">Type your reply to Sarah…</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <div style="flex:1;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;font-size:11px;color:var(--fg2);text-align:center">Empathy</div>
+              <div style="flex:1;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;font-size:11px;color:var(--fg2);text-align:center">Active listening</div>
+              <div style="flex:1;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;font-size:11px;color:var(--fg2);text-align:center">Clarity</div>
+            </div>
+            <div style="margin-top:6px;font-size:11px;color:var(--fg3);text-align:center">Competencies tracked by the engine</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 8 — HOW IT ALL FLOWS
+  ════════════════════════════════════════ -->
+  <div class="slide" data-slide="7">
+    <div class="inner">
+      <div class="overline">End-to-end</div>
+      <h2>How it all works together</h2>
+      <p style="max-width:68ch">An author builds an experience once in Studio. The engine runs it for every user who encounters it — generating fresh, personalised content each time.</p>
+
+      <div style="margin-top:28px">
+        <!-- Row 1: Author side -->
+        <div style="margin-bottom:6px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3)">Author time — happens once</div>
+        <div style="display:flex;align-items:center;gap:0;margin-bottom:24px">
+          <div style="flex:1;padding:16px;text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:4px">
+            <div style="font-size:11px;color:var(--fg3);letter-spacing:.1em;margin-bottom:4px">AUTHOR</div>
+            <div style="font-size:15px;font-weight:600;color:var(--fg)">Opens Studio</div>
+          </div>
+          <div style="color:var(--fg3);padding:0 10px;font-size:20px">→</div>
+          <div style="flex:2;padding:16px;text-align:center;background:var(--studioBg);border:1px solid rgba(34,201,165,.25);border-radius:4px">
+            <div style="font-size:11px;color:var(--studio);letter-spacing:.1em;margin-bottom:4px">TRAVERSESTUDIO</div>
+            <div style="font-size:15px;font-weight:600;color:var(--fg)">Builds node graph + configures context</div>
+            <div style="font-size:12px;color:var(--fg2);margin-top:3px">Characters · World · Learning objectives · Beat instructions</div>
+          </div>
+          <div style="color:var(--fg3);padding:0 10px;font-size:20px">→</div>
+          <div style="flex:1;padding:16px;text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:4px">
+            <div style="font-size:11px;color:var(--fg3);letter-spacing:.1em;margin-bottom:4px">OUTPUT</div>
+            <div style="font-size:15px;font-weight:600;color:var(--fg)">Experience saved</div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div style="border-top:1px dashed rgba(255,255,255,0.08);margin-bottom:24px;position:relative">
+          <span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--bg);padding:0 12px;font-size:10px;color:var(--fg3);letter-spacing:.12em">reader / learner time — repeats for every user</span>
+        </div>
+
+        <!-- Row 2: Reader side -->
+        <div style="display:flex;align-items:stretch;gap:0">
+          <div style="flex:1;padding:16px;text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:4px;display:flex;flex-direction:column;justify-content:center">
+            <div style="font-size:11px;color:var(--fg3);letter-spacing:.1em;margin-bottom:4px">USER</div>
+            <div style="font-size:14px;font-weight:600;color:var(--fg)">Opens Stories or Training</div>
+          </div>
+          <div style="color:var(--fg3);padding:0 10px;font-size:20px;display:flex;align-items:center">→</div>
+          <div style="flex:2;padding:16px;text-align:center;background:var(--engineBg);border:1px solid rgba(232,150,10,.3);border-radius:4px">
+            <div style="font-size:11px;color:var(--engine);letter-spacing:.1em;margin-bottom:4px">TRAVERSEENGINE</div>
+            <div style="font-size:15px;font-weight:600;color:var(--fg)">Loads experience · starts session</div>
+            <div style="font-size:12px;color:var(--fg2);margin-top:3px">Traverses nodes → calls Claude → generates prose → tracks choices</div>
+          </div>
+          <div style="color:var(--fg3);padding:0 10px;font-size:20px;display:flex;align-items:center">→</div>
+          <div style="flex:1;padding:16px;text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:4px;display:flex;flex-direction:column;justify-content:center">
+            <div style="font-size:11px;color:var(--fg3);letter-spacing:.1em;margin-bottom:4px">RESULT</div>
+            <div style="font-size:14px;font-weight:600;color:var(--fg)">Unique experience</div>
+            <div style="font-size:11px;color:var(--fg2);margin-top:3px">Different for every user</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:20px">
+        The author's work is done once. The engine does the heavy lifting at runtime — every user session is live, personalised, and different.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SLIDE 9 — SUMMARY
+  ════════════════════════════════════════ -->
+  <div class="slide" data-slide="8">
+    <div class="inner">
+      <div class="overline">Summary</div>
+      <h2>The Traverse platform<br>in four points</h2>
+
+      <div class="sum-grid">
+        <div class="sum-card" style="border-color:rgba(232,150,10,.2);background:var(--engineBg)">
+          <div style="width:28px;height:3px;background:var(--engine);border-radius:2px;margin-bottom:12px"></div>
+          <h4 style="color:var(--engine)">One shared engine</h4>
+          <p>TraverseEngine is the AI core that powers everything. Stories and Training are render layers on top — not separate systems. Build once, deploy anywhere.</p>
+        </div>
+        <div class="sum-card" style="border-color:rgba(34,201,165,.2);background:var(--studioBg)">
+          <div style="width:28px;height:3px;background:var(--studio);border-radius:2px;margin-bottom:12px"></div>
+          <h4 style="color:var(--studio)">Authors use Studio</h4>
+          <p>TraverseStudio is the authoring tool. Non-technical authors build node graphs that define the structure — the AI fills in the content at runtime.</p>
+        </div>
+        <div class="sum-card" style="border-color:rgba(232,68,104,.2);background:var(--storiesBg)">
+          <div style="width:28px;height:3px;background:var(--stories);border-radius:2px;margin-bottom:12px"></div>
+          <h4 style="color:var(--stories)">Stories for consumers</h4>
+          <p>TraverseStories is the B2C CYOA reader. Book-style interface, AI-generated prose, branching choices — every reader's journey is unique.</p>
+        </div>
+        <div class="sum-card" style="border-color:rgba(74,144,224,.2);background:var(--trainingBg)">
+          <div style="width:28px;height:3px;background:var(--training);border-radius:2px;margin-bottom:12px"></div>
+          <h4 style="color:var(--training)">Training for organisations</h4>
+          <p>TraverseTraining is the B2B L&amp;D platform. Corporate interface, dialogue practice, competency tracking — same engine, different audience and purpose.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding:18px 22px;background:var(--bg2);border:1px solid var(--borderHi);border-radius:5px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+        <div style="font-size:15px;color:var(--fg2);line-height:1.6">
+          The node graph system — seven node types connected by authors in Studio — is the common language across the entire platform.
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <div class="nchip nc-gen" style="font-size:10px;padding:6px 12px"><div class="nd"></div>Generated</div>
+          <div class="nchip nc-dialogue" style="font-size:10px;padding:6px 12px"><div class="nd"></div>Dialogue</div>
+          <div class="nchip nc-eval" style="font-size:10px;padding:6px 12px"><div class="nd"></div>Evaluative</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #deck -->
+
+<!-- ── NAVIGATION ── -->
+<div id="nav">
+  <button class="nbtn" id="prevBtn" onclick="go(-1)">←</button>
+  <div class="ndots" id="dots"></div>
+  <span class="nctr" id="ctr"></span>
+  <button class="nbtn" id="nextBtn" onclick="go(1)">→</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dotsEl = document.getElementById('dots');
+  const ctrEl  = document.getElementById('ctr');
+  let cur = 0;
+  const total = slides.length;
+
+  // Build dots
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = 'ndot' + (i === 0 ? ' on' : '');
+    d.onclick = () => show(i);
+    dotsEl.appendChild(d);
+  }
+
+  function show(n) {
+    slides[cur].classList.remove('active');
+    slides[cur].classList.add('prev');
+    setTimeout(() => slides[cur].classList.remove('prev'), 500);
+
+    cur = (n + total) % total;
+    slides[cur].classList.add('active');
+
+    document.querySelectorAll('.ndot').forEach((d, i) => d.classList.toggle('on', i === cur));
+    ctrEl.textContent = (cur + 1) + ' / ' + total;
+  }
+
+  function go(dir) { show(cur + dir); }
+
+  // Initial counter
+  ctrEl.textContent = '1 / ' + total;
+
+  // Keyboard
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(1); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); go(-1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End')  show(total - 1);
+  });
+
+  // Click anywhere to advance (but not on nav)
+  document.getElementById('deck').addEventListener('click', e => {
+    if (!e.target.closest('#nav')) go(1);
+  });
+</script>
+</body>
+</html>

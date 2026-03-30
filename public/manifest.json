@@ -1,7 +1,7 @@
 {
-  "name": "Turn To Page",
-  "short_name": "TurnToPage",
-  "description": "Choose your own adventure for grown-ups",
+  "name": "TraverseStories",
+  "short_name": "TraverseStories",
+  "description": "Your story, written as you read it.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F5F0E8",

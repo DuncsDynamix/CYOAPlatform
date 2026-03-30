@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Console — Turn To Page",
+  title: "TraverseStudio",
 }
 
 export default function AuthoringLayout({ children }: { children: React.ReactNode }) {
@@ -9,7 +9,7 @@ export default function AuthoringLayout({ children }: { children: React.ReactNod
     <div className="auth-shell">
       <header className="auth-header">
         <a href="/" className="auth-header-brand">
-          Turn To Page
+          TraverseStudio
         </a>
         <nav className="auth-header-nav">
           <a href="/dashboard" className="auth-header-link">

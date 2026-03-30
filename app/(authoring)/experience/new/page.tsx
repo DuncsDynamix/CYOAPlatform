@@ -29,7 +29,7 @@ export default function NewExperiencePage() {
       const body: Record<string, string> = { title, description, type }
       if (genre) body.genre = genre
 
-      const res = await fetch("/api/experience", {
+      const res = await fetch('/api/v1/experience', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

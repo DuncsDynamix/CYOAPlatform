@@ -50,7 +50,7 @@ export default function ExperienceEditorPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    fetch(`/api/experience/${id}`)
+    fetch(`/api/v1/experience/${id}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.error) throw new Error(data.error)
@@ -69,7 +69,7 @@ export default function ExperienceEditorPage() {
     async (updated: Experience) => {
       setSaveStatus("saving")
       try {
-        const res = await fetch(`/api/experience/${id}`, {
+        const res = await fetch(`/api/v1/experience/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -201,7 +201,7 @@ export default function ExperienceEditorPage() {
     setPublishing(true)
     try {
       const action = experience.status === "published" ? "unpublish" : "publish"
-      const res = await fetch(`/api/experience/${id}/publish`, {
+      const res = await fetch(`/api/v1/experience/${id}/publish`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
@@ -218,7 +218,7 @@ export default function ExperienceEditorPage() {
 
   async function handleDelete() {
     if (!confirm("Delete this experience? This cannot be undone.")) return
-    const res = await fetch(`/api/experience/${id}`, { method: "DELETE" })
+    const res = await fetch(`/api/v1/experience/${id}`, { method: "DELETE" })
     if (res.ok) router.push("/dashboard")
     else alert("Delete failed")
   }

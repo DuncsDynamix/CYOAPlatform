@@ -1,17 +1,28 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 
-const PUBLIC_PATHS = [
+export const PUBLIC_PATHS = [
   "/",
   "/login",
   "/signup",
   "/reset-password",
-  "/api/engine/stream",
+  "/api/v1/engine/stream",
   "/api/stripe/webhook",
   "/api/auth",
 ]
 
-const AUTHED_PATHS = ["/dashboard", "/experience"]
+export const AUTHED_PATHS = ["/dashboard", "/experience"]
+
+// TraverseTraining routes — require auth + operator or org membership
+export const TRAINING_PATHS = ["/scenario"]
+
+/** Pure function — determines whether a user profile has TraverseTraining access. */
+export function hasTrainingAccess(
+  profile: { isOperator: boolean | null; orgId: string | null } | null
+): boolean {
+  if (!profile) return false
+  return !!(profile.isOperator || profile.orgId)
+}
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
@@ -57,6 +68,25 @@ export async function middleware(req: NextRequest) {
   // Protect authoring tool routes
   if (AUTHED_PATHS.some((p) => pathname.startsWith(p))) {
     if (!user) {
+      return NextResponse.redirect(new URL("/login", req.url))
+    }
+  }
+
+  // Protect TraverseTraining routes — require auth + operator or org membership
+  if (TRAINING_PATHS.some((p) => pathname.startsWith(p))) {
+    if (!user) {
+      return NextResponse.redirect(new URL("/login", req.url))
+    }
+
+    // Fetch user record to check org/operator status
+    const { data: profile } = await supabase
+      .from("users")
+      .select("isOperator, orgId")
+      .eq("id", user.id)
+      .single()
+
+    const hasAccess = profile?.isOperator || profile?.orgId
+    if (!hasAccess) {
       return NextResponse.redirect(new URL("/login", req.url))
     }
   }

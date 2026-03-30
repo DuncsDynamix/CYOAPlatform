@@ -26,7 +26,7 @@ export function OutcomeCard({ data, experienceTitle, onReplay }: OutcomeCardProp
       if (navigator.share) {
         await navigator.share({
           title: `I reached: ${data.outcomeLabel}`,
-          text: `${experienceTitle} — Turn To Page`,
+          text: `${experienceTitle} — TraverseStories`,
           files: [new File([blob], "outcome.png", { type: "image/png" })],
         })
       } else {
@@ -50,7 +50,7 @@ export function OutcomeCard({ data, experienceTitle, onReplay }: OutcomeCardProp
       {/* The shareable card */}
       <div ref={cardRef} className="outcome-card">
         <div className="outcome-card-header">
-          <span className="outcome-card-brand">Turn To Page</span>
+          <span className="outcome-card-brand">TraverseStories</span>
           <span className="outcome-card-title">{experienceTitle}</span>
         </div>
 

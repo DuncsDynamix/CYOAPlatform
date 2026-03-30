@@ -8,6 +8,34 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ─── ORGANISATIONS ───────────────────────────────────────────
+
+model Org {
+  id   String @id @default(uuid())
+  name String
+  slug String @unique
+
+  // Licence tiers
+  trainingTier String? // training_pilot | training_essentials | training_professional | training_enterprise
+  studioTier   String? // studio_team | studio_business | studio_enterprise
+
+  // Stripe
+  stripeCustomerId String? @unique
+
+  // BYOK / operator access
+  isOperator         Boolean @default(false)
+  operatorApiKey     String? // encrypted
+  operatorApiKeyHint String? // last 4 chars for display
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members     User[]
+  experiences Experience[]
+
+  @@map("orgs")
+}
+
 // ─── USERS & AUTH ───────────────────────────────────────────
 
 model User {
@@ -15,6 +43,11 @@ model User {
   email     String  @unique
   name      String?
   avatarUrl String?
+
+  // Org membership (nullable — individual users have no org)
+  orgId   String?
+  orgRole String? // "owner" | "author" | "learner"
+  org     Org?    @relation(fields: [orgId], references: [id])
 
   // Subscription
   stripeCustomerId   String?   @unique
@@ -44,6 +77,10 @@ model Experience {
   id       String @id @default(uuid())
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
+
+  // Org ownership (nullable — individual author's experience has no org)
+  orgId String?
+  org   Org?    @relation(fields: [orgId], references: [id])
 
   // Identity
   title         String

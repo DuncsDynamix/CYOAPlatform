@@ -12,6 +12,7 @@ const db = new PrismaClient()
 
 const AUTHOR_ID = "00000000-0000-0000-0000-000000000001"
 const EXPERIENCE_ID = "00000000-0000-0000-0000-000000000030"
+const ORG_ID = "00000000-0000-0000-0000-000000000100"
 
 // ─── NODE GRAPH — "The First Call" ───────────────────────────────────────────
 //
@@ -444,6 +445,19 @@ const shape: ShapeDefinition = {
 async function main() {
   console.log("Seeding ClearConnect complaint handling training experience…")
 
+  await db.org.upsert({
+    where: { id: ORG_ID },
+    update: {},
+    create: {
+      id: ORG_ID,
+      name: "ClearConnect",
+      slug: "clearconnect",
+      trainingTier: "training_pilot",
+      isOperator: false,
+    },
+  })
+  console.log("  ✓ Org seeded (ClearConnect)")
+
   await db.user.upsert({
     where: { id: AUTHOR_ID },
     update: {},
@@ -451,6 +465,8 @@ async function main() {
       id: AUTHOR_ID,
       email: "dev@pageengine.local",
       name: "Dev Author",
+      orgId: ORG_ID,
+      orgRole: "owner",
     },
   })
   console.log("  ✓ User seeded")
@@ -469,6 +485,7 @@ async function main() {
     create: {
       id: EXPERIENCE_ID,
       authorId: AUTHOR_ID,
+      orgId: ORG_ID,
       title: "The First Call: Handling Customer Complaints",
       slug: "clearconnect-complaint-handling",
       description:
@@ -507,7 +524,7 @@ async function main() {
   console.log("      [minor]    Professional composure under pressure")
   console.log("")
   console.log("  Training player URL:")
-  console.log("    http://localhost:3000/module/clearconnect-complaint-handling")
+  console.log("    http://localhost:3000/scenario/clearconnect-complaint-handling")
 }
 
 main()

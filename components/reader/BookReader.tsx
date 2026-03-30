@@ -33,7 +33,7 @@ export function BookReader({ id }: { id: string }) {
   useEffect(() => {
     async function startSession() {
       try {
-        const res = await fetch("/api/engine/start", {
+        const res = await fetch("/api/v1/engine/start", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ experienceSlug: id }),
@@ -87,7 +87,7 @@ export function BookReader({ id }: { id: string }) {
   const advanceToNextNode = useCallback(async (sessionId: string, choicesMade: number) => {
     setStatus({ type: "advancing" })
     try {
-      const res = await fetch(`/api/engine/node?sessionId=${sessionId}`)
+      const res = await fetch(`/api/v1/engine/node?sessionId=${sessionId}`)
       if (!res.ok) {
         setStatus({ type: "error", message: "Could not advance story" })
         return
@@ -107,7 +107,7 @@ export function BookReader({ id }: { id: string }) {
   ) => {
     setStatus({ type: "submitting", sessionId, choicesMade })
     try {
-      const res = await fetch("/api/engine/choose", {
+      const res = await fetch("/api/v1/engine/choose", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, choiceId, freeTextResponse: freeText }),
@@ -175,7 +175,7 @@ export function BookReader({ id }: { id: string }) {
       <div style={{ paddingBottom: "3rem" }}>
         <OutcomeCard
           data={{ ...content.outcomeCard, closingLine: content.closingLine, summary: content.summary }}
-          experienceTitle={experienceTitle || "Turn To Page"}
+          experienceTitle={experienceTitle || "TraverseStories"}
           onReplay={() => router.push("/")}
         />
       </div>

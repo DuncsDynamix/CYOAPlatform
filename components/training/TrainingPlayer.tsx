@@ -55,7 +55,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
     setDialogueHistory([])
 
     try {
-      const res = await fetch("/api/engine/start", {
+      const res = await fetch("/api/v1/engine/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ experienceSlug }),
@@ -175,7 +175,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
   const advanceToNextNode = useCallback(async (sid: string) => {
     setPlayerStatus({ status: "advancing" })
     try {
-      const res = await fetch(`/api/engine/node?sessionId=${sid}`)
+      const res = await fetch(`/api/v1/engine/node?sessionId=${sid}`)
       if (!res.ok) {
         setPlayerStatus({ status: "error", message: "Could not advance module" })
         return
@@ -234,7 +234,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
     })
 
     try {
-      const res = await fetch("/api/engine/dialogue", {
+      const res = await fetch("/api/v1/engine/dialogue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, participantText }),
@@ -281,7 +281,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
     if (!sessionId) return
     setPlayerStatus({ status: "advancing" })
     try {
-      const res = await fetch("/api/engine/node?sessionId=" + sessionId)
+      const res = await fetch("/api/v1/engine/node?sessionId=" + sessionId)
       if (!res.ok) {
         setPlayerStatus({ status: "error", message: "Could not advance" })
         return
@@ -297,7 +297,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
     if (!sessionId) return
     setPlayerStatus({ status: "advancing" })
     try {
-      const res = await fetch("/api/engine/choose", {
+      const res = await fetch("/api/v1/engine/choose", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, choiceId }),
