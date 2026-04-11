@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function TraverseTrainingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="traverse-training-theme tt-shell">
+    <div className="traverse-training-theme">
       {children}
     </div>
   )

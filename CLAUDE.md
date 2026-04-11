@@ -22,9 +22,18 @@ Type-check without building:
 npx tsc --noEmit
 ```
 
+## Product Names
+
+| Product | Name |
+|---------|------|
+| Engine / API layer | Traverse (TraverseEngine) |
+| Authoring tool | TraverseStudio |
+| B2C CYOA reader | TraverseStories |
+| L&D training layer | TraverseTraining |
+
 ## Architecture Overview
 
-**PageEngine** is an AI-powered interactive experience platform. Authors build node graphs; the engine generates prose and evaluates choices using Claude at runtime.
+**Traverse** is an AI-powered interactive experience platform. Authors build node graphs; the engine generates prose and evaluates choices using Claude at runtime.
 
 ### Route Groups
 
@@ -32,11 +41,11 @@ Three Next.js route groups, each with its own layout and CSS:
 
 | Group | Path | Purpose |
 |-------|------|---------|
-| `(reader)` | `/story/[id]` | Book-style CYOA reader (`retro-book` theme) |
-| `(training)` | `/module/[slug]` | Training scenario player (`training` theme) |
-| `(authoring)` | `/experience/[id]` | Experience editor |
+| `(reader)` | `/story/[id]` | Book-style CYOA reader — TraverseStories |
+| `(traverse-training)` | `/scenario/[id]` | L&D training scenario player — TraverseTraining |
+| `(authoring)` | `/experience/[id]` | Experience editor — TraverseStudio |
 
-The story page is a server component that checks `experience.renderingTheme` and redirects to `/module/[id]` if the theme is `training`.
+The story page (`app/(reader)/story/[id]/page.tsx`) checks `experience.renderingTheme` and redirects to `/scenario/[id]` if the theme is `"training"`.
 
 ### The Engine
 
@@ -81,19 +90,41 @@ Every GENERATED node produces a `NarrativeScaffold` (via a cheap Haiku call) sto
 
 ### API Routes
 
-All engine routes are in `app/api/engine/`:
+All engine routes are versioned under `app/api/v1/`:
 
-- `POST /start` — Create session, arrive at first node
-- `POST /choose` — Submit a choice, arrive at next node
-- `POST /dialogue` — Submit a participant turn in a DIALOGUE node
-- `GET /node?sessionId=` — Advance from current node to its `nextNodeId`
-- `GET /stream` — Streaming variant (separate concern)
+- `POST /api/v1/engine/start` — Create session, arrive at first node
+- `POST /api/v1/engine/choose` — Submit a choice, arrive at next node
+- `POST /api/v1/engine/dialogue` — Submit a participant turn in a DIALOGUE node
+- `GET /api/v1/engine/node?sessionId=` — Advance from current node to its `nextNodeId`
+- `GET /api/v1/engine/stream` — Streaming variant (separate concern)
+- `/api/v1/experience/...` — Experience CRUD
+- `/api/v1/analytics/...`, `/api/v1/account/...`, `/api/v1/stories/...`
+
+Old paths (`/api/engine/...`) redirect to v1 via `next.config.js` 308 redirects.
 
 ### Auth
 
 `lib/auth/index.ts` — `requireAuth()` reads Supabase session cookies. **If `NEXT_PUBLIC_SUPABASE_URL` is not set, it returns a hardcoded dev user** (`00000000-0000-0000-0000-000000000001`). This means the app runs fully without Supabase configured locally.
 
 Operators (`isOperator: true`) can supply their own Anthropic key (BYOK), which is passed through the engine via `getAnthropicKey(user)`.
+
+### Database Schema
+
+Key models in `prisma/schema.prisma`:
+
+- **`User`** — has `orgId`, `orgRole` (`owner` | `author` | `learner`), `subscriptionTier`
+- **`Org`** — multi-tenant org with `trainingTier`, `studioTier`, `stripeCustomerId`, `isOperator`, `operatorApiKey`
+- **`Experience`** — has `orgId` linking to Org
+- **`ExperienceSession`** — runtime session state
+
+### Subscription Tiers
+
+Canonical tier string values (in `lib/subscriptions.ts`):
+
+- TraverseStories: `stories_free`, `stories_reader`, `stories_gift`
+- TraverseStudio: `studio_free`, `studio_creator`, `studio_indie`, `studio_team`, `studio_business`, `studio_enterprise`
+- TraverseTraining: `training_pilot`, `training_essentials`, `training_professional`, `training_enterprise`
+- Operator: `operator_sandbox`, `operator_byok`, `operator_platform`
 
 ### External Services (all optional in dev)
 
@@ -107,9 +138,18 @@ Operators (`isOperator: true`) can supply their own Anthropic key (BYOK), which 
 ### CSS Architecture
 
 - `app/globals.css` — Base styles + all `.auth-*` authoring classes
-- `app/globals-training.css` — Training theme CSS, scoped under `.training-theme`. Imported only by `app/(training)/layout.tsx`. All tokens prefixed `--t-`.
+- `app/globals-traverse-training.css` — TraverseTraining CSS, scoped under `.traverse-training-theme`. Used by `app/(traverse-training)/layout.tsx`. New tokens use `--c-` prefix; legacy `--t-` tokens are also defined here for backwards compatibility with existing `components/training/` components.
 
-The training layout wraps everything in `<div className="training-theme">`, preventing leakage into the book reader.
+The TraverseTraining layout wraps everything in `<div className="traverse-training-theme">`.
+
+**CSS token migration:** `components/training/` uses `t-` class names and `--t-` tokens. `components/traverse-training/` uses `tt-` class names and `--c-` tokens. Both sets are defined in `globals-traverse-training.css`.
+
+### TraverseTraining Components
+
+Two component directories exist in parallel during migration:
+
+- **`components/training/`** — Working full-featured player (`TrainingPlayer.tsx`) with all 7 node types, feedback panels, debrief screen, objectives drawer. Uses `t-` CSS classes. Currently rendered by `app/(traverse-training)/scenario/[id]/page.tsx`.
+- **`components/traverse-training/`** — New components using `tt-` CSS classes: `ScenePanel.tsx`, `ChoicePanel.tsx`, `GeneratingScreen.tsx`. A full `TraversePlayer` to replace `TrainingPlayer` is deferred (post-April 2026).
 
 ### Testing
 
@@ -123,4 +163,19 @@ Seed scripts in `prisma/`. Run directly with `npx tsx prisma/seed-*.ts`. The dev
 
 - `seed.ts` — Base seed
 - `seed-thames-water.ts` — L&D experience (ID `...0020`), uses CHOICE nodes with training feedback
-- `seed-clearconnect.ts` — L&D experience (ID `...0030`), uses DIALOGUE + EVALUATIVE nodes
+- `seed-clearconnect.ts` — L&D experience (ID `...0030`), uses DIALOGUE + EVALUATIVE nodes; creates a test Org
+
+## Roadmap Status
+
+See `docs/platform_roadmap_vercel.md` for the full plan. As of 2026-03-30:
+
+| Phase | Status | Notes |
+|-------|--------|-------|
+| 1. Branding | ✅ Done | PageEngine → TraverseStories/TraverseStudio throughout |
+| 2. API versioning | ✅ Done | All routes at `/api/v1/`; old paths redirect via next.config.js |
+| 3. DB schema | ✅ Done | Org model added; User + Experience linked to Org |
+| 4. TraverseTraining MVP | ✅ Done | `/scenario/[id]` playable; CSS scoped; legacy components working |
+| 5. Middleware | ✅ Done | `/scenario` paths protected behind org/operator gate |
+| 6. Tier strings | ✅ Done | New canonical values in `lib/subscriptions.ts` |
+
+**Deferred (post-April 2026):** Full `TraversePlayer` using `tt-` components (replacing `TrainingPlayer`), `DebriefScreen`, `ProgressIndicator`, `ScenarioCard`, scenario library home, account page.

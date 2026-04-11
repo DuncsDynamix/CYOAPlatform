@@ -39,6 +39,38 @@
   font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: var(--c-text-1);
   background: var(--c-bg);
+
+  /* ── Legacy --t- tokens (components migrate to --c- over time) ── */
+  --t-bg:                 #F8FAFB;
+  --t-surface:            #FFFFFF;
+  --t-surface-scene:      #EEF3FA;
+  --t-surface-feedback:   #E6F7F3;
+  --t-surface-warning:    #FEF3C7;
+  --t-surface-debrief:    #1E293B;
+  --t-text-primary:       #0F1923;
+  --t-text-secondary:     #3D5166;
+  --t-text-muted:         #7A8FA0;
+  --t-text-on-dark:       #F1F5F9;
+  --t-text-on-dark-muted: #94A3B8;
+  --t-accent:             #185FA5;
+  --t-accent-hover:       #134E8A;
+  --t-accent-light:       #E6F1FB;
+  --t-accent-text:        #103D7A;
+  --t-success:            #0F6E56;
+  --t-success-light:      #E6F7F3;
+  --t-warning:            #B45309;
+  --t-warning-light:      #FEF3C7;
+  --t-neutral:            #7A8FA0;
+  --t-border:             rgba(15,25,35,0.10);
+  --t-border-strong:      rgba(15,25,35,0.18);
+  --t-radius-sm:          6px;
+  --t-radius-md:          10px;
+  --t-radius-lg:          16px;
+  --t-shadow-card:        0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --t-shadow-panel:       0 8px 24px rgba(0,0,0,0.10);
+  --t-font-body:          'IBM Plex Sans', -apple-system, sans-serif;
+  --t-font-scenario:      'IBM Plex Serif', Georgia, serif;
+  --t-font-ui:            'IBM Plex Sans', -apple-system, sans-serif;
 }
 
 /* ── Shell ──────────────────────────────────────────────────────────────── */
@@ -239,3 +271,447 @@
   font-size: 14px;
   color: var(--c-error);
 }
+
+/* ─── Legacy t- component classes ────────────────────────────────────────────
+   Scoped under .traverse-training-theme so existing training components render
+   correctly without modification. Remove as components migrate to tt- classes.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.traverse-training-theme .t-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--t-bg);
+}
+
+.traverse-training-theme .t-shell-header {
+  background: var(--t-surface);
+  border-bottom: 1px solid var(--t-border);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.traverse-training-theme .t-shell-org {
+  font-family: var(--t-font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--t-text-muted);
+  white-space: nowrap;
+}
+
+.traverse-training-theme .t-shell-title {
+  font-family: var(--t-font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--t-text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.traverse-training-theme .t-shell-obj-btn {
+  background: none;
+  border: 1px solid var(--t-border);
+  border-radius: var(--t-radius-sm);
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+  font-family: var(--t-font-body);
+  font-weight: 500;
+  color: var(--t-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 150ms, color 150ms;
+}
+.traverse-training-theme .t-shell-obj-btn:hover { border-color: var(--t-accent); color: var(--t-accent); }
+.traverse-training-theme .t-shell-obj-btn:focus-visible { outline: 2px solid var(--t-accent); outline-offset: 2px; }
+
+.traverse-training-theme .t-progress-bar-wrap {
+  height: 6px;
+  background: var(--t-border);
+  position: relative;
+  flex-shrink: 0;
+}
+.traverse-training-theme .t-progress-bar-fill {
+  height: 100%;
+  background: var(--t-accent);
+  transition: width 400ms ease;
+}
+.traverse-training-theme .t-progress-label {
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--t-text-muted);
+  padding: 0.25rem 1.25rem 0;
+  font-family: var(--t-font-body);
+}
+
+.traverse-training-theme .t-shell-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 6rem;
+  gap: 1.5rem;
+}
+
+.traverse-training-theme .t-scenario {
+  background: var(--t-surface-scene);
+  border-left: 3px solid var(--t-accent);
+  border-radius: var(--t-radius-md);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.traverse-training-theme .t-scenario-meta {
+  font-size: 0.75rem;
+  color: var(--t-text-muted);
+  font-family: var(--t-font-body);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.traverse-training-theme .t-scenario-sep { opacity: 0.5; }
+.traverse-training-theme .t-scenario-chars { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.traverse-training-theme .t-char-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-family: var(--t-font-body);
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: var(--t-accent-light);
+  color: var(--t-accent-text);
+  font-weight: 500;
+}
+.traverse-training-theme .t-char-chip--speaking { background: var(--t-accent); color: #fff; }
+
+.traverse-training-theme .t-speech { display: flex; gap: 0.75rem; align-items: flex-start; }
+.traverse-training-theme .t-speech--protagonist { flex-direction: row-reverse; }
+.traverse-training-theme .t-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--t-accent); color: #fff;
+  font-size: 0.75rem; font-weight: 600; font-family: var(--t-font-body);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.traverse-training-theme .t-avatar--protagonist { background: var(--t-border-strong); color: var(--t-text-secondary); }
+.traverse-training-theme .t-speech-body { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; min-width: 0; }
+.traverse-training-theme .t-speech--protagonist .t-speech-body { align-items: flex-end; }
+.traverse-training-theme .t-speech-name { font-size: 0.8rem; font-weight: 600; color: var(--t-text-primary); font-family: var(--t-font-body); }
+.traverse-training-theme .t-speech-role { font-size: 0.72rem; color: var(--t-text-muted); font-family: var(--t-font-body); }
+.traverse-training-theme .t-speech-bubble {
+  background: var(--t-surface); border: 1px solid var(--t-border);
+  border-radius: var(--t-radius-md); padding: 14px 16px;
+  font-size: 1rem; line-height: 1.7; color: var(--t-text-secondary);
+  font-family: var(--t-font-body); margin-top: 0.25rem;
+}
+
+.traverse-training-theme .t-situation {
+  font-family: var(--t-font-body);
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--t-text-primary);
+  padding: 2rem 1.5rem;
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.traverse-training-theme .t-generating {
+  display: flex; gap: 6px; align-items: center;
+  padding: 2rem; justify-content: center;
+}
+.traverse-training-theme .t-generating-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--t-accent); opacity: 0.4;
+  animation: tt-legacy-pulse 1.2s ease-in-out infinite;
+}
+.traverse-training-theme .t-generating-dot:nth-child(2) { animation-delay: 0.2s; }
+.traverse-training-theme .t-generating-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes tt-legacy-pulse {
+  0%, 80%, 100% { opacity: 0.4; transform: scale(1); }
+  40% { opacity: 1; transform: scale(1.2); }
+}
+
+.traverse-training-theme .t-choice { display: flex; flex-direction: column; gap: 0.75rem; }
+.traverse-training-theme .t-choice-prompt {
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--t-text-muted); font-family: var(--t-font-body);
+  font-weight: 500; margin-bottom: 0.25rem;
+}
+.traverse-training-theme .t-choice-option {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  background: var(--t-surface); border: 1.5px solid var(--t-border);
+  border-radius: var(--t-radius-md); padding: 1rem 1.25rem;
+  cursor: pointer; text-align: left; width: 100%;
+  transition: border-color 150ms ease, background 150ms ease;
+  font-family: var(--t-font-body);
+}
+.traverse-training-theme .t-choice-option:hover:not(:disabled) { border-color: var(--t-accent); background: var(--t-accent-light); }
+.traverse-training-theme .t-choice-option:focus-visible { outline: 2px solid var(--t-accent); outline-offset: 2px; }
+.traverse-training-theme .t-choice-option--selected { border-color: var(--t-accent); background: var(--t-accent-light); }
+.traverse-training-theme .t-choice-option--faded { opacity: 0.45; pointer-events: none; }
+.traverse-training-theme .t-choice-letter { font-size: 0.85rem; font-weight: 600; color: var(--t-accent); min-width: 20px; line-height: 1.5; }
+.traverse-training-theme .t-choice-letter--circle {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--t-accent); color: #fff;
+  font-size: 0.75rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.traverse-training-theme .t-choice-text { font-size: 0.9375rem; line-height: 1.5; color: var(--t-text-primary); }
+.traverse-training-theme .t-open-choice { display: flex; flex-direction: column; gap: 0.75rem; }
+.traverse-training-theme .t-open-textarea {
+  width: 100%; border: 1.5px solid var(--t-border); border-radius: var(--t-radius-md);
+  padding: 0.75rem 1rem; font-size: 0.9375rem; font-family: var(--t-font-body);
+  line-height: 1.6; color: var(--t-text-primary); background: var(--t-surface);
+  resize: vertical; min-height: 100px; box-sizing: border-box;
+}
+.traverse-training-theme .t-open-textarea:focus { outline: 2px solid var(--t-accent); outline-offset: -1px; border-color: transparent; }
+.traverse-training-theme .t-open-submit {
+  background: var(--t-accent); color: #fff; border: none;
+  border-radius: var(--t-radius-sm); padding: 0.65rem 1.5rem;
+  font-size: 0.9rem; font-family: var(--t-font-body); font-weight: 600;
+  cursor: pointer; align-self: flex-start; transition: background 150ms;
+}
+.traverse-training-theme .t-open-submit:hover { background: var(--t-accent-hover); }
+.traverse-training-theme .t-open-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.traverse-training-theme .t-feedback-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: flex-end; justify-content: center;
+  pointer-events: none;
+}
+.traverse-training-theme .t-feedback {
+  width: 100%; max-width: 720px;
+  background: var(--t-surface); border-top: 1px solid var(--t-border);
+  border-radius: var(--t-radius-lg) var(--t-radius-lg) 0 0;
+  padding: 1.5rem 1.5rem 2rem; box-shadow: var(--t-shadow-panel);
+  pointer-events: all; transform: translateY(100%);
+  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex; flex-direction: column; gap: 1rem;
+  border-left: 3px solid var(--t-border-strong);
+}
+.traverse-training-theme .t-feedback--visible { transform: translateY(0); }
+.traverse-training-theme .t-feedback--positive { background: var(--t-surface-feedback); border-left-color: var(--t-success); }
+.traverse-training-theme .t-feedback--developmental { background: var(--t-surface-warning); border-left-color: var(--t-warning); }
+.traverse-training-theme .t-feedback-header { display: flex; align-items: flex-start; gap: 0.75rem; }
+.traverse-training-theme .t-feedback-icon { width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px; }
+.traverse-training-theme .t-feedback-choice-wrap { display: flex; flex-direction: column; gap: 0.2rem; }
+.traverse-training-theme .t-feedback-your-response {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--t-text-muted); font-family: var(--t-font-body); font-weight: 500;
+}
+.traverse-training-theme .t-feedback-choice-echo {
+  font-size: 0.875rem; font-style: italic; color: var(--t-text-secondary); font-family: var(--t-font-body);
+}
+.traverse-training-theme .t-feedback-divider { height: 1px; background: var(--t-border); }
+.traverse-training-theme .t-feedback-text { font-size: 1rem; line-height: 1.7; color: var(--t-text-primary); font-family: var(--t-font-body); }
+.traverse-training-theme .t-feedback-footer {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;
+}
+.traverse-training-theme .t-continue-btn {
+  background: var(--t-accent); color: #fff; border: none;
+  border-radius: var(--t-radius-sm); padding: 0.6rem 1.25rem;
+  font-size: 0.9rem; font-family: var(--t-font-body); font-weight: 600;
+  cursor: pointer; transition: background 150ms;
+}
+.traverse-training-theme .t-continue-btn:hover { background: var(--t-accent-hover); }
+.traverse-training-theme .t-continue-btn:focus-visible { outline: 2px solid var(--t-accent); outline-offset: 2px; }
+
+.traverse-training-theme .t-competency {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  height: 24px; border-radius: 12px; padding: 0 10px;
+  font-size: 0.75rem; font-weight: 500; font-family: var(--t-font-body); white-space: nowrap;
+}
+.traverse-training-theme .t-competency--demonstrated { background: var(--t-success-light); color: var(--t-success); }
+.traverse-training-theme .t-competency--developmental { background: var(--t-warning-light); color: var(--t-warning); }
+.traverse-training-theme .t-competency--assessed { background: var(--t-accent-light); color: var(--t-accent-text); }
+
+.traverse-training-theme .t-drawer-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.2); z-index: 300;
+  animation: tt-legacy-fade-in 150ms ease;
+}
+@keyframes tt-legacy-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.traverse-training-theme .t-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: 320px;
+  background: var(--t-surface); border-left: 1px solid var(--t-border);
+  box-shadow: var(--t-shadow-panel); z-index: 301;
+  display: flex; flex-direction: column;
+  animation: tt-legacy-slide-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes tt-legacy-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@media (max-width: 480px) {
+  .traverse-training-theme .t-drawer {
+    right: 0; left: 0; top: auto; bottom: 0; width: 100%; height: 60vh;
+    border-left: none; border-top: 1px solid var(--t-border);
+    border-radius: var(--t-radius-lg) var(--t-radius-lg) 0 0;
+    animation: tt-legacy-slide-up 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes tt-legacy-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+}
+.traverse-training-theme .t-drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--t-border);
+  font-size: 0.9rem; font-weight: 600; font-family: var(--t-font-body); color: var(--t-text-primary);
+}
+.traverse-training-theme .t-drawer-close {
+  background: none; border: none; font-size: 1.2rem; color: var(--t-text-muted);
+  cursor: pointer; padding: 0.25rem; line-height: 1; border-radius: 4px;
+}
+.traverse-training-theme .t-drawer-close:hover { color: var(--t-text-primary); }
+.traverse-training-theme .t-drawer-body {
+  flex: 1; overflow-y: auto; padding: 1rem 1.25rem;
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+.traverse-training-theme .t-objective { display: flex; align-items: flex-start; gap: 0.6rem; font-family: var(--t-font-body); font-size: 0.875rem; }
+.traverse-training-theme .t-objective-check {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--t-border-strong);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+  transition: background 300ms, border-color 300ms;
+}
+.traverse-training-theme .t-objective-check--done { background: var(--t-success); border-color: var(--t-success); }
+.traverse-training-theme .t-objective-label { color: var(--t-text-primary); line-height: 1.4; }
+.traverse-training-theme .t-objective-label--done { color: var(--t-text-muted); text-decoration: line-through; }
+
+.traverse-training-theme .t-debrief {
+  min-height: 100vh; background: var(--t-surface-debrief);
+  display: flex; flex-direction: column; align-items: center; padding: 3rem 1.5rem 4rem;
+}
+.traverse-training-theme .t-debrief-inner { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 2rem; }
+.traverse-training-theme .t-debrief-label {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--t-text-on-dark-muted); font-family: var(--t-font-body); font-weight: 500;
+}
+.traverse-training-theme .t-debrief-title { font-family: var(--t-font-body); font-size: 1.75rem; font-weight: 700; color: var(--t-text-on-dark); margin-top: 0.25rem; }
+.traverse-training-theme .t-debrief-outcome { font-family: var(--t-font-body); font-size: 0.95rem; font-weight: 500; color: var(--t-text-on-dark-muted); margin-top: 0.5rem; }
+.traverse-training-theme .t-debrief-closing {
+  font-family: var(--t-font-scenario); font-style: italic; font-size: 1.1rem; line-height: 1.65;
+  color: var(--t-text-on-dark); border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;
+}
+.traverse-training-theme .t-debrief-section {
+  border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;
+  display: flex; flex-direction: column; gap: 1rem;
+}
+.traverse-training-theme .t-debrief-section-label {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--t-text-on-dark-muted); font-family: var(--t-font-body); font-weight: 500;
+}
+.traverse-training-theme .t-debrief-summary-text { font-family: var(--t-font-body); font-size: 1rem; line-height: 1.7; color: var(--t-text-on-dark); }
+.traverse-training-theme .t-decision-row {
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06); font-family: var(--t-font-body);
+}
+.traverse-training-theme .t-decision-num { font-size: 0.75rem; color: var(--t-text-on-dark-muted); min-width: 1.25rem; }
+.traverse-training-theme .t-decision-scene { flex: 1; font-size: 0.875rem; color: var(--t-text-on-dark); }
+.traverse-training-theme .t-decision-tone-icon { font-size: 0.9rem; width: 20px; text-align: center; }
+.traverse-training-theme .t-competency-bar-row { display: flex; flex-direction: column; gap: 0.4rem; }
+.traverse-training-theme .t-competency-bar-label {
+  display: flex; justify-content: space-between;
+  font-family: var(--t-font-body); font-size: 0.8rem; color: var(--t-text-on-dark-muted);
+}
+.traverse-training-theme .t-competency-bar-track { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+.traverse-training-theme .t-competency-bar-fill { height: 100%; background: var(--t-success); border-radius: 4px; transition: width 600ms ease; }
+.traverse-training-theme .t-debrief-actions { display: flex; gap: 1rem; flex-wrap: wrap; padding-top: 0.5rem; }
+.traverse-training-theme .t-btn-outline {
+  background: transparent; border: 1px solid rgba(255,255,255,0.3); color: var(--t-text-on-dark);
+  border-radius: var(--t-radius-sm); padding: 0.65rem 1.25rem;
+  font-size: 0.9rem; font-family: var(--t-font-body); font-weight: 500; cursor: pointer;
+  transition: border-color 150ms, background 150ms;
+}
+.traverse-training-theme .t-btn-outline:hover { border-color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.05); }
+.traverse-training-theme .t-btn-primary {
+  background: var(--t-accent); color: #fff; border: none;
+  border-radius: var(--t-radius-sm); padding: 0.65rem 1.25rem;
+  font-size: 0.9rem; font-family: var(--t-font-body); font-weight: 600;
+  cursor: pointer; transition: background 150ms;
+}
+.traverse-training-theme .t-btn-primary:hover { background: var(--t-accent-hover); }
+.traverse-training-theme .t-btn-primary:focus-visible { outline: 2px solid var(--t-accent); outline-offset: 2px; }
+
+.traverse-training-theme .t-loading {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1.25rem; background: var(--t-bg);
+}
+.traverse-training-theme .t-loading-text { font-family: var(--t-font-body); font-size: 0.9rem; color: var(--t-text-muted); }
+
+.traverse-training-theme .t-dialogue-panel {
+  background: var(--t-surface); border: 1px solid var(--t-border);
+  border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;
+}
+.traverse-training-theme .t-dialogue-header {
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.25rem;
+  background: var(--t-surface-scene); border-bottom: 1px solid var(--t-border-strong);
+}
+.traverse-training-theme .t-dialogue-actor { font-family: var(--t-font-ui); font-size: 0.875rem; font-weight: 600; color: var(--t-text-primary); }
+.traverse-training-theme .t-dialogue-role { font-family: var(--t-font-ui); font-size: 0.8rem; color: var(--t-text-muted); flex: 1; }
+.traverse-training-theme .t-dialogue-turns { font-family: var(--t-font-ui); font-size: 0.75rem; color: var(--t-text-muted); }
+.traverse-training-theme .t-dialogue-history {
+  padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;
+  max-height: 400px; overflow-y: auto;
+}
+.traverse-training-theme .t-dialogue-turn { display: flex; flex-direction: column; gap: 0.25rem; }
+.traverse-training-theme .t-dialogue-turn--character { align-items: flex-start; }
+.traverse-training-theme .t-dialogue-turn--participant { align-items: flex-end; }
+.traverse-training-theme .t-dialogue-turn-label {
+  font-family: var(--t-font-ui); font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--t-text-muted);
+}
+.traverse-training-theme .t-dialogue-turn-text {
+  font-family: var(--t-font-body); font-size: 0.9375rem; line-height: 1.6;
+  color: var(--t-text-primary); background: var(--t-bg);
+  border-radius: 8px; padding: 0.625rem 0.875rem; max-width: 85%; margin: 0;
+}
+.traverse-training-theme .t-dialogue-turn--character .t-dialogue-turn-text {
+  background: var(--t-accent-light); color: var(--t-accent-text);
+}
+.traverse-training-theme .t-dialogue-input-row {
+  display: flex; gap: 0.75rem; padding: 1rem 1.25rem;
+  border-top: 1px solid var(--t-border); align-items: flex-end;
+}
+.traverse-training-theme .t-dialogue-input {
+  flex: 1; font-family: var(--t-font-body); font-size: 0.9375rem;
+  padding: 0.625rem 0.875rem; border: 1px solid var(--t-border-strong);
+  border-radius: 8px; background: var(--t-bg); color: var(--t-text-primary);
+  resize: none; line-height: 1.5;
+}
+.traverse-training-theme .t-dialogue-input:focus {
+  outline: none; border-color: var(--t-accent);
+  box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.12);
+}
+.traverse-training-theme .t-loading-dots { opacity: 0.6; animation: tt-legacy-dots 1.2s infinite; }
+@keyframes tt-legacy-dots { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+.traverse-training-theme .t-evaluative-panel {
+  background: var(--t-surface); border: 1px solid var(--t-border);
+  border-radius: 12px; padding: 1.75rem; display: flex; flex-direction: column; gap: 1.25rem;
+}
+.traverse-training-theme .t-evaluative-outcome {
+  font-family: var(--t-font-ui); font-size: 1rem; font-weight: 700;
+  padding: 0.625rem 1rem; border-radius: 8px;
+  display: inline-flex; align-items: center; gap: 0.5rem; align-self: flex-start;
+}
+.traverse-training-theme .t-evaluative-outcome--pass { background: var(--t-success-light); color: var(--t-success); }
+.traverse-training-theme .t-evaluative-outcome--develop { background: var(--t-surface-warning); color: var(--t-warning); }
+.traverse-training-theme .t-evaluative-feedback { font-family: var(--t-font-body); font-size: 1rem; line-height: 1.7; color: var(--t-text-secondary); margin: 0; }
+.traverse-training-theme .t-evaluative-criteria { display: flex; flex-direction: column; gap: 0.75rem; }
+.traverse-training-theme .t-evaluative-criterion {
+  border-radius: 8px; padding: 0.875rem 1rem;
+  border-left: 4px solid transparent; background: var(--t-bg);
+}
+.traverse-training-theme .t-evaluative-criterion--pass { border-left-color: var(--t-success); }
+.traverse-training-theme .t-evaluative-criterion--fail { border-left-color: var(--t-warning); }
+.traverse-training-theme .t-evaluative-criterion-label { font-family: var(--t-font-ui); font-size: 0.875rem; font-weight: 600; color: var(--t-text-primary); display: block; }
+.traverse-training-theme .t-evaluative-criterion-weight { font-family: var(--t-font-ui); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--t-text-muted); display: block; margin-top: 0.1rem; }
+.traverse-training-theme .t-evaluative-criterion-evidence { font-family: var(--t-font-body); font-size: 0.875rem; line-height: 1.5; color: var(--t-text-secondary); margin: 0.5rem 0 0; }
