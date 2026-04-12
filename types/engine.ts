@@ -29,6 +29,7 @@ export type ResolvedContent =
       feedback: string
       nextNodeId: string
     }
+  | { type: "not_implemented"; nodeType: string; message: string }
 
 // ─── ARRIVAL RESULT ───────────────────────────────────────────
 

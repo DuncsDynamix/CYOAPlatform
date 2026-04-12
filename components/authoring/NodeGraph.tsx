@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useRef, useState, useCallback } from "react"
-import type { Node, ChoiceNode, FixedNode, GeneratedNode, CheckpointNode, DialogueNode, EvaluativeNode } from "@/types/experience"
+import type { Node, ChoiceNode, FixedNode, GeneratedNode, CheckpointNode, DialogueNode, EvaluativeNode, SubroutineCallNode } from "@/types/experience"
 
 // ─── COLOURS ─────────────────────────────────────────────────
 
@@ -85,8 +85,10 @@ function getChildIds(node: Node): { id: string; label?: string }[] {
     case "EVALUATIVE":
       return [{ id: (node as EvaluativeNode).nextNodeId }]
     case "SUBROUTINE_CALL": {
-      const sc = node as import("@/types/experience").SubroutineCallNode
-      return sc.targetNodeId ? [{ id: sc.targetNodeId, label: "call" }] : []
+      const sc = node as SubroutineCallNode
+      const children = sc.targetNodeId ? [{ id: sc.targetNodeId, label: "call" }] : []
+      if (sc.returnNodeId) children.push({ id: sc.returnNodeId, label: "return" })
+      return children
     }
     case "SUBROUTINE_RETURN":
       return []

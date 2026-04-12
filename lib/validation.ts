@@ -57,6 +57,9 @@ export const ChoiceOptionSchema = z.object({
     })
     .optional(),
   stateChanges: z.record(z.union([z.number(), z.string(), z.boolean()])).optional(),
+  displayConditions: z.array(z.record(z.unknown())).optional(),
+  branchType: z.enum(["structural", "cosmetic", "load_bearing"]).optional(),
+  disabled: z.boolean().optional(),
 })
 
 const BaseNodeSchema = z.object({
@@ -101,6 +104,7 @@ export const CheckpointNodeSchema = BaseNodeSchema.extend({
   visibleContent: z.string().optional(),
   marksCompletionOf: z.string().min(1),
   unlocks: z.array(z.string()),
+  snapshotsState: z.boolean().optional(),
   nextNodeId: z.string().min(1),
 })
 
@@ -110,6 +114,7 @@ export const EndpointNodeSchema = BaseNodeSchema.extend({
   outcomeLabel: z.string().min(1).max(100),
   closingLine: z.string().min(1),
   summaryInstruction: z.string().min(1),
+  outcomeVariants: z.array(z.record(z.unknown())).optional(),
   outcomeCard: z.object({
     shareable: z.boolean(),
     showChoiceStats: z.boolean(),
@@ -118,12 +123,24 @@ export const EndpointNodeSchema = BaseNodeSchema.extend({
   }),
 })
 
+export const SubroutineCallNodeSchema = BaseNodeSchema.extend({
+  type: z.literal("SUBROUTINE_CALL"),
+  targetNodeId: z.string().min(1),
+  returnNodeId: z.string().min(1),
+})
+
+export const SubroutineReturnNodeSchema = BaseNodeSchema.extend({
+  type: z.literal("SUBROUTINE_RETURN"),
+})
+
 export const NodeSchema = z.discriminatedUnion("type", [
   FixedNodeSchema,
   GeneratedNodeSchema,
   ChoiceNodeSchema,
   CheckpointNodeSchema,
   EndpointNodeSchema,
+  SubroutineCallNodeSchema,
+  SubroutineReturnNodeSchema,
 ])
 
 // ─── INFERRED TYPES ───────────────────────────────────────────

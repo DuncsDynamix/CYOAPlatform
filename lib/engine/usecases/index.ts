@@ -25,6 +25,7 @@ export const USE_CASE_PACKS: Record<string, ExperienceUseCasePack> = {
     },
     nodeDefaults: {
       defaultConstraints: { lengthMin: 150, lengthMax: 250 },
+      // SUBROUTINE_CALL and SUBROUTINE_RETURN are Phase 2 and deliberately excluded from all use-case packs.
       allowedNodeTypes: ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT"],
     },
     authoringConfig: {
@@ -59,6 +60,7 @@ export const USE_CASE_PACKS: Record<string, ExperienceUseCasePack> = {
     },
     nodeDefaults: {
       defaultConstraints: { lengthMin: 100, lengthMax: 200 },
+      // SUBROUTINE_CALL and SUBROUTINE_RETURN are Phase 2 and deliberately excluded from all use-case packs.
       allowedNodeTypes: ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT"],
     },
     authoringConfig: {
@@ -93,6 +95,7 @@ export const USE_CASE_PACKS: Record<string, ExperienceUseCasePack> = {
     },
     nodeDefaults: {
       defaultConstraints: { lengthMin: 120, lengthMax: 220 },
+      // SUBROUTINE_CALL and SUBROUTINE_RETURN are Phase 2 and deliberately excluded from all use-case packs.
       allowedNodeTypes: ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT"],
     },
     authoringConfig: {
@@ -127,6 +130,7 @@ export const USE_CASE_PACKS: Record<string, ExperienceUseCasePack> = {
     },
     nodeDefaults: {
       defaultConstraints: { lengthMin: 150, lengthMax: 300 },
+      // SUBROUTINE_CALL and SUBROUTINE_RETURN are Phase 2 and deliberately excluded from all use-case packs.
       allowedNodeTypes: ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT"],
     },
     authoringConfig: {

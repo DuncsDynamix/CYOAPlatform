@@ -13,6 +13,7 @@ import type {
   EndpointNode,
   DialogueNode,
   EvaluativeNode,
+  SubroutineCallNode,
   ChoiceOption,
   Experience,
   Segment,
@@ -296,6 +297,14 @@ async function resolveNodeContent(
         nextNodeId: evalNode.nextNodeId,
       }
     }
+
+    case "SUBROUTINE_CALL":
+    case "SUBROUTINE_RETURN":
+      return {
+        type: "not_implemented",
+        nodeType: node.type,
+        message: `${node.type} is reserved for Phase 2 and is not yet supported.`,
+      }
   }
 }
 
@@ -338,6 +347,10 @@ function getImmediateChildIds(node: Node): string[] {
     }
     case "EVALUATIVE":
       return [(node as EvaluativeNode).nextNodeId]
+    case "SUBROUTINE_CALL":
+      return [(node as SubroutineCallNode).targetNodeId]
+    case "SUBROUTINE_RETURN":
+      return []
   }
 }
 
