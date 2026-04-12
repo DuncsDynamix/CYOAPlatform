@@ -203,6 +203,8 @@ export function createTestSession(
 ): ExperienceSession {
   const defaultState: SessionState = {
     flags: {},
+    counters: {},
+    returnStack: [],
     currentPath: "",
     choicesMade: 0,
     nodesVisited: [],
@@ -236,6 +238,8 @@ export function createTestSessionWithChoices(choicesMade: number): ExperienceSes
   return createTestSession({
     state: {
       flags: {},
+      counters: {},
+      returnStack: [],
       currentPath: "",
       choicesMade,
       nodesVisited: [],

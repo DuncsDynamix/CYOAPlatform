@@ -1,7 +1,9 @@
 // ─── SESSION STATE ────────────────────────────────────────────
 
 export interface SessionState {
-  flags: Record<string, number | string | boolean>
+  flags: Record<string, string | boolean>   // string and boolean only — numbers go to counters
+  counters: Record<string, number>          // numeric accumulators, separate from flags
+  returnStack: string[]                     // Phase 2: subroutine return addresses
   currentPath: string
   choicesMade: number
   nodesVisited: string[]

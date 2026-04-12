@@ -3,6 +3,8 @@ import type { ExperienceSession, SessionState, NarrativeHistoryEntry, ChoiceHist
 
 const DEFAULT_STATE: SessionState = {
   flags: {},
+  counters: {},
+  returnStack: [],
   currentPath: "",
   choicesMade: 0,
   nodesVisited: [],
@@ -87,13 +89,26 @@ export async function applyStateChanges(
   if (!session) return
 
   const currentState = session.state as unknown as SessionState
+  const newFlags = { ...currentState.flags }
+  const newCounters = { ...currentState.counters }
+
+  for (const [key, value] of Object.entries(stateChanges)) {
+    if (typeof value === "number") {
+      if (key in newFlags) throw new Error(`State key "${key}" already exists as a flag; cannot write as counter`)
+      newCounters[key] = (newCounters[key] ?? 0) + value
+    } else {
+      if (key in newCounters) throw new Error(`State key "${key}" already exists as a counter; cannot write as flag`)
+      newFlags[key] = value
+    }
+  }
 
   await db.experienceSession.update({
     where: { id: sessionId },
     data: {
       state: {
         ...currentState,
-        flags: { ...currentState.flags, ...stateChanges },
+        flags: newFlags,
+        counters: newCounters,
       } as object,
     },
   })
