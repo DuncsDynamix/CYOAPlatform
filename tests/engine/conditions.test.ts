@@ -129,4 +129,29 @@ describe("applyDisplayConditions", () => {
     expect(result).toHaveLength(2)
     expect(result.find((o) => o.id === "b")?.disabled).toBe(true)
   })
+
+  it("depthGate passes but displayConditions fails — option is disabled", () => {
+    const session = createTestSession({ state: { ...createTestSession().state, choicesMade: 5 } })
+    const opts = [
+      baseOption("a", {
+        depthGate: { minChoicesMade: 3, ifNotMet: "suppress_option" },  // passes (5 >= 3)
+        displayConditions: [{ type: "flag_equals", key: "unlocked", value: true, ifNotMet: "show_disabled" }],  // fails (flag absent)
+      }),
+    ]
+    const result = applyDisplayConditions(opts, session.state)
+    expect(result).toHaveLength(1)
+    expect(result[0].disabled).toBe(true)
+  })
+
+  it("depthGate fails with suppress — displayConditions not evaluated", () => {
+    const session = createTestSession()  // choicesMade: 0
+    const opts = [
+      baseOption("a", {
+        depthGate: { minChoicesMade: 5, ifNotMet: "suppress_option" },  // fails (0 < 5)
+        displayConditions: [{ type: "min_choices", value: 0, ifNotMet: "suppress_option" }],  // would pass
+      }),
+    ]
+    const result = applyDisplayConditions(opts, session.state)
+    expect(result).toHaveLength(0)  // suppressed by depthGate, not rescued by displayConditions
+  })
 })

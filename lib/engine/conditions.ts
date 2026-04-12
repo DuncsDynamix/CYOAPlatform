@@ -24,6 +24,11 @@ export function evaluateCondition(
       return (state.counters[condition.key] ?? 0) <= condition.value
     case "counter_equals":
       return (state.counters[condition.key] ?? 0) === condition.value
+    default: {
+      const exhaustiveCheck: never = condition
+      console.warn(`[conditions] unknown condition type: ${(exhaustiveCheck as { type: string }).type}`)
+      return true
+    }
   }
 }
 
@@ -31,6 +36,9 @@ export function evaluateCondition(
  * Evaluates all display conditions (and legacy depthGate) for each option.
  * Suppressed options are removed. show_disabled options are included with disabled=true.
  * This replaces applyDepthGates in the executor.
+ *
+ * When both `depthGate` and `displayConditions` are present, `depthGate` is evaluated first.
+ * `displayConditions` is only evaluated if `depthGate` passes.
  */
 export function applyDisplayConditions(
   options: ChoiceOption[],
