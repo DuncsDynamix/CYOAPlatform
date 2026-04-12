@@ -18,6 +18,8 @@ describe("createSession", () => {
       currentNodeId: null,
       state: {
         flags: {},
+        counters: {},
+        returnStack: [],
         currentPath: "",
         choicesMade: 0,
         nodesVisited: [],
@@ -25,6 +27,8 @@ describe("createSession", () => {
         distanceToNearestEndpoint: 0,
         pacingInstruction: "",
         generationTimings: {},
+        dialogue: null,
+        competencyProfile: [],
       },
       narrativeHistory: [],
       choiceHistory: [],

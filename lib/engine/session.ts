@@ -76,6 +76,11 @@ export async function updateSessionState(
   })
 }
 
+/**
+ * Applies authored state changes to the session.
+ * Numeric values are accumulated into `counters`; string/boolean values are written to `flags`.
+ * Throws if a key already exists under the other type (collision guard).
+ */
 export async function applyStateChanges(
   sessionId: string,
   stateChanges?: Record<string, number | string | boolean>
@@ -89,8 +94,8 @@ export async function applyStateChanges(
   if (!session) return
 
   const currentState = session.state as unknown as SessionState
-  const newFlags = { ...currentState.flags }
-  const newCounters = { ...currentState.counters }
+  const newFlags = { ...(currentState.flags ?? {}) }
+  const newCounters = { ...(currentState.counters ?? {}) }
 
   for (const [key, value] of Object.entries(stateChanges)) {
     if (typeof value === "number") {
