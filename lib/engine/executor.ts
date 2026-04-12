@@ -78,8 +78,8 @@ export async function arriveAtNode(
     nodeType: node.type,
     experienceId: experience.id,
     choicesMade: session.state.choicesMade,
-    fromCache: content.type === "prose" ? (content as { fromCache?: boolean }).fromCache ?? false : false,
-    isMandatory: (experience.shape?.mandatoryNodeIds ?? []).includes(nodeId),
+    fromCache: content.type === "prose" && content.fromCache === true,
+    isMandatory: (experience.shape.mandatoryNodeIds ?? []).includes(nodeId),
   })
 
   // Fire-and-forget: pre-generate all GENERATED children
