@@ -61,7 +61,7 @@ describe("applyStateChanges", () => {
     mockFindUnique.mockResolvedValue({ state: session.state })
 
     await expect(applyStateChanges(session.id, { score: 10 })).rejects.toThrow(
-      'State key "score" already exists as a flag'
+      'State key "score" already exists as a flag; cannot write as counter'
     )
   })
 
@@ -70,12 +70,20 @@ describe("applyStateChanges", () => {
     mockFindUnique.mockResolvedValue({ state: session.state })
 
     await expect(applyStateChanges(session.id, { score: "high" })).rejects.toThrow(
-      'State key "score" already exists as a counter'
+      'State key "score" already exists as a counter; cannot write as flag'
     )
   })
 
   it("does nothing when stateChanges is empty", async () => {
     await applyStateChanges("session-id", {})
+    expect(mockUpdate).not.toHaveBeenCalled()
+  })
+
+  it("does nothing when session is not found", async () => {
+    mockFindUnique.mockResolvedValue(null)
+
+    await applyStateChanges("nonexistent-session", { path: "forest" })
+
     expect(mockUpdate).not.toHaveBeenCalled()
   })
 })
