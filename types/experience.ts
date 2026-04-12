@@ -112,9 +112,9 @@ export interface EndpointShape {
 
 // ─── NODE TYPES ───────────────────────────────────────────────
 
-export type NodeType = "FIXED" | "GENERATED" | "CHOICE" | "CHECKPOINT" | "ENDPOINT" | "DIALOGUE" | "EVALUATIVE"
+export type NodeType = "FIXED" | "GENERATED" | "CHOICE" | "CHECKPOINT" | "ENDPOINT" | "DIALOGUE" | "EVALUATIVE" | "SUBROUTINE_CALL" | "SUBROUTINE_RETURN"
 
-export type Node = FixedNode | GeneratedNode | ChoiceNode | CheckpointNode | EndpointNode | DialogueNode | EvaluativeNode
+export type Node = FixedNode | GeneratedNode | ChoiceNode | CheckpointNode | EndpointNode | DialogueNode | EvaluativeNode | SubroutineCallNode | SubroutineReturnNode
 
 interface BaseNode {
   id: string
@@ -151,19 +151,75 @@ export interface ChoiceNode extends BaseNode {
   openPlaceholder?: string
 }
 
+// ─── DISPLAY CONDITIONS ───────────────────────────────────────
+
+export interface MinChoicesCondition {
+  type: "min_choices"
+  value: number
+  ifNotMet: "suppress_option" | "show_disabled"
+}
+export interface FlagEqualsCondition {
+  type: "flag_equals"
+  key: string
+  value: string | boolean
+  ifNotMet: "suppress_option" | "show_disabled"
+}
+export interface FlagExistsCondition {
+  type: "flag_exists"
+  key: string
+  ifNotMet: "suppress_option" | "show_disabled"
+}
+export interface FlagNotExistsCondition {
+  type: "flag_not_exists"
+  key: string
+  ifNotMet: "suppress_option" | "show_disabled"
+}
+export interface CounterGteCondition {
+  type: "counter_gte"
+  key: string
+  value: number
+  ifNotMet: "suppress_option" | "show_disabled"
+}
+export interface CounterLteCondition {
+  type: "counter_lte"
+  key: string
+  value: number
+  ifNotMet: "suppress_option" | "show_disabled"
+}
+export interface CounterEqualsCondition {
+  type: "counter_equals"
+  key: string
+  value: number
+  ifNotMet: "suppress_option" | "show_disabled"
+}
+
+export type DisplayCondition =
+  | MinChoicesCondition
+  | FlagEqualsCondition
+  | FlagExistsCondition
+  | FlagNotExistsCondition
+  | CounterGteCondition
+  | CounterLteCondition
+  | CounterEqualsCondition
+
 export interface ChoiceOption {
   id: string
   label: string
   nextNodeId: string
   isLoadBearing: boolean
-  /** When true, the engine skips pre-generating this branch. The node is
-   *  generated synchronously at the moment the reader makes this choice,
-   *  ensuring the session state (including the choice itself) is captured. */
+  /** When true, the engine skips pre-generating this branch. */
   requiresFreshGeneration?: boolean
+  /** @deprecated Use displayConditions with type "min_choices" instead. */
   depthGate?: {
     minChoicesMade: number
     ifNotMet: "suppress_option" | "show_disabled"
   }
+  /** Runtime-evaluated visibility conditions. Engine sets disabled=true on options that fail show_disabled conditions. */
+  displayConditions?: DisplayCondition[]
+  /** Metadata for authoring tool and arc awareness. Does not affect routing. */
+  branchType?: "structural" | "cosmetic" | "load_bearing"
+  /** Set by the engine at runtime when a show_disabled condition fails. Never authored. */
+  disabled?: boolean
   stateChanges?: Record<string, number | string | boolean>
   // Training-specific (optional — ignored by Turn To Page renderer)
   trainingFeedback?: string
@@ -177,7 +233,19 @@ export interface CheckpointNode extends BaseNode {
   visibleContent?: string
   marksCompletionOf: string
   unlocks: string[]
+  /** When true, engine emits a checkpoint_reached analytics event with full session state. */
+  snapshotsState?: boolean
   nextNodeId: string
+}
+
+export interface OutcomeVariant {
+  /** Name of the counter to evaluate */
+  counterKey: string
+  /** Minimum counter value required for this variant to qualify */
+  minThreshold: number
+  outcomeLabel: string
+  closingLine: string
+  summaryInstruction: string
 }
 
 export interface EndpointNode extends BaseNode {
@@ -186,6 +254,8 @@ export interface EndpointNode extends BaseNode {
   outcomeLabel: string
   closingLine: string
   summaryInstruction: string
+  /** Optional conditional variants. Engine selects highest-qualifying variant by counterKey threshold. Falls back to base fields if none qualify. */
+  outcomeVariants?: OutcomeVariant[]
   outcomeCard: {
     shareable: boolean
     showChoiceStats: boolean
@@ -223,6 +293,18 @@ export interface EvaluativeNode extends BaseNode {
   /** Node IDs whose scaffold context to use for assessment (CB-003) */
   assessesNodeIds: string[]
   nextNodeId: string
+}
+
+export interface SubroutineCallNode extends BaseNode {
+  type: "SUBROUTINE_CALL"
+  /** Node to jump to */
+  targetNodeId: string
+  /** Node to return to when the subroutine completes (Phase 2) */
+  returnNodeId: string
+}
+
+export interface SubroutineReturnNode extends BaseNode {
+  type: "SUBROUTINE_RETURN"
 }
 
 // ─── SEGMENTS ────────────────────────────────────────────────

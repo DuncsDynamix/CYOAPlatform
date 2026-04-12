@@ -84,6 +84,12 @@ function getChildIds(node: Node): { id: string; label?: string }[] {
     }
     case "EVALUATIVE":
       return [{ id: (node as EvaluativeNode).nextNodeId }]
+    case "SUBROUTINE_CALL": {
+      const sc = node as import("@/types/experience").SubroutineCallNode
+      return sc.targetNodeId ? [{ id: sc.targetNodeId, label: "call" }] : []
+    }
+    case "SUBROUTINE_RETURN":
+      return []
   }
 }
 

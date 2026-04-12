@@ -27,6 +27,10 @@ function makeNode(type: Node["type"]): Node {
       return { id, type, label: "", actorId: "", breakthroughCriteria: "", maxTurns: 5, nextNodeId: "" }
     case "EVALUATIVE":
       return { id, type, label: "", rubric: [], assessesNodeIds: [], nextNodeId: "" }
+    case "SUBROUTINE_CALL":
+      return { id, type, label: "", targetNodeId: "", returnNodeId: "" }
+    case "SUBROUTINE_RETURN":
+      return { id, type, label: "" }
   }
 }
 
