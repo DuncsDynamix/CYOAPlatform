@@ -7,7 +7,7 @@ import { trackEvent } from "@/lib/analytics"
 import type { GeneratedNode, EndpointNode, Experience, ExperienceContextPack, GroundTruthSource, Actor, DialogueNode, EvaluativeNode } from "@/types/experience"
 import type { ExperienceSession, NarrativeHistoryEntry, ChoiceHistoryEntry, NarrativeScaffold, DialogueTurn, CompetencyResult } from "@/types/session"
 
-const MODEL = "claude-sonnet-4-5"
+const MODEL = "claude-sonnet-4-20250514"
 const SCAFFOLD_MODEL = "claude-haiku-4-5-20251001"
 
 function getAnthropicClient(apiKey?: string): Anthropic {
