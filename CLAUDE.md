@@ -52,7 +52,7 @@ The story page (`app/(reader)/story/[id]/page.tsx`) checks `experience.rendering
 The engine lives in `lib/engine/` and is the core of the platform:
 
 - **`executor.ts`** — Entry point. `arriveAtNode()` resolves a node to `ResolvedContent`, updates session state, and fires parallel pre-generation for reachable GENERATED children. The `resolveNodeContent` switch handles all 7 node types.
-- **`generator.ts`** — All Anthropic API calls. Uses `claude-sonnet-4-5` for generation, `claude-haiku-4-5-20251001` for scaffolding/assessment (cheap extraction calls). All calls go through `generationQueue` (p-queue, default concurrency 5).
+- **`generator.ts`** — All Anthropic API calls. Uses `claude-sonnet-4-20250514` for generation, `claude-haiku-4-5-20251001` for scaffolding/assessment (cheap extraction calls). All calls go through `generationQueue` (p-queue, default concurrency 5).
 - **`session.ts`** — All DB reads/writes for `ExperienceSession`. The session state JSON includes `flags`, `dialogue`, and `competencyProfile`.
 - **`cache.ts`** — Redis (Upstash) + in-memory fallback for generated node prose. Key: `node:{sessionId}:{nodeId}`.
 - **`arc.ts`** — Calculates arc phase (opening → resolution) from `choicesMade / totalDepthMid` to inject pacing instructions into generation prompts.

@@ -3,7 +3,7 @@ import type { ChoiceNode } from "@/types/experience"
 import type { ExperienceSession } from "@/types/session"
 import type { Experience } from "@/types/experience"
 
-const MODEL = "claude-sonnet-4-5"
+const MODEL = "claude-sonnet-4-20250514"
 
 /**
  * For open/free-text choices, use Claude to determine which branch to route to
