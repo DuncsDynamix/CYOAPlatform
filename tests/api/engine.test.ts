@@ -24,7 +24,6 @@ vi.mock("@/lib/engine/executor", () => ({
   arriveAtNode: vi.fn(),
   findFirstNodeId: vi.fn().mockReturnValue("node-1"),
   findNode: vi.fn(),
-  applyDepthGates: vi.fn(),
   getReachableGeneratedChildren: vi.fn().mockReturnValue([]),
   getAllNodes: vi.fn().mockImplementation((exp: { nodes: unknown[] }) => exp.nodes ?? []),
 }))

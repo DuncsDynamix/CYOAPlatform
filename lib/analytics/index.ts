@@ -15,6 +15,7 @@ export type EventType =
   | "page_view"
   | "generation_metric"
   | "dialogue_turn"
+  | "checkpoint_reached"
   | "error"
 
 // Typed properties per event — used for callsite type safety
@@ -32,6 +33,7 @@ export interface EventProperties {
     nodeType: string
     choicesMade: number
     fromCache?: boolean
+    isMandatory?: boolean
   }
   choice_made: {
     sessionId: string
@@ -98,6 +100,16 @@ export interface EventProperties {
     nodeId: string
     turnCount: number
     breakthrough: boolean
+  }
+  checkpoint_reached: {
+    sessionId: string
+    experienceId: string
+    userId?: string | null
+    checkpointLabel: string
+    stateSnapshot: {
+      flags: Record<string, string | boolean>
+      counters: Record<string, number>
+    }
   }
   error: {
     message: string

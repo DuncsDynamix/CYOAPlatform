@@ -1,38 +1,56 @@
 import { describe, it, expect } from "vitest"
-import { applyDepthGates } from "@/lib/engine/executor"
+import { applyDisplayConditions } from "@/lib/engine/conditions"
 import { createDepthGatedOptions } from "../helpers/factories"
 import type { ChoiceOption } from "@/types/experience"
+import type { SessionState } from "@/types/session"
 
-describe("applyDepthGates", () => {
-  it("returns all options when none have depth gates", () => {
+function makeState(choicesMade: number, flags: Record<string, string | boolean> = {}): SessionState {
+  return {
+    flags,
+    counters: {},
+    returnStack: [],
+    currentPath: "",
+    choicesMade,
+    nodesVisited: [],
+    depthPercentage: 0,
+    distanceToNearestEndpoint: 0,
+    pacingInstruction: "",
+    generationTimings: {},
+    dialogue: null,
+    competencyProfile: [],
+  }
+}
+
+describe("applyDisplayConditions (replaces applyDepthGates)", () => {
+  it("returns all options when none have depth gates or displayConditions", () => {
     const options: ChoiceOption[] = [
       { id: "a", label: "Go left", nextNodeId: "n1", isLoadBearing: false },
       { id: "b", label: "Go right", nextNodeId: "n2", isLoadBearing: false },
     ]
-    const result = applyDepthGates(options, 0)
+    const result = applyDisplayConditions(options, makeState(0))
     expect(result).toHaveLength(2)
   })
 
   it("suppresses option when depth gate not met and ifNotMet is suppress_option", () => {
     const options = createDepthGatedOptions()
-    const result = applyDepthGates(options, 3)
+    const result = applyDisplayConditions(options, makeState(3))
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe("opt-a")
   })
 
   it("shows suppressed option when depth gate is exactly met", () => {
     const options = createDepthGatedOptions()
-    const result = applyDepthGates(options, 5)
+    const result = applyDisplayConditions(options, makeState(5))
     expect(result).toHaveLength(2)
   })
 
   it("shows suppressed option when depth gate is exceeded", () => {
     const options = createDepthGatedOptions()
-    const result = applyDepthGates(options, 7)
+    const result = applyDisplayConditions(options, makeState(7))
     expect(result).toHaveLength(2)
   })
 
-  it("keeps disabled option when ifNotMet is show_disabled", () => {
+  it("keeps disabled option when depthGate ifNotMet is show_disabled", () => {
     const options: ChoiceOption[] = [
       { id: "a", label: "Go left", nextNodeId: "n1", isLoadBearing: false },
       {
@@ -44,12 +62,12 @@ describe("applyDepthGates", () => {
       },
     ]
     // Both returned — UI is responsible for rendering 'b' as disabled
-    const result = applyDepthGates(options, 3)
+    const result = applyDisplayConditions(options, makeState(3))
     expect(result).toHaveLength(2)
   })
 
   it("handles empty options array", () => {
-    expect(applyDepthGates([], 5)).toHaveLength(0)
+    expect(applyDisplayConditions([], makeState(5))).toHaveLength(0)
   })
 
   it("handles options with depthGate minChoicesMade of 0 (always show)", () => {
@@ -62,7 +80,21 @@ describe("applyDepthGates", () => {
         depthGate: { minChoicesMade: 0, ifNotMet: "suppress_option" },
       },
     ]
-    const result = applyDepthGates(options, 0)
+    const result = applyDisplayConditions(options, makeState(0))
     expect(result).toHaveLength(1)
+  })
+
+  it("suppresses option when flag_exists condition is not met and ifNotMet is suppress_option", () => {
+    const options: ChoiceOption[] = [
+      {
+        id: "a",
+        label: "Secret path",
+        nextNodeId: "n1",
+        isLoadBearing: false,
+        displayConditions: [{ type: "flag_exists", key: "secretUnlocked", ifNotMet: "suppress_option" }],
+      },
+    ]
+    expect(applyDisplayConditions(options, makeState(0))).toHaveLength(0)
+    expect(applyDisplayConditions(options, makeState(0, { secretUnlocked: true }))).toHaveLength(1)
   })
 })

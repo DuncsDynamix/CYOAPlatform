@@ -3,6 +3,7 @@ import { generateNode, generateEndpointSummary, generateScaffold, generateDialog
 import { getFromCache, writeToCache } from "./cache"
 import { updateSessionState, getSession, markSessionComplete, appendNarrativeHistory, initDialogueState, appendCompetencyResult } from "./session"
 import { buildArcAwareness } from "./arc"
+import { applyDisplayConditions } from "./conditions"
 import { trackEvent } from "@/lib/analytics"
 import type {
   Node,
@@ -77,27 +78,14 @@ export async function arriveAtNode(
     nodeType: node.type,
     experienceId: experience.id,
     choicesMade: session.state.choicesMade,
-    fromCache: content.type === "prose" ? content.fromCache ?? false : false,
+    fromCache: content.type === "prose" ? (content as { fromCache?: boolean }).fromCache ?? false : false,
+    isMandatory: (experience.shape?.mandatoryNodeIds ?? []).includes(nodeId),
   })
 
   // Fire-and-forget: pre-generate all GENERATED children
   generateChildrenInParallel(node, nodes, session, experience, apiKey).catch(console.error)
 
   return { node, content, session }
-}
-
-/**
- * Filters choice options blocked by depth gates.
- */
-export function applyDepthGates(
-  options: ChoiceOption[],
-  choicesMade: number
-): ChoiceOption[] {
-  return options.filter((option) => {
-    if (!option.depthGate) return true
-    if (choicesMade >= option.depthGate.minChoicesMade) return true
-    return option.depthGate.ifNotMet !== "suppress_option"
-  })
 }
 
 /**
@@ -192,13 +180,30 @@ async function resolveNodeContent(
 
     case "CHOICE": {
       const choiceNode = node as ChoiceNode
-      const options = applyDepthGates(choiceNode.options ?? [], session.state.choicesMade)
+      const options = applyDisplayConditions(choiceNode.options ?? [], session.state)
       return { type: "choice", options }
     }
 
     case "CHECKPOINT": {
       const checkpointNode = node as CheckpointNode
       await applyCheckpoint(checkpointNode, session)
+
+      if (checkpointNode.snapshotsState) {
+        // Re-read state after applyCheckpoint to capture unlocks
+        const updatedSession = await getSession(session.id)
+        const state = updatedSession?.state ?? session.state
+        trackEvent("checkpoint_reached", {
+          sessionId: session.id,
+          experienceId: experience.id,
+          userId: session.userId ?? null,
+          checkpointLabel: checkpointNode.marksCompletionOf,
+          stateSnapshot: {
+            flags: state.flags,
+            counters: state.counters,
+          },
+        })
+      }
+
       return {
         type: "checkpoint",
         visible: checkpointNode.visible,
