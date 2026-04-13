@@ -50,7 +50,7 @@ export function selectOutcomeVariant(
     (v) => (counters[v.counterKey] ?? 0) >= v.minThreshold
   )
   if (qualifying.length === 0) return null
-  return qualifying.sort((a, b) => b.minThreshold - a.minThreshold)[0]
+  return [...qualifying].sort((a, b) => b.minThreshold - a.minThreshold)[0]
 }
 
 // ─── NODE RESOLUTION ─────────────────────────────────────────
@@ -253,9 +253,10 @@ async function resolveNodeContent(
         const allNodes = getAllNodes(experience)
         const mandatoryNode = allNodes.find((n) => n.id === unvisited)
         if (mandatoryNode) {
-          await updateSessionState(session.id, { currentNodeId: unvisited })
-          return resolveNodeContent(mandatoryNode, session, experience, apiKey)
+          return { type: "redirect", targetNodeId: unvisited }
         }
+        // Node not found in graph — log warning and fall through to endpoint
+        console.warn(`[executor] mandatory node "${unvisited}" not found in experience graph — skipping enforcement`)
       }
 
       // §4.5 — select outcome variant (falls back to base fields if none qualify)

@@ -131,7 +131,12 @@ export async function POST(req: NextRequest) {
       : currentNode.nextNodeId
 
     // Advance to next node
-    const arrival = await arriveAtNode(sessionId, nextNodeId, experience, apiKey)
+    let arrival = await arriveAtNode(sessionId, nextNodeId, experience, apiKey)
+
+    // Transparent mandatory-node redirect: re-arrive at the target so nodesVisited is updated correctly
+    if (arrival.content.type === "redirect") {
+      arrival = await arriveAtNode(sessionId, arrival.content.targetNodeId, experience, apiKey)
+    }
 
     return NextResponse.json({
       characterLine,

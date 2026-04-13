@@ -30,6 +30,7 @@ export type ResolvedContent =
       nextNodeId: string
     }
   | { type: "not_implemented"; nodeType: string; message: string }
+  | { type: "redirect"; targetNodeId: string }
 
 // ─── ARRIVAL RESULT ───────────────────────────────────────────
 
