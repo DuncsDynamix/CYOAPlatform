@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, beforeAll } from "vitest"
 import nextConfig from "../../next.config"
 
 describe("API route versioning redirects", () => {
   let redirects: Array<{ source: string; destination: string; permanent: boolean }>
 
   beforeAll(async () => {
-    redirects = await nextConfig.redirects!()
+    redirects = (await nextConfig.redirects!()) as Array<{ source: string; destination: string; permanent: boolean }>
   })
 
   const oldPaths = [
