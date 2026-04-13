@@ -64,7 +64,12 @@ export async function POST(req: NextRequest) {
     source: req.headers.get("referer") ?? undefined,
   })
 
-  const arrival = await arriveAtNode(session.id, firstNodeId, experience, apiKey)
+  let arrival = await arriveAtNode(session.id, firstNodeId, experience, apiKey)
+
+  // Transparent mandatory-node redirect: re-arrive at the target so nodesVisited is updated correctly
+  if (arrival.content.type === "redirect") {
+    arrival = await arriveAtNode(session.id, arrival.content.targetNodeId, experience, apiKey)
+  }
 
   return NextResponse.json({
     sessionId: session.id,

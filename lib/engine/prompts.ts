@@ -144,7 +144,7 @@ export function buildEndpointSummaryPrompt(
     .join("\n")
 
   const countersBlock = Object.keys(counters).length > 0
-    ? `\nSCORE SUMMARY:\n${Object.entries(counters).map(([k, v]) => `${k}: ${v}`).join("\n")}`
+    ? `SCORE SUMMARY:\n${Object.entries(counters).map(([k, v]) => `${k}: ${v}`).join("\n")}`
     : ""
 
   return [
