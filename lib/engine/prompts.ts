@@ -114,7 +114,7 @@ export function buildGenerationPrompt(
   ].join("\n")
 
   const countersBlock = Object.keys(session.state.counters).length > 0
-    ? `SESSION COUNTERS:\n${Object.entries(session.state.counters).map(([k, v]) => `${k}: ${v}`).join("\n")}`
+    ? `\nSESSION COUNTERS:\n${Object.entries(session.state.counters).map(([k, v]) => `${k}: ${v}`).join("\n")}`
     : ""
 
   return `
@@ -125,7 +125,7 @@ ${resolvedGroundTruth ? `GROUND TRUTH — facts you must treat as authoritative:
 
 CURRENT ARC POSITION:
 ${arcAwareness.instruction}
-${countersBlock ? `\n${countersBlock}` : ""}
+${countersBlock}
 ${scriptBlock}
 
 YOUR TASK FOR THIS SCENE:
