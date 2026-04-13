@@ -142,6 +142,7 @@ Do not include choiceMade — that is added separately when the reader makes the
 
 export async function generateEndpointSummary(
   node: EndpointNode,
+  summaryInstruction: string,
   session: ExperienceSession,
   experience: Experience,
   apiKey?: string
@@ -153,7 +154,7 @@ export async function generateEndpointSummary(
   const narrativeSummary = narrativeHistory.map((entry) => entry.content).join("\n\n---\n\n")
   const choiceHistory = session.choiceHistory as ChoiceHistoryEntry[]
 
-  const prompt = buildEndpointSummaryPrompt(narrativeSummary, choiceHistory, node.summaryInstruction)
+  const prompt = buildEndpointSummaryPrompt(narrativeSummary, choiceHistory, summaryInstruction, session.state.counters)
   const systemPrompt = `You are a master storyteller writing a personalised ending reflection. ${contextPack.style?.styleNotes ?? ""}`
 
   const message = await generationQueue.add(() =>

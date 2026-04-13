@@ -136,11 +136,16 @@ Write the scene now.
 export function buildEndpointSummaryPrompt(
   narrativeSummary: string,
   choiceHistory: ChoiceHistoryEntry[],
-  summaryInstruction: string
+  summaryInstruction: string,
+  counters: Record<string, number>
 ): string {
   const choices = choiceHistory
     .map((c, i) => `${i + 1}. ${c.choiceLabel}`)
     .join("\n")
+
+  const countersBlock = Object.keys(counters).length > 0
+    ? `\nSCORE SUMMARY:\n${Object.entries(counters).map(([k, v]) => `${k}: ${v}`).join("\n")}`
+    : ""
 
   return [
     "You have just finished reading a complete interactive story journey.",
@@ -150,6 +155,7 @@ export function buildEndpointSummaryPrompt(
     "",
     "The choices they made were:",
     choices || "(No choices recorded)",
+    countersBlock,
     "",
     `Your task: ${summaryInstruction}`,
     "",

@@ -19,9 +19,39 @@ import type {
   Experience,
   Segment,
   ExperienceContextPack,
+  OutcomeVariant,
 } from "@/types/experience"
 import type { ExperienceSession, NarrativeHistoryEntry } from "@/types/session"
 import type { ArrivalResult, ResolvedContent, OutcomeCardData } from "@/types/engine"
+
+// ─── PURE HELPER FUNCTIONS ────────────────────────────────────
+
+/**
+ * Returns the first mandatory node ID that has not been visited.
+ * Returns null if all mandatory nodes have been visited.
+ */
+export function selectFirstUnvisitedMandatory(
+  mandatoryNodeIds: string[],
+  visitedNodeIds: string[]
+): string | null {
+  const visited = new Set(visitedNodeIds)
+  return mandatoryNodeIds.find((id) => !visited.has(id)) ?? null
+}
+
+/**
+ * Selects the highest-qualifying outcome variant based on counter thresholds.
+ * Returns null if no variant qualifies.
+ */
+export function selectOutcomeVariant(
+  variants: OutcomeVariant[],
+  counters: Record<string, number>
+): OutcomeVariant | null {
+  const qualifying = variants.filter(
+    (v) => (counters[v.counterKey] ?? 0) >= v.minThreshold
+  )
+  if (qualifying.length === 0) return null
+  return qualifying.sort((a, b) => b.minThreshold - a.minThreshold)[0]
+}
 
 // ─── NODE RESOLUTION ─────────────────────────────────────────
 
@@ -213,7 +243,37 @@ async function resolveNodeContent(
 
     case "ENDPOINT": {
       const endpointNode = node as EndpointNode
-      const summary = await generateEndpointSummary(endpointNode, session, experience, apiKey)
+
+      // §8.2 — mandatory node enforcement: redirect to first unvisited mandatory node
+      const unvisited = selectFirstUnvisitedMandatory(
+        experience.shape.mandatoryNodeIds ?? [],
+        session.state.nodesVisited
+      )
+      if (unvisited) {
+        const allNodes = getAllNodes(experience)
+        const mandatoryNode = allNodes.find((n) => n.id === unvisited)
+        if (mandatoryNode) {
+          await updateSessionState(session.id, { currentNodeId: unvisited })
+          return resolveNodeContent(mandatoryNode, session, experience, apiKey)
+        }
+      }
+
+      // §4.5 — select outcome variant (falls back to base fields if none qualify)
+      const variant = selectOutcomeVariant(
+        endpointNode.outcomeVariants ?? [],
+        session.state.counters
+      )
+      const effectiveClosingLine = variant?.closingLine ?? endpointNode.closingLine
+      const effectiveSummaryInstruction = variant?.summaryInstruction ?? endpointNode.summaryInstruction
+      const effectiveOutcomeLabel = variant?.outcomeLabel ?? endpointNode.outcomeLabel
+
+      const summary = await generateEndpointSummary(
+        endpointNode,
+        effectiveSummaryInstruction,
+        session,
+        experience,
+        apiKey
+      )
       await markSessionComplete(session.id, endpointNode.endpointId)
 
       trackEvent("session_completed", {
@@ -229,9 +289,13 @@ async function resolveNodeContent(
 
       return {
         type: "endpoint",
-        closingLine: endpointNode.closingLine,
+        closingLine: effectiveClosingLine,
         summary,
-        outcomeCard: buildOutcomeCard(endpointNode, session, experience),
+        outcomeCard: buildOutcomeCard(
+          { ...endpointNode, outcomeLabel: effectiveOutcomeLabel, closingLine: effectiveClosingLine },
+          session,
+          experience
+        ),
       }
     }
 
