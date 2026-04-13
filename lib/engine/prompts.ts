@@ -113,6 +113,10 @@ export function buildGenerationPrompt(
     ...(node.constraints.mustInclude ?? []).map((i) => `- Must include: ${i}`),
   ].join("\n")
 
+  const countersBlock = Object.keys(session.state.counters).length > 0
+    ? `SESSION COUNTERS:\n${Object.entries(session.state.counters).map(([k, v]) => `${k}: ${v}`).join("\n")}`
+    : ""
+
   return `
 STORY SO FAR (STRUCTURED SUMMARY):
 ${scaffoldContext}
@@ -121,6 +125,7 @@ ${resolvedGroundTruth ? `GROUND TRUTH — facts you must treat as authoritative:
 
 CURRENT ARC POSITION:
 ${arcAwareness.instruction}
+${countersBlock ? `\n${countersBlock}` : ""}
 ${scriptBlock}
 
 YOUR TASK FOR THIS SCENE:
