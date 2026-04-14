@@ -1,3 +1,5 @@
+import Markdown from "react-markdown"
+
 interface SituationTextProps {
   content: string
   isGenerating?: boolean
@@ -16,9 +18,7 @@ export function SituationText({ content, isGenerating = false }: SituationTextPr
 
   return (
     <div className="t-situation">
-      {content.split("\n\n").map((para, i) => (
-        <p key={i} style={{ margin: "0 0 1.1em" }}>{para}</p>
-      ))}
+      <Markdown>{content}</Markdown>
     </div>
   )
 }

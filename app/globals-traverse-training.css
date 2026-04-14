@@ -429,6 +429,58 @@
   width: 100%;
 }
 
+/* ── Markdown content in FIXED nodes ────────────────────────────── */
+.traverse-training-theme .t-situation img,
+.traverse-training-theme .tt-scene-prose img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.25em auto;
+  border-radius: 6px;
+}
+
+.traverse-training-theme .t-situation ul,
+.traverse-training-theme .t-situation ol {
+  padding-left: 1.5em;
+  margin: 0.75em 0;
+}
+
+.traverse-training-theme .t-situation li {
+  margin-bottom: 0.4em;
+}
+
+.traverse-training-theme .t-situation strong {
+  font-weight: 600;
+}
+
+.traverse-training-theme .t-situation h1,
+.traverse-training-theme .t-situation h2,
+.traverse-training-theme .t-situation h3 {
+  font-family: var(--t-font-ui);
+  font-weight: 700;
+  color: var(--t-text-primary);
+  margin: 1.25em 0 0.5em;
+}
+
+.traverse-training-theme .t-situation table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.9375rem;
+}
+
+.traverse-training-theme .t-situation th,
+.traverse-training-theme .t-situation td {
+  text-align: left;
+  padding: 0.5em 0.75em;
+  border-bottom: 1px solid var(--t-border);
+}
+
+.traverse-training-theme .t-situation th {
+  font-weight: 600;
+  background: var(--t-surface);
+}
+
 .traverse-training-theme .t-generating {
   display: flex; gap: 6px; align-items: center;
   padding: 2rem; justify-content: center;

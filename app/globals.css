@@ -513,3 +513,7 @@
 .cpe-tab-content { padding: 1.75rem 1.5rem; width: 100%; max-width: 860px; box-sizing: border-box; display: flex; flex-direction: column; gap: 1.5rem; }
 .cpe-tab-description { font-family: system-ui, sans-serif; font-size: 0.82rem; color: var(--at2); line-height: 1.6; margin: 0; }
 .cpe-subsection-title { font-family: system-ui, sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--at2); padding-bottom: 0.5rem; border-bottom: 1px solid var(--abr); }
+
+
+/* ── Markdown images in SituationText ───────────────────────────── */
+.t-situation img { max-width: 100%; height: auto; display: block; margin: 1.25em auto; border-radius: 6px; }
