@@ -118,6 +118,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
         closingLine: content.closingLine,
         aiSummary: content.summary,
         decisionHistory,
+        score: content.outcomeCard.score,
       })
       return
     }
@@ -340,6 +341,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
           decisionHistory={playerStatus.decisionHistory}
           competencies={buildCompetencyProfile(playerStatus.decisionHistory)}
           moduleTitle={moduleTitle}
+          score={playerStatus.score}
           onRestart={startSession}
           onExit={() => { window.location.href = "/" }}
         />

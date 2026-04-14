@@ -256,6 +256,13 @@ export interface EndpointNode extends BaseNode {
   summaryInstruction: string
   /** Optional conditional variants. Engine selects highest-qualifying variant by counterKey threshold. Falls back to base fields if none qualify. */
   outcomeVariants?: OutcomeVariant[]
+  /** When set, executor passes score counter value to OutcomeCardData for display in DebriefScreen. */
+  scoreConfig?: {
+    counterKey: string
+    maxScore: number
+    passMark: number
+    label?: string
+  }
   outcomeCard: {
     shareable: boolean
     showChoiceStats: boolean

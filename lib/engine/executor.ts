@@ -469,6 +469,15 @@ function buildOutcomeCard(
     showReadingTime: node.outcomeCard.showReadingTime,
     depthPercentage: depthPct,
     readingTimeSeconds: durationSeconds,
+    score: node.scoreConfig
+      ? {
+          value: session.state.counters[node.scoreConfig.counterKey] ?? 0,
+          outOf: node.scoreConfig.maxScore,
+          passMark: node.scoreConfig.passMark,
+          passed: (session.state.counters[node.scoreConfig.counterKey] ?? 0) >= node.scoreConfig.passMark,
+          label: node.scoreConfig.label ?? "Score",
+        }
+      : undefined,
   }
 }
 

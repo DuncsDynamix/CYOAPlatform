@@ -71,6 +71,13 @@ export interface OutcomeCardData {
   choicePercentageMatch?: number
   depthPercentage?: number
   readingTimeSeconds?: number
+  score?: {
+    value: number
+    outOf: number
+    passMark: number
+    passed: boolean
+    label: string
+  }
 }
 
 // ─── GENERATION METRIC ────────────────────────────────────────
@@ -125,7 +132,7 @@ export type TrainingPlayerStatus =
   | { status: "at_decision"; options: import("./experience").ChoiceOption[]; responseType: "closed" | "open"; openPrompt?: string; sceneContext?: SceneContext }
   | { status: "reviewing_decision"; feedback: string; feedbackTone: "positive" | "developmental" | "neutral"; competencySignal?: string; choiceLabel: string; onContinue: () => void }
   | { status: "advancing" }
-  | { status: "debrief"; outcomeLabel: string; closingLine: string; aiSummary: string; decisionHistory: DecisionReview[] }
+  | { status: "debrief"; outcomeLabel: string; closingLine: string; aiSummary: string; decisionHistory: DecisionReview[]; score?: OutcomeCardData["score"] }
   | { status: "error"; message: string }
   | {
       status: "in_dialogue"

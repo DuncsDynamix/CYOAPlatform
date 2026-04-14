@@ -1,4 +1,4 @@
-import type { DecisionReview, CompetencyProfile } from "@/types/engine"
+import type { DecisionReview, CompetencyProfile, OutcomeCardData } from "@/types/engine"
 
 interface DebriefScreenProps {
   outcomeLabel: string
@@ -7,6 +7,7 @@ interface DebriefScreenProps {
   decisionHistory: DecisionReview[]
   competencies: CompetencyProfile[]
   moduleTitle: string
+  score?: OutcomeCardData["score"]
   onRestart: () => void
   onExit: () => void
 }
@@ -23,7 +24,7 @@ function toneColour(tone?: "positive" | "developmental" | "neutral"): string {
   return "var(--t-text-on-dark-muted)"
 }
 
-export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHistory, competencies, moduleTitle, onRestart, onExit }: DebriefScreenProps) {
+export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHistory, competencies, moduleTitle, score, onRestart, onExit }: DebriefScreenProps) {
   return (
     <div className="t-debrief">
       <div className="t-debrief-inner">
@@ -33,6 +34,21 @@ export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHi
           <div className="t-debrief-title">{moduleTitle}</div>
           <div className="t-debrief-outcome">Outcome: "{outcomeLabel}"</div>
         </div>
+
+        {/* Numeric score (MCQ / test mode) */}
+        {score && (
+          <div className="t-debrief-score">
+            <span className="t-debrief-score-label">{score.label}:</span>{" "}
+            <span className="t-debrief-score-value">{score.value} / {score.outOf}</span>
+            {" — "}
+            <span
+              className="t-debrief-score-result"
+              style={{ color: score.passed ? "var(--t-success)" : "var(--t-warning)" }}
+            >
+              {score.passed ? "Passed" : "Not passed"} (pass mark: {score.passMark})
+            </span>
+          </div>
+        )}
 
         {/* Closing line */}
         {closingLine && (
