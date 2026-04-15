@@ -9,18 +9,20 @@ interface TrainingChoicePanelProps {
   options: ChoiceOption[]
   onChoose: (choiceId: string, choiceLabel: string, option: ChoiceOption) => void
   responseType: "closed" | "open"
+  prompt?: string
   openPrompt?: string
   isSubmitting?: boolean
 }
 
-export function TrainingChoicePanel({ options, onChoose, responseType, openPrompt, isSubmitting = false }: TrainingChoicePanelProps) {
+export function TrainingChoicePanel({ options, onChoose, responseType, prompt, openPrompt, isSubmitting = false }: TrainingChoicePanelProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [freeText, setFreeText] = useState("")
 
   if (responseType === "open") {
     return (
       <div className="t-choice">
-        <div className="t-choice-prompt">{openPrompt ?? "How do you respond?"}</div>
+        {prompt && <div className="t-choice-prompt">{prompt}</div>}
+        <div className="t-choice-open-label">{openPrompt ?? "How do you respond?"}</div>
         <div className="t-open-choice">
           <textarea
             className="t-open-textarea"
@@ -48,7 +50,7 @@ export function TrainingChoicePanel({ options, onChoose, responseType, openPromp
 
   return (
     <div className="t-choice">
-      <div className="t-choice-prompt">How do you respond?</div>
+      {prompt && <div className="t-choice-prompt">{prompt}</div>}
       {options.map((option, i) => {
         const isSelected = selectedId === option.id
         const isFaded = isSubmitting && !isSelected

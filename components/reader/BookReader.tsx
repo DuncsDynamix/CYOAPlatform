@@ -221,6 +221,7 @@ export function BookReader({ id }: { id: string }) {
         <ChoicePanel
           options={content.options}
           responseType="closed"
+          prompt={content.prompt}
           onChoose={(choiceId, freeText) =>
             handleChoice(status.sessionId, status.choicesMade, choiceId, freeText)
           }

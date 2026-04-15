@@ -129,6 +129,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
         status: "at_decision",
         options: choiceNode.options ?? [],
         responseType: choiceNode.responseType,
+        prompt: content.prompt,
         openPrompt: choiceNode.openPrompt,
       })
       return
@@ -410,6 +411,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
           options={playerStatus.options}
           onChoose={handleChoice}
           responseType={playerStatus.responseType}
+          prompt={playerStatus.prompt}
           openPrompt={playerStatus.openPrompt}
           isSubmitting={false}
         />

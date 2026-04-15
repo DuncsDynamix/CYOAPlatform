@@ -6,7 +6,7 @@ import type { ExperienceSession, DialogueTurn, CompetencyResult } from "./sessio
 
 export type ResolvedContent =
   | { type: "prose"; content: string; fromCache?: boolean }
-  | { type: "choice"; options: ChoiceOption[] }
+  | { type: "choice"; options: ChoiceOption[]; prompt?: string }
   | { type: "checkpoint"; visible: boolean; content?: string | null }
   | {
       type: "endpoint"
@@ -129,7 +129,7 @@ export interface CompetencyProfile {
 export type TrainingPlayerStatus =
   | { status: "loading_module" }
   | { status: "reading_scenario"; content: string; sceneContext?: SceneContext }
-  | { status: "at_decision"; options: import("./experience").ChoiceOption[]; responseType: "closed" | "open"; openPrompt?: string; sceneContext?: SceneContext }
+  | { status: "at_decision"; options: import("./experience").ChoiceOption[]; responseType: "closed" | "open"; prompt?: string; openPrompt?: string; sceneContext?: SceneContext }
   | { status: "reviewing_decision"; feedback: string; feedbackTone: "positive" | "developmental" | "neutral"; competencySignal?: string; choiceLabel: string; onContinue: () => void }
   | { status: "advancing" }
   | { status: "debrief"; outcomeLabel: string; closingLine: string; aiSummary: string; decisionHistory: DecisionReview[]; score?: OutcomeCardData["score"] }

@@ -211,7 +211,7 @@ async function resolveNodeContent(
     case "CHOICE": {
       const choiceNode = node as ChoiceNode
       const options = applyDisplayConditions(choiceNode.options ?? [], session.state)
-      return { type: "choice", options }
+      return { type: "choice", options, prompt: choiceNode.prompt }
     }
 
     case "CHECKPOINT": {

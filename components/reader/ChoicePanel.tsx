@@ -7,12 +7,14 @@ interface ClosedChoicePanelProps {
   options: ChoiceOption[]
   onChoose: (choiceId: string, freeText?: string) => void
   responseType: "closed"
+  prompt?: string
 }
 
 interface OpenChoicePanelProps {
   options?: ChoiceOption[]
   onChoose: (choiceId: string | null, freeText?: string) => void
   responseType: "open"
+  prompt?: string
   openPrompt?: string
   openPlaceholder?: string
 }
@@ -26,7 +28,7 @@ export function ChoicePanel(props: ChoicePanelProps) {
   if (props.responseType === "open") {
     return (
       <div className="choice-panel choice-panel--open">
-        <p className="choice-prompt">{props.openPrompt ?? "What do you do?"}</p>
+        <p className="choice-prompt">{props.prompt ?? props.openPrompt ?? "What do you do?"}</p>
         <textarea
           value={openText}
           onChange={(e) => setOpenText(e.target.value)}
@@ -47,7 +49,7 @@ export function ChoicePanel(props: ChoicePanelProps) {
 
   return (
     <div className="choice-panel">
-      <p className="choice-panel-header">What do you do?</p>
+      <p className="choice-panel-header">{props.prompt ?? "What do you do?"}</p>
       <div className="choice-options">
         {props.options.map((option, i) => (
           <button

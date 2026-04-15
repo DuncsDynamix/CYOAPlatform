@@ -146,6 +146,8 @@ export interface GeneratedNode extends BaseNode {
 export interface ChoiceNode extends BaseNode {
   type: "CHOICE"
   responseType: "closed" | "open"
+  /** Question or scenario text displayed above the choice options. Works for both open and closed response types. */
+  prompt?: string
   options?: ChoiceOption[]
   openPrompt?: string
   openPlaceholder?: string
