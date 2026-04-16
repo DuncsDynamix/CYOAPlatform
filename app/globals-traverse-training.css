@@ -499,7 +499,7 @@
 
 .traverse-training-theme .t-choice { display: flex; flex-direction: column; gap: 0.75rem; }
 .traverse-training-theme .t-choice-prompt {
-  font-size: 1rem; color: var(--t-text-on-dark); font-family: var(--t-font-body);
+  font-size: 1rem; color: var(--t-text-primary); font-family: var(--t-font-body);
   font-weight: 500; margin-bottom: 1rem; line-height: 1.5;
 }
 .traverse-training-theme .t-choice-open-label {
