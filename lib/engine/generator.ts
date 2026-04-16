@@ -332,6 +332,11 @@ export async function generateEvaluativeAssessment(
     feedback: "Your decisions have been recorded.",
   }
 
+  if (scaffoldEntries.length === 0) {
+    console.warn(`[evaluative] No scaffold entries found for node ${node.id} — assessesNodeIds: ${JSON.stringify(node.assessesNodeIds)}`)
+    return fallback
+  }
+
   try {
     const anthropic = getAnthropicClient(apiKey)
 
@@ -385,7 +390,9 @@ Include all ${node.rubric.length} criteria in results. No markdown fences — ju
 
     if (!message) return fallback
 
-    const raw = message.content[0].type === "text" ? message.content[0].text.trim() : ""
+    const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
+    // Strip markdown fences if the model wraps the JSON despite being asked not to
+    const raw = rawText.replace(/^```[a-z]*\n?/m, "").replace(/\n?```$/m, "").trim()
     const parsed = JSON.parse(raw) as {
       results: { rubricCriterionId: string; passed: boolean; evidence: string }[]
       feedback: string
@@ -404,7 +411,8 @@ Include all ${node.rubric.length} criteria in results. No markdown fences — ju
     })
 
     return { results, feedback: parsed.feedback ?? fallback.feedback }
-  } catch {
+  } catch (err) {
+    console.error(`[evaluative] Assessment failed for node ${node.id}:`, err)
     return fallback
   }
 }
