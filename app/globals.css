@@ -517,3 +517,44 @@
 
 /* ── Markdown images in SituationText ───────────────────────────── */
 .t-situation img { max-width: 100%; height: auto; display: block; margin: 1.25em auto; border-radius: 6px; }
+
+/* ─── OBSERVED DIALOGUE (reader) ─────────────────────────────── */
+.observed-dialogue-context {
+  font-size: 0.875rem;
+  color: var(--colour-meta);
+  font-style: italic;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--colour-border);
+  background: var(--colour-surface-alt, #f8f8f8);
+  border-radius: 0 4px 4px 0;
+}
+
+.observed-dialogue-exchanges {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.observed-dialogue-exchange {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.observed-dialogue-speaker {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--colour-meta);
+  font-family: var(--font-ui, sans-serif);
+}
+
+.observed-dialogue-line {
+  font-size: 1.05rem;
+  color: var(--colour-text);
+  line-height: 1.65;
+  margin: 0;
+}

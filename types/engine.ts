@@ -23,6 +23,12 @@ export type ResolvedContent =
       maxTurns: number
     }
   | {
+      type: "observed_dialogue"
+      exchanges: { speaker: string; line: string }[]
+      openingContext?: string
+      nextNodeId: string
+    }
+  | {
       type: "evaluative"
       passed: boolean
       results: CompetencyResult[]
@@ -142,6 +148,12 @@ export type TrainingPlayerStatus =
       turnCount: number
       maxTurns: number
       dialogueHistory: DialogueTurn[]
+    }
+  | {
+      status: "observing_dialogue"
+      exchanges: { speaker: string; line: string }[]
+      openingContext?: string
+      onContinue: () => void
     }
   | {
       status: "evaluative_result"

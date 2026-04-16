@@ -11,8 +11,9 @@ const TYPE_COLOURS: Record<string, { bg: string; border: string; text: string }>
   CHOICE:     { bg: "#422006", border: "#F59E0B", text: "#FCD34D" },
   CHECKPOINT: { bg: "#064E3B", border: "#10B981", text: "#6EE7B7" },
   ENDPOINT:   { bg: "#450A0A", border: "#EF4444", text: "#FCA5A5" },
-  DIALOGUE:   { bg: "#0C1A2E", border: "#06B6D4", text: "#67E8F9" },
-  EVALUATIVE: { bg: "#2E0A1A", border: "#EC4899", text: "#F9A8D4" },
+  DIALOGUE:          { bg: "#0C1A2E", border: "#06B6D4", text: "#67E8F9" },
+  OBSERVED_DIALOGUE: { bg: "#f0f4ff", border: "#6366f1", text: "#3730a3" },
+  EVALUATIVE:        { bg: "#2E0A1A", border: "#EC4899", text: "#F9A8D4" },
 }
 
 // Dark mode base colours for SVG elements
@@ -35,6 +36,7 @@ const TYPE_ICONS: Record<string, string> = {
   CHECKPOINT: "✓",
   ENDPOINT: "●",
   DIALOGUE: "D",
+  OBSERVED_DIALOGUE: "👁",
   EVALUATIVE: "E",
 }
 
@@ -84,6 +86,8 @@ function getChildIds(node: Node): { id: string; label?: string }[] {
     }
     case "EVALUATIVE":
       return [{ id: (node as EvaluativeNode).nextNodeId }]
+    case "OBSERVED_DIALOGUE":
+      return [{ id: (node as { nextNodeId: string }).nextNodeId }]
     case "SUBROUTINE_CALL": {
       const sc = node as SubroutineCallNode
       const children = sc.targetNodeId ? [{ id: sc.targetNodeId, label: "call" }] : []

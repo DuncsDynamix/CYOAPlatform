@@ -25,6 +25,8 @@ function makeNode(type: Node["type"]): Node {
       return { id, type, label: "", endpointId: "", outcomeLabel: "", closingLine: "", summaryInstruction: "", outcomeCard: { shareable: true, showChoiceStats: true, showDepthStats: true, showReadingTime: true } }
     case "DIALOGUE":
       return { id, type, label: "", actorId: "", breakthroughCriteria: "", maxTurns: 5, nextNodeId: "" }
+    case "OBSERVED_DIALOGUE":
+      return { id, type, label: "", actorAId: "", actorBId: "", purpose: "", turns: 4, nextNodeId: "" }
     case "EVALUATIVE":
       return { id, type, label: "", rubric: [], assessesNodeIds: [], nextNodeId: "" }
     case "SUBROUTINE_CALL":

@@ -192,41 +192,20 @@ Contaminating the water supply doesn't just affect tap water — it affects ever
     marksCompletionOf: "Module 1 — The Importance of Water",
     unlocks: [],
     snapshotsState: false,
-    nextNodeId: "n-m2-facts",
+    nextNodeId: "n-m2-briefing",
   },
 
   // ─── MODULE 2: WATER AS A CARRIER OF DISEASE ─────────────────────────────
 
   {
-    id: "n-m2-facts",
-    type: "FIXED",
-    label: "Module 2 — Key facts",
-    mandatory: true,
-    content: `## Module 2: Water as a Carrier of Disease
-
-### Historical Context
-
-In **1854**, Dr John Snow traced a cholera outbreak killing over 600 people in London to a single contaminated water pump on Broad Street — the first proof that water could transmit fatal disease.
-
-### Cryptosporidium — The Modern Threat
-
-- **Resistant to chlorine** — standard disinfection does not kill it
-- Must be **physically removed** by filtration or destroyed by UV treatment
-- Causes severe gastrointestinal illness and is invisible, odourless, tasteless in water
-
-### Health Exclusion — When You Must Not Work
-
-You **must tell your supervisor** before working on restricted operations if you have, or recently had:
-
-- Persistent vomiting or diarrhoea
-- Cryptosporidiosis, hepatitis A or E, jaundice, typhoid, dysentery
-- **Any gastrointestinal illness after travelling abroad** — even mild symptoms
-
-Your supervisor — not you — decides whether a health screen is required. You do not make that call yourself.
-
----
-
-*The next scenario puts you in the situation directly. Read it carefully.*`,
+    id: "n-m2-briefing",
+    type: "OBSERVED_DIALOGUE",
+    label: "Module 2 — Site gate briefing",
+    actorAId: "Pat Doherty",
+    actorBId: "Jamie Ellis",
+    purpose: "Pat briefs Jamie on the personal hygiene rules that apply when returning to work after travel abroad — specifically the requirement to self-report illness and not enter restricted operations. Jamie is initially dismissive but Pat explains the contamination risk clearly. The learner observes the correct procedure being explained.",
+    turns: 6,
+    openingContext: "It is 07:45 at the site gate. Pat Doherty is conducting the morning briefing before the crew enters the restricted zone. Jamie Ellis arrived looking pale.",
     nextNodeId: "n-m2-scene",
   },
 
@@ -1296,7 +1275,7 @@ const shape: ShapeDefinition = {
   mandatoryNodeIds: [
     "n-intro",
     "n-m1-facts", "d-m1",
-    "n-m2-facts", "n-m2-scene", "q-m2", "n-m2-debrief",
+    "n-m2-briefing", "n-m2-scene", "q-m2", "n-m2-debrief",
     "n-m3-facts", "n-m3-scene", "q-m3", "n-m3-outcome", "ev-m3",
     "n-m4-facts", "d-m4", "n-m4-summary", "ev-m4",
     "n-quiz-intro",

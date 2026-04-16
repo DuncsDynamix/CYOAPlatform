@@ -4,7 +4,7 @@ import { buildArcAwareness } from "./arc"
 import { USE_CASE_PACKS } from "./usecases"
 import { generationQueue } from "./queue"
 import { trackEvent } from "@/lib/analytics"
-import type { GeneratedNode, EndpointNode, Experience, ExperienceContextPack, GroundTruthSource, Actor, DialogueNode, EvaluativeNode } from "@/types/experience"
+import type { GeneratedNode, EndpointNode, Experience, ExperienceContextPack, GroundTruthSource, Actor, DialogueNode, EvaluativeNode, ObservedDialogueNode } from "@/types/experience"
 import type { ExperienceSession, NarrativeHistoryEntry, ChoiceHistoryEntry, NarrativeScaffold, DialogueTurn, CompetencyResult } from "@/types/session"
 
 const MODEL = "claude-sonnet-4-20250514"
@@ -304,6 +304,73 @@ Has the participant achieved the breakthrough described above? Answer with a sin
     return parsed.breakthrough === true
   } catch {
     return false
+  }
+}
+
+/**
+ * Generates a full observed dialogue exchange between two characters.
+ * Learner reads the exchange without participating.
+ * Single AI call — result is cached by the executor.
+ */
+export async function generateObservedDialogue(
+  node: ObservedDialogueNode,
+  actorA: Actor,
+  actorB: Actor,
+  session: ExperienceSession,
+  experience: Experience,
+  apiKey?: string
+): Promise<{ speaker: string; line: string }[]> {
+  const fallback: { speaker: string; line: string }[] = [
+    { speaker: actorA.name, line: "We need to talk about what happened." },
+    { speaker: actorB.name, line: "Of course — what's on your mind?" },
+  ]
+
+  try {
+    const anthropic = getAnthropicClient(apiKey)
+    const contextPack = experience.contextPack as ExperienceContextPack
+
+    const systemPrompt = `You are writing a realistic workplace conversation for a training scenario.
+Setting: ${contextPack.world?.description ?? "a professional workplace"}
+Tone: ${contextPack.style?.tone ?? "professional"}
+
+Character A — ${actorA.name}: ${actorA.role}. ${actorA.personality} Speech: ${actorA.speech}
+Character B — ${actorB.name}: ${actorB.role}. ${actorB.personality} Speech: ${actorB.speech}
+
+Write realistic, natural dialogue. Each line should be 1–3 sentences. Include occasional brief action beats in parentheses if they add clarity (e.g., "(glances at the clipboard)"). Keep it grounded and authentic to the workplace context.`
+
+    const userPrompt = `Write a dialogue exchange of exactly ${node.turns} turns (${node.turns} lines total, alternating speakers) between ${actorA.name} and ${actorB.name}.
+
+Purpose of this scene: ${node.purpose}
+${node.openingContext ? `Scene context: ${node.openingContext}` : ""}
+
+Return a JSON array only — no markdown fences, no explanation:
+[
+  { "speaker": "${actorA.name}", "line": "..." },
+  { "speaker": "${actorB.name}", "line": "..." }
+]
+
+Alternate speakers starting with ${actorA.name}. Return exactly ${node.turns} objects.`
+
+    const message = await generationQueue.add(() =>
+      anthropic.messages.create({
+        model: MODEL,
+        max_tokens: 800,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+      })
+    )
+
+    if (!message) return fallback
+
+    const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
+    const raw = rawText.replace(/^```[a-z]*\n?/m, "").replace(/\n?```$/m, "").trim()
+    const parsed = JSON.parse(raw) as { speaker: string; line: string }[]
+
+    if (!Array.isArray(parsed) || parsed.length === 0) return fallback
+    return parsed
+  } catch (err) {
+    console.error(`[observed-dialogue] Generation failed for node ${node.id}:`, err)
+    return fallback
   }
 }
 

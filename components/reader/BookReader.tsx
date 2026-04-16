@@ -20,6 +20,7 @@ type PageStatus =
   | { type: "choice"; sessionId: string; choicesMade: number; node: Node; content: ResolvedContent }
   | { type: "submitting"; sessionId: string; choicesMade: number }
   | { type: "ending"; sessionId: string; content: ResolvedContent; experienceTitle: string }
+  | { type: "observed_dialogue"; sessionId: string; choicesMade: number; exchanges: { speaker: string; line: string }[]; openingContext?: string; nextNodeId: string }
   | { type: "error"; message: string }
 
 // ─── COMPONENT ────────────────────────────────────────────────
@@ -81,6 +82,8 @@ export function BookReader({ id }: { id: string }) {
       setStatus({ type: "ending", sessionId, content, experienceTitle })
     } else if (content.type === "checkpoint") {
       advanceToNextNode(sessionId, choicesMade)
+    } else if (content.type === "observed_dialogue") {
+      setStatus({ type: "observed_dialogue", sessionId, choicesMade, exchanges: content.exchanges, openingContext: content.openingContext, nextNodeId: content.nextNodeId })
     }
   }
 
@@ -193,6 +196,34 @@ export function BookReader({ id }: { id: string }) {
               setLastProse("")
               advanceToNextNode(status.sessionId, status.choicesMade)
             }}
+            className="choice-submit"
+            style={{ width: "100%" }}
+          >
+            Continue →
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (status.type === "observed_dialogue") {
+    return (
+      <div style={{ paddingBottom: "3rem" }}>
+        <ProgressBar choicesMade={status.choicesMade} />
+        <div style={{ maxWidth: "680px", margin: "0 auto", padding: "0 1rem" }}>
+          {status.openingContext && (
+            <p className="observed-dialogue-context">{status.openingContext}</p>
+          )}
+          <div className="observed-dialogue-exchanges">
+            {status.exchanges.map((ex, i) => (
+              <div key={i} className="observed-dialogue-exchange">
+                <span className="observed-dialogue-speaker">{ex.speaker}</span>
+                <p className="observed-dialogue-line">{ex.line}</p>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => advanceToNextNode(status.sessionId, status.choicesMade)}
             className="choice-submit"
             style={{ width: "100%" }}
           >

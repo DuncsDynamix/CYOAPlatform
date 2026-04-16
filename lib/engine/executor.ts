@@ -1,5 +1,5 @@
 import { db } from "@/lib/db/prisma"
-import { generateNode, generateEndpointSummary, generateScaffold, generateDialogueOpener, generateEvaluativeAssessment } from "./generator"
+import { generateNode, generateEndpointSummary, generateScaffold, generateDialogueOpener, generateEvaluativeAssessment, generateObservedDialogue } from "./generator"
 import { getFromCache, writeToCache } from "./cache"
 import { updateSessionState, getSession, markSessionComplete, appendNarrativeHistory, initDialogueState, appendCompetencyResult } from "./session"
 import { buildArcAwareness } from "./arc"
@@ -13,6 +13,7 @@ import type {
   CheckpointNode,
   EndpointNode,
   DialogueNode,
+  ObservedDialogueNode,
   EvaluativeNode,
   SubroutineCallNode,
   ChoiceOption,
@@ -368,6 +369,31 @@ async function resolveNodeContent(
       }
     }
 
+    case "OBSERVED_DIALOGUE": {
+      const obsNode = node as ObservedDialogueNode
+      const cp = experience.contextPack as ExperienceContextPack
+      const actorA = cp.actors?.find((a) => a.name === obsNode.actorAId)
+      const actorB = cp.actors?.find((a) => a.name === obsNode.actorBId)
+      if (!actorA) throw new Error(`Actor "${obsNode.actorAId}" not found in context pack`)
+      if (!actorB) throw new Error(`Actor "${obsNode.actorBId}" not found in context pack`)
+
+      const cached = await getFromCache(session.id, node.id)
+      if (cached) {
+        const exchanges = JSON.parse(cached) as { speaker: string; line: string }[]
+        return { type: "observed_dialogue", exchanges, openingContext: obsNode.openingContext, nextNodeId: obsNode.nextNodeId }
+      }
+
+      const exchanges = await generateObservedDialogue(obsNode, actorA, actorB, session, experience, apiKey)
+      await writeToCache(session.id, node.id, JSON.stringify(exchanges))
+
+      return {
+        type: "observed_dialogue",
+        exchanges,
+        openingContext: obsNode.openingContext,
+        nextNodeId: obsNode.nextNodeId,
+      }
+    }
+
     case "SUBROUTINE_CALL":
     case "SUBROUTINE_RETURN":
       return {
@@ -417,6 +443,8 @@ function getImmediateChildIds(node: Node): string[] {
     }
     case "EVALUATIVE":
       return [(node as EvaluativeNode).nextNodeId]
+    case "OBSERVED_DIALOGUE":
+      return [(node as ObservedDialogueNode).nextNodeId]
     case "SUBROUTINE_CALL":
       return [(node as SubroutineCallNode).targetNodeId]
     case "SUBROUTINE_RETURN":

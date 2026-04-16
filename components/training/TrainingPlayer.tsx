@@ -162,6 +162,16 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
       return
     }
 
+    if (content.type === "observed_dialogue") {
+      setPlayerStatus({
+        status: "observing_dialogue",
+        exchanges: content.exchanges,
+        openingContext: content.openingContext,
+        onContinue: () => advanceToNextNode(sid),
+      })
+      return
+    }
+
     if (content.type === "evaluative") {
       setPlayerStatus({
         status: "evaluative_result",
@@ -440,6 +450,15 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
           onSubmit={handleDialogueTurn}
         />
       )}
+
+      {/* Observed dialogue panel */}
+      {playerStatus.status === "observing_dialogue" && (
+        <ObservedDialoguePanel
+          exchanges={playerStatus.exchanges}
+          openingContext={playerStatus.openingContext}
+          onContinue={playerStatus.onContinue}
+        />
+      )}
     </TrainingShell>
   )
 }
@@ -517,6 +536,37 @@ function DialoguePanel({
           disabled={!draft.trim() || submitting}
         >
           Send
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ObservedDialoguePanel({
+  exchanges,
+  openingContext,
+  onContinue,
+}: {
+  exchanges: { speaker: string; line: string }[]
+  openingContext?: string
+  onContinue: () => void
+}) {
+  return (
+    <div className="t-observed-dialogue">
+      {openingContext && (
+        <p className="t-observed-dialogue-context">{openingContext}</p>
+      )}
+      <div className="t-observed-dialogue-exchanges">
+        {exchanges.map((ex, i) => (
+          <div key={i} className="t-observed-dialogue-exchange">
+            <span className="t-observed-dialogue-speaker">{ex.speaker}</span>
+            <p className="t-observed-dialogue-line">{ex.line}</p>
+          </div>
+        ))}
+      </div>
+      <div className="t-observed-dialogue-footer">
+        <button className="t-btn t-btn--primary" onClick={onContinue}>
+          Continue →
         </button>
       </div>
     </div>

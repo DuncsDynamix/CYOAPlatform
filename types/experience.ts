@@ -112,9 +112,9 @@ export interface EndpointShape {
 
 // ─── NODE TYPES ───────────────────────────────────────────────
 
-export type NodeType = "FIXED" | "GENERATED" | "CHOICE" | "CHECKPOINT" | "ENDPOINT" | "DIALOGUE" | "EVALUATIVE" | "SUBROUTINE_CALL" | "SUBROUTINE_RETURN"
+export type NodeType = "FIXED" | "GENERATED" | "CHOICE" | "CHECKPOINT" | "ENDPOINT" | "DIALOGUE" | "OBSERVED_DIALOGUE" | "EVALUATIVE" | "SUBROUTINE_CALL" | "SUBROUTINE_RETURN"
 
-export type Node = FixedNode | GeneratedNode | ChoiceNode | CheckpointNode | EndpointNode | DialogueNode | EvaluativeNode | SubroutineCallNode | SubroutineReturnNode
+export type Node = FixedNode | GeneratedNode | ChoiceNode | CheckpointNode | EndpointNode | DialogueNode | ObservedDialogueNode | EvaluativeNode | SubroutineCallNode | SubroutineReturnNode
 
 interface BaseNode {
   id: string
@@ -287,6 +287,21 @@ export interface DialogueNode extends BaseNode {
   nextNodeId: string
   /** Where to go if maxTurns exceeded without breakthrough — defaults to nextNodeId */
   failureNodeId?: string
+}
+
+export interface ObservedDialogueNode extends BaseNode {
+  type: "OBSERVED_DIALOGUE"
+  /** Must match an Actor.name in contextPack.actors — first speaker */
+  actorAId: string
+  /** Must match an Actor.name in contextPack.actors — second speaker */
+  actorBId: string
+  /** What this scene is meant to demonstrate — used in the generation prompt */
+  purpose: string
+  /** Number of back-and-forth exchanges to generate (recommended: 3–8) */
+  turns: number
+  /** Optional stage direction shown before the exchange begins */
+  openingContext?: string
+  nextNodeId: string
 }
 
 export interface RubricCriterion {
