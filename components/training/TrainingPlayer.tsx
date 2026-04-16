@@ -114,7 +114,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
     if (content.type === "endpoint") {
       setPlayerStatus({
         status: "debrief",
-        outcomeLabel: node.type === "ENDPOINT" ? (node as { outcomeLabel: string }).outcomeLabel : "",
+        outcomeLabel: content.outcomeCard.outcomeLabel,
         closingLine: content.closingLine,
         aiSummary: content.summary,
         decisionHistory,
