@@ -565,7 +565,7 @@ function ObservedDialoguePanel({
         ))}
       </div>
       <div className="t-observed-dialogue-footer">
-        <button className="t-btn t-btn--primary" onClick={onContinue}>
+        <button className="t-btn-primary" onClick={onContinue}>
           Continue →
         </button>
       </div>
