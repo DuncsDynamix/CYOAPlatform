@@ -210,26 +210,11 @@ export function BookReader({ id }: { id: string }) {
     return (
       <div style={{ paddingBottom: "3rem" }}>
         <ProgressBar choicesMade={status.choicesMade} />
-        <div style={{ maxWidth: "680px", margin: "0 auto", padding: "0 1rem" }}>
-          {status.openingContext && (
-            <p className="observed-dialogue-context">{status.openingContext}</p>
-          )}
-          <div className="observed-dialogue-exchanges">
-            {status.exchanges.map((ex, i) => (
-              <div key={i} className="observed-dialogue-exchange">
-                <span className="observed-dialogue-speaker">{ex.speaker}</span>
-                <p className="observed-dialogue-line">{ex.line}</p>
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={() => advanceToNextNode(status.sessionId, status.choicesMade)}
-            className="choice-submit"
-            style={{ width: "100%" }}
-          >
-            Continue →
-          </button>
-        </div>
+        <ObservedDialogueView
+          exchanges={status.exchanges}
+          openingContext={status.openingContext}
+          onContinue={() => advanceToNextNode(status.sessionId, status.choicesMade)}
+        />
       </div>
     )
   }
@@ -262,4 +247,46 @@ export function BookReader({ id }: { id: string }) {
   }
 
   return null
+}
+
+function ObservedDialogueView({
+  exchanges,
+  openingContext,
+  onContinue,
+}: {
+  exchanges: { speaker: string; line: string }[]
+  openingContext?: string
+  onContinue: () => void
+}) {
+  const [revealed, setRevealed] = useState(1)
+  const isComplete = revealed >= exchanges.length
+
+  return (
+    <div style={{ maxWidth: "680px", margin: "0 auto", padding: "0 1rem" }}>
+      {openingContext && (
+        <p className="observed-dialogue-context">{openingContext}</p>
+      )}
+      <div className="observed-dialogue-exchanges">
+        {exchanges.slice(0, revealed).map((ex, i) => (
+          <div key={i} className="observed-dialogue-exchange">
+            <span className="observed-dialogue-speaker">{ex.speaker}</span>
+            <p className="observed-dialogue-line">{ex.line}</p>
+          </div>
+        ))}
+      </div>
+      {isComplete ? (
+        <button onClick={onContinue} className="choice-submit" style={{ width: "100%" }}>
+          Continue →
+        </button>
+      ) : (
+        <button
+          onClick={() => setRevealed((r) => r + 1)}
+          className="choice-submit"
+          style={{ width: "100%", background: "var(--colour-surface)", color: "var(--colour-text)", border: "1px solid var(--colour-border)" }}
+        >
+          Next →
+        </button>
+      )}
+    </div>
+  )
 }

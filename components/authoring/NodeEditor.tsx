@@ -656,6 +656,80 @@ function DialogueNodeForm({
   )
 }
 
+function ObservedDialogueNodeForm({
+  node,
+  onChange,
+  allNodes,
+}: {
+  node: Extract<Node, { type: "OBSERVED_DIALOGUE" }>
+  onChange: (n: Node) => void
+  allNodes?: Node[]
+}) {
+  return (
+    <>
+      <label className="auth-label">
+        Actor A ID (first speaker)
+        <input
+          className="auth-input"
+          value={node.actorAId}
+          onChange={(e) => onChange({ ...node, actorAId: e.target.value })}
+          placeholder="Must match an Actor name in the Context Pack"
+        />
+      </label>
+      <label className="auth-label">
+        Actor B ID (second speaker)
+        <input
+          className="auth-input"
+          value={node.actorBId}
+          onChange={(e) => onChange({ ...node, actorBId: e.target.value })}
+          placeholder="Must match an Actor name in the Context Pack"
+        />
+      </label>
+      <label className="auth-label">
+        Purpose
+        <textarea
+          className="auth-textarea"
+          rows={3}
+          value={node.purpose}
+          onChange={(e) => onChange({ ...node, purpose: e.target.value })}
+          placeholder="What this scene is meant to demonstrate — used in the AI generation prompt…"
+        />
+      </label>
+      <label className="auth-label">
+        Turns (individual lines)
+        <input
+          type="number"
+          className="auth-input"
+          value={node.turns}
+          min={2}
+          max={16}
+          onChange={(e) => onChange({ ...node, turns: Number(e.target.value) })}
+        />
+      </label>
+      <label className="auth-label">
+        Opening context (optional stage direction)
+        <textarea
+          className="auth-textarea"
+          rows={2}
+          value={node.openingContext ?? ""}
+          onChange={(e) => onChange({ ...node, openingContext: e.target.value || undefined })}
+          placeholder="Scene-setting text shown to the learner before the exchange begins…"
+        />
+      </label>
+      <label className="auth-label">
+        Next node
+        <NodeIdSelect
+          value={node.nextNodeId}
+          onChange={(id) => onChange({ ...node, nextNodeId: id })}
+          allNodes={allNodes}
+          excludeId={node.id}
+          placeholder="Select next node"
+        />
+      </label>
+    </>
+  )
+}
+
 function EvaluativeNodeForm({
   node,
   onChange,
@@ -795,6 +869,9 @@ export function NodeEditor({ node, onChange, allNodes, renderingTheme }: NodeEdi
       )}
       {node.type === "DIALOGUE" && (
         <DialogueNodeForm node={node} onChange={onChange} allNodes={allNodes} />
+      )}
+      {node.type === "OBSERVED_DIALOGUE" && (
+        <ObservedDialogueNodeForm node={node} onChange={onChange} allNodes={allNodes} />
       )}
       {node.type === "EVALUATIVE" && (
         <EvaluativeNodeForm node={node} onChange={onChange} allNodes={allNodes} />

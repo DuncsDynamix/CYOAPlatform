@@ -551,13 +551,16 @@ function ObservedDialoguePanel({
   openingContext?: string
   onContinue: () => void
 }) {
+  const [revealed, setRevealed] = useState(1)
+  const isComplete = revealed >= exchanges.length
+
   return (
     <div className="t-observed-dialogue">
       {openingContext && (
         <p className="t-observed-dialogue-context">{openingContext}</p>
       )}
       <div className="t-observed-dialogue-exchanges">
-        {exchanges.map((ex, i) => (
+        {exchanges.slice(0, revealed).map((ex, i) => (
           <div key={i} className="t-observed-dialogue-exchange">
             <span className="t-observed-dialogue-speaker">{ex.speaker}</span>
             <p className="t-observed-dialogue-line">{ex.line}</p>
@@ -565,9 +568,15 @@ function ObservedDialoguePanel({
         ))}
       </div>
       <div className="t-observed-dialogue-footer">
-        <button className="t-btn-primary" onClick={onContinue}>
-          Continue →
-        </button>
+        {isComplete ? (
+          <button className="t-btn-primary" onClick={onContinue}>
+            Continue →
+          </button>
+        ) : (
+          <button className="t-btn-secondary" onClick={() => setRevealed((r) => r + 1)}>
+            Next →
+          </button>
+        )}
       </div>
     </div>
   )

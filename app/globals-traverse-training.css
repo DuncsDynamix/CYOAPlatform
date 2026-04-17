@@ -695,6 +695,13 @@
 }
 .traverse-training-theme .t-btn-primary:hover { background: var(--t-accent-hover); }
 .traverse-training-theme .t-btn-primary:focus-visible { outline: 2px solid var(--t-accent); outline-offset: 2px; }
+.traverse-training-theme .t-btn-secondary {
+  background: var(--t-surface); color: var(--t-text-primary); border: 1px solid var(--t-border);
+  border-radius: var(--t-radius-sm); padding: 0.65rem 1.25rem;
+  font-size: 0.9rem; font-family: var(--t-font-body); font-weight: 600;
+  cursor: pointer; transition: background 150ms;
+}
+.traverse-training-theme .t-btn-secondary:hover { background: var(--t-surface-alt, var(--t-surface)); }
 
 .traverse-training-theme .t-loading {
   min-height: 100vh; display: flex; flex-direction: column;
