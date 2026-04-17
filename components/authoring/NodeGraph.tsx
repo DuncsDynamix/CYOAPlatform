@@ -345,7 +345,7 @@ interface NodeGraphProps {
   onAdd: (type: Node["type"]) => void
 }
 
-const NODE_TYPES: Node["type"][] = ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT", "DIALOGUE", "EVALUATIVE"]
+const NODE_TYPES: Node["type"][] = ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT", "DIALOGUE", "OBSERVED_DIALOGUE", "EVALUATIVE"]
 
 export function NodeGraph({ nodes, selectedId, onSelect, onAdd }: NodeGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)
