@@ -12,7 +12,7 @@ const TYPE_COLOURS: Record<string, { bg: string; border: string; text: string }>
   CHECKPOINT: { bg: "#064E3B", border: "#10B981", text: "#6EE7B7" },
   ENDPOINT:   { bg: "#450A0A", border: "#EF4444", text: "#FCA5A5" },
   DIALOGUE:          { bg: "#0C1A2E", border: "#06B6D4", text: "#67E8F9" },
-  OBSERVED_DIALOGUE: { bg: "#f0f4ff", border: "#6366f1", text: "#3730a3" },
+  OBSERVED_DIALOGUE: { bg: "#1A1040", border: "#818CF8", text: "#C7D2FE" },
   EVALUATIVE:        { bg: "#2E0A1A", border: "#EC4899", text: "#F9A8D4" },
 }
 
