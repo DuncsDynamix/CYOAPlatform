@@ -261,28 +261,40 @@ function ObservedDialogueView({
   const [revealed, setRevealed] = useState(1)
   const isComplete = revealed >= exchanges.length
 
+  const speakerA = exchanges[0]?.speaker ?? ""
+  const initials = (name: string) => name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()
+
   return (
     <div style={{ maxWidth: "680px", margin: "0 auto", padding: "0 1rem" }}>
-      {openingContext && (
-        <p className="observed-dialogue-context">{openingContext}</p>
-      )}
-      <div className="observed-dialogue-exchanges">
-        {exchanges.slice(0, revealed).map((ex, i) => (
-          <div key={i} className="observed-dialogue-exchange">
-            <span className="observed-dialogue-speaker">{ex.speaker}</span>
-            <p className="observed-dialogue-line">{ex.line}</p>
-          </div>
-        ))}
+      <div className="observed-dialogue-label">Overheard</div>
+      <div className="observed-dialogue-scene">
+        {openingContext && (
+          <p className="observed-dialogue-context">{openingContext}</p>
+        )}
+        <div className="observed-dialogue-exchanges">
+          {exchanges.slice(0, revealed).map((ex, i) => {
+            const isB = ex.speaker !== speakerA
+            return (
+              <div key={i} className={`observed-dialogue-exchange${isB ? " observed-dialogue-exchange--b" : ""}`}>
+                <div className="observed-dialogue-avatar">{initials(ex.speaker)}</div>
+                <div className="observed-dialogue-bubble">
+                  <span className="observed-dialogue-speaker">{ex.speaker}</span>
+                  <p className="observed-dialogue-line">{ex.line}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
       {isComplete ? (
-        <button onClick={onContinue} className="choice-submit" style={{ width: "100%" }}>
+        <button onClick={onContinue} className="choice-submit" style={{ width: "100%", marginTop: "0.5rem" }}>
           Continue →
         </button>
       ) : (
         <button
           onClick={() => setRevealed((r) => r + 1)}
           className="choice-submit"
-          style={{ width: "100%", background: "var(--colour-surface)", color: "var(--colour-text)", border: "1px solid var(--colour-border)" }}
+          style={{ width: "100%", marginTop: "0.5rem", background: "var(--colour-page-dark)", color: "var(--colour-text-primary)", border: "1px solid var(--colour-border)" }}
         >
           Next →
         </button>

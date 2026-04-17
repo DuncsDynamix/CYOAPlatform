@@ -554,18 +554,31 @@ function ObservedDialoguePanel({
   const [revealed, setRevealed] = useState(1)
   const isComplete = revealed >= exchanges.length
 
+  // Determine the two speakers in order of first appearance
+  const speakerA = exchanges[0]?.speaker ?? ""
+  const initials = (name: string) => name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()
+
   return (
     <div className="t-observed-dialogue">
-      {openingContext && (
-        <p className="t-observed-dialogue-context">{openingContext}</p>
-      )}
-      <div className="t-observed-dialogue-exchanges">
-        {exchanges.slice(0, revealed).map((ex, i) => (
-          <div key={i} className="t-observed-dialogue-exchange">
-            <span className="t-observed-dialogue-speaker">{ex.speaker}</span>
-            <p className="t-observed-dialogue-line">{ex.line}</p>
-          </div>
-        ))}
+      <div className="t-observed-dialogue-label">Observe</div>
+      <div className="t-observed-dialogue-scene">
+        {openingContext && (
+          <p className="t-observed-dialogue-context">{openingContext}</p>
+        )}
+        <div className="t-observed-dialogue-exchanges">
+          {exchanges.slice(0, revealed).map((ex, i) => {
+            const isB = ex.speaker !== speakerA
+            return (
+              <div key={i} className={`t-observed-dialogue-exchange${isB ? " t-observed-dialogue-exchange--b" : ""}`}>
+                <div className="t-observed-dialogue-avatar">{initials(ex.speaker)}</div>
+                <div className="t-observed-dialogue-bubble">
+                  <span className="t-observed-dialogue-speaker">{ex.speaker}</span>
+                  <p className="t-observed-dialogue-line">{ex.line}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
       <div className="t-observed-dialogue-footer">
         {isComplete ? (
