@@ -16,6 +16,7 @@ export type EventType =
   | "generation_metric"
   | "dialogue_turn"
   | "checkpoint_reached"
+  | "scaffold_generation_failed"
   | "error"
 
 // Typed properties per event — used for callsite type safety

@@ -49,12 +49,16 @@ export async function POST(req: NextRequest) {
 
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session
-        if (session.metadata?.userId && session.customer) {
-          await db.user.update({
-            where: { id: session.metadata.userId },
-            data: { stripeCustomerId: session.customer as string },
-          })
+        if (!session.metadata?.userId) {
+          throw new Error(`checkout.session.completed missing userId in metadata (event ${event.id})`)
         }
+        if (!session.customer) {
+          throw new Error(`checkout.session.completed missing customer (event ${event.id})`)
+        }
+        await db.user.update({
+          where: { id: session.metadata.userId },
+          data: { stripeCustomerId: session.customer as string },
+        })
         break
       }
     }

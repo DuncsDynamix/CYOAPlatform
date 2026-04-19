@@ -445,6 +445,15 @@ const shape: ShapeDefinition = {
 async function main() {
   console.log("Seeding ClearConnect complaint handling training experience…")
 
+  const existing = await db.experience.findUnique({ where: { id: EXPERIENCE_ID } })
+  if (existing) {
+    console.log("✓ Already seeded. Run with a clean DB to re-seed.")
+    return
+  }
+
+  const useCasePack = USE_CASE_PACKS.l_and_d
+  if (!useCasePack) throw new Error('USE_CASE_PACK "l_and_d" not found in lib/engine/usecases')
+
   await db.org.upsert({
     where: { id: ORG_ID },
     update: {},

@@ -272,9 +272,10 @@
   color: var(--c-error);
 }
 
-/* ─── Legacy t- component classes ────────────────────────────────────────────
-   Scoped under .traverse-training-theme so existing training components render
-   correctly without modification. Remove as components migrate to tt- classes.
+/* ─── @deprecated: Legacy t- component classes ───────────────────────────────
+   DO NOT add new t-* classes here. Use tt-* classes and --c-* tokens instead.
+   These are kept only for components/training/ which have not yet migrated.
+   Remove each block as its component migrates to components/traverse-training/.
    ─────────────────────────────────────────────────────────────────────────── */
 
 .traverse-training-theme .t-shell {

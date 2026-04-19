@@ -7,9 +7,14 @@ export const StartSessionSchema = z
     experienceId: z.string().uuid().optional(),
     experienceSlug: z.string().min(1).max(100).optional(),
   })
-  .refine((data) => data.experienceId || data.experienceSlug, {
-    message: "Either experienceId or experienceSlug is required",
-  })
+  .refine(
+    (data) => {
+      const hasId = !!data.experienceId
+      const hasSlug = !!data.experienceSlug
+      return (hasId && !hasSlug) || (!hasId && hasSlug)
+    },
+    { message: "Provide either experienceId or experienceSlug, not both" }
+  )
 
 export const SubmitChoiceSchema = z
   .object({

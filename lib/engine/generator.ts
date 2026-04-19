@@ -135,7 +135,13 @@ Do not include choiceMade — that is added separately when the reader makes the
         : [],
       stateSnapshot: session.state.flags,
     }
-  } catch {
+  } catch (err) {
+    console.warn(`[generateScaffold] failed for node ${node.id}:`, err instanceof Error ? err.message : String(err))
+    trackEvent("scaffold_generation_failed", {
+      sessionId: session.id,
+      nodeId: node.id,
+      error: err instanceof Error ? err.message : String(err),
+    })
     return fallback
   }
 }

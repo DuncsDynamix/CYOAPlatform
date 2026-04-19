@@ -68,6 +68,7 @@ model User {
   sessions        ExperienceSession[]
   analyticsEvents AnalyticsEvent[]
 
+  @@index([orgId])
   @@map("users")
 }
 
@@ -122,6 +123,8 @@ model Experience {
 
   sessions ExperienceSession[]
 
+  @@index([authorId])
+  @@index([orgId])
   @@map("experiences")
 }
 
@@ -161,6 +164,8 @@ model ExperienceSession {
 
   generatedNodes GeneratedNode[]
 
+  @@index([experienceId])
+  @@index([userId])
   @@map("experience_sessions")
 }
 
@@ -184,6 +189,7 @@ model GeneratedNode {
   createdAt DateTime @default(now())
 
   @@unique([sessionId, nodeId])
+  @@index([sessionId])
   @@map("generated_nodes")
 }
 
@@ -205,6 +211,7 @@ model AnalyticsEvent {
 
   createdAt DateTime @default(now())
 
+  @@index([sessionId])
   @@index([experienceId, eventType])
   @@index([userId, eventType])
   @@index([createdAt])

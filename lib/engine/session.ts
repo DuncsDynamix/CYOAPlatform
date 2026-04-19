@@ -5,13 +5,10 @@ const DEFAULT_STATE: SessionState = {
   flags: {},
   counters: {},
   returnStack: [],
-  currentPath: "",
   choicesMade: 0,
   nodesVisited: [],
   depthPercentage: 0,
-  distanceToNearestEndpoint: 0,
   pacingInstruction: "",
-  generationTimings: {},
   dialogue: null,
   competencyProfile: [],
 }

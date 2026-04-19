@@ -4,17 +4,12 @@ export interface SessionState {
   flags: Record<string, string | boolean>   // string and boolean only — numbers go to counters
   counters: Record<string, number>          // numeric accumulators, separate from flags
   returnStack: string[]                     // Phase 2: subroutine return addresses
-  currentPath: string
   choicesMade: number
   nodesVisited: string[]
 
   // Arc awareness (calculated by engine, not stored by author)
   depthPercentage: number
-  distanceToNearestEndpoint: number
   pacingInstruction: string
-
-  // Performance tracking
-  generationTimings: Record<string, number>
 
   // Phase 2: active dialogue loop (null when no dialogue in progress)
   dialogue: DialogueSessionState | null

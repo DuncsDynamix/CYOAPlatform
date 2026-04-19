@@ -9,13 +9,10 @@ function makeState(choicesMade: number, flags: Record<string, string | boolean> 
     flags,
     counters: {},
     returnStack: [],
-    currentPath: "",
     choicesMade,
     nodesVisited: [],
     depthPercentage: 0,
-    distanceToNearestEndpoint: 0,
     pacingInstruction: "",
-    generationTimings: {},
     dialogue: null,
     competencyProfile: [],
   }

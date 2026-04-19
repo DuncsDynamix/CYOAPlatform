@@ -448,6 +448,15 @@ const segments: Segment[] = [
 async function main() {
   console.log("Seeding database…")
 
+  const existing = await db.experience.findUnique({ where: { id: EXPERIENCE_ID } })
+  if (existing) {
+    console.log("✓ Already seeded. Run with a clean DB to re-seed.")
+    return
+  }
+
+  const useCasePack = USE_CASE_PACKS.cyoa_story
+  if (!useCasePack) throw new Error('USE_CASE_PACK "cyoa_story" not found in lib/engine/usecases')
+
   // Upsert the dev author
   await db.user.upsert({
     where: { id: AUTHOR_ID },

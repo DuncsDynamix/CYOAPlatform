@@ -101,6 +101,10 @@ export async function POST(req: NextRequest) {
     assessDialogueBreakthrough(currentNode, afterParticipant.turns, apiKey),
   ])
 
+  if (!characterLine || characterLine.trim().length === 0) {
+    return NextResponse.json({ error: "Failed to generate dialogue response" }, { status: 500 })
+  }
+
   // Append character response turn
   const characterTurn: DialogueTurn = {
     role: "character",
