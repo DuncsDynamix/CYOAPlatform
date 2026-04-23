@@ -50,6 +50,17 @@ The player sees a fixed block of prose — exactly what you wrote, every time, f
 }
 ```
 
+**Optional: visual layout**
+
+Add a `layout` field to display the content alongside an image or within a styled template. When omitted (or set to `"text-only"`), the node renders as plain prose.
+
+| Field | Required | What it means |
+|-------|----------|---------------|
+| `layout.template` | No | One of the 7 layout templates — see the layout templates section below |
+| `layout.mediaUrl` | No | URL of the image. Upload via the image uploader in the node editor; V1 stores locally. |
+| `layout.caption` | No | Caption shown below the image |
+| `layout.callouts` | No | Array of numbered markers for `diagram-with-callouts` — see below |
+
 **Tips**
 
 - Use `mandatory: true` for your opening scene so every player reads it before they can skip to an ending.
@@ -101,6 +112,10 @@ The player sees AI-written prose that adapts to their session — their previous
   "nextNodeId": "q1"
 }
 ```
+
+**Optional: visual layout**
+
+Same as FIXED — GENERATED nodes also accept a `layout` field. If present, the generated prose is shown inside the chosen template rather than as plain text. The `layout` is authored, not generated — the AI writes the prose, you choose how it is displayed.
 
 **Tips**
 
@@ -495,6 +510,128 @@ The player watches a scripted conversation between two characters — they read 
 - Both `actorAId` and `actorBId` must be in your context pack's `actors` array.
 - 4–6 turns is usually enough to make a point without overstaying. Each "turn" is one exchange (A speaks, B speaks = 1 turn).
 - `purpose` is critical — write it as a specific goal for the scene, not just a topic. "Sarah explains WIMS" is weak. "Sarah catches Marcus about to skip a log entry and talks him through why it's a legal requirement, not an admin nicety" gives the AI a clear dramatic intention.
+
+---
+
+## 9. SLIDE_DECK
+
+**What the player experiences**
+
+A sequence of slides — like a mini presentation. The player advances through them one at a time using prev/next buttons or left/right keyboard arrows. A progress bar shows where they are. When they reach the last slide, a "Continue" button advances to the next node. Slide decks are static — no AI generation, no choices.
+
+Use SLIDE_DECK for orientation sequences, didactic content, visual briefings, or any sequence of information you want to control precisely and display with visual structure.
+
+**Top-level fields**
+
+| Field | Required | What it means | Example |
+|-------|----------|---------------|---------|
+| `id` | Yes | Unique identifier | `"sd1"` |
+| `label` | Yes | Author-facing name | `"Course introduction"` |
+| `type` | Yes | Always `"SLIDE_DECK"` | |
+| `slides` | Yes | Ordered array of slide objects — see below | |
+| `nextNodeId` | Yes | The node to advance to after the last slide | `"n1"` |
+
+**Slide fields** (each entry in `slides`)
+
+| Field | Required | What it means | Example |
+|-------|----------|---------------|---------|
+| `id` | Yes | Unique identifier for this slide | `"sd1-s1"` |
+| `template` | Yes | Layout template — one of the 7 options below | `"image-left"` |
+| `title` | No | Slide heading | `"National Water Hygiene"` |
+| `body` | No | Main text content | `"This session covers..."` |
+| `mediaUrl` | No | Image URL. For seed data, use `/uploads/seed/<filename>`. For authored content, upload via the Studio image uploader. | `"/uploads/seed/tw-training-room.jpeg"` |
+| `caption` | No | Caption displayed beneath the image | `"Lee Valley Training Centre"` |
+| `callouts` | No | Array of numbered markers on the image — used with `diagram-with-callouts` template only | |
+| `notes` | No | Author notes — never shown to the player | `"Remind tutors to emphasise..."` |
+
+**Layout templates**
+
+| Template | What it looks like |
+|----------|--------------------|
+| `text-only` | Plain text, no image. Default if no template is specified. |
+| `title` | Large centred title, optional subtitle body text. |
+| `image-left` | Image on the left half, text on the right. |
+| `image-right` | Image on the right half, text on the left. |
+| `full-bleed` | Image fills the full slide area; title and body overlay on top. |
+| `quote` | Large typographic quote in the centre with no image. |
+| `diagram-with-callouts` | Image with numbered callout markers positioned at specified coordinates. Each callout has a label and optional tooltip. |
+
+**Callout fields** (for `diagram-with-callouts` only)
+
+| Field | Required | What it means |
+|-------|----------|---------------|
+| `x` | Yes | Horizontal position, 0–1 (0 = left edge, 1 = right edge) |
+| `y` | Yes | Vertical position, 0–1 (0 = top edge, 1 = bottom edge) |
+| `label` | Yes | Text shown in the callout list |
+| `detail` | No | Tooltip shown on hover |
+
+**Worked example** — from `seed-thames-water.ts`
+
+```json
+{
+  "id": "sd1",
+  "type": "SLIDE_DECK",
+  "label": "Course introduction — National Water Hygiene overview",
+  "nextNodeId": "n1",
+  "slides": [
+    {
+      "id": "sd1-s1",
+      "template": "title",
+      "title": "National Water Hygiene",
+      "body": "A Day at Lee Valley Water Treatment Works\n\nField Operations Judgement Training"
+    },
+    {
+      "id": "sd1-s2",
+      "template": "image-right",
+      "title": "Your Training Environment",
+      "body": "This session takes place at Lee Valley Water Treatment Works...",
+      "mediaUrl": "/uploads/seed/tw-training-room.jpeg",
+      "caption": "Training centre, Lee Valley Works"
+    },
+    {
+      "id": "sd1-s3",
+      "template": "diagram-with-callouts",
+      "title": "Treatment Process Overview",
+      "mediaUrl": "/uploads/seed/tw-process-diagram.png",
+      "callouts": [
+        { "x": 0.18, "y": 0.45, "label": "Raw intake", "detail": "River Lee abstraction point" },
+        { "x": 0.52, "y": 0.32, "label": "Filter banks", "detail": "Rapid gravity filtration" },
+        { "x": 0.81, "y": 0.55, "label": "Chlorination", "detail": "Target residual: 0.5–1.0 mg/l" }
+      ]
+    }
+  ]
+}
+```
+
+**Tips**
+
+- SLIDE_DECK is the right choice for any static information sequence — course introductions, safety briefings, procedural walkthroughs, reference material. Once you want the player to respond or choose, switch back to CHOICE / DIALOGUE.
+- Use `title` template for your first slide and `text-only` or image templates for subsequent slides. The progression feels natural.
+- The `notes` field on each slide is a useful scratchpad for tutors or content reviewers — it's never rendered to the player.
+- Keep slides focused — 2–4 slides per concept. Long decks slow pacing. If you have 10+ slides of the same type, consider breaking them into multiple SLIDE_DECK nodes with CHECKPOINT nodes between them so analytics can track engagement per section.
+- For `diagram-with-callouts`, position callouts in the authoring UI by clicking directly on the image — the x/y coordinates are set automatically.
+
+---
+
+## Layout templates — reference
+
+The same 7 layout templates are available on SLIDE_DECK slides, and as a `layout` field on FIXED and GENERATED nodes. This section applies to all three.
+
+| Template | Best for |
+|----------|----------|
+| `text-only` | Default. Pure prose. No image needed. |
+| `title` | Course title slides, section intros, big statements. |
+| `image-left` | Images that sit naturally to the left of supporting text. |
+| `image-right` | Images that sit naturally to the right of supporting text. |
+| `full-bleed` | Striking establishing images. Use when the visual IS the message. |
+| `quote` | Regulatory quotes, key principles, memorable statements. No image. |
+| `diagram-with-callouts` | Any annotated diagram, process map, or labelled photograph. |
+
+**Uploading images in the authoring UI**
+
+Images can be added via URL (paste any accessible URL) or via file upload (uploads are stored in `public/uploads/` and served by Next.js). Supported formats: JPEG, PNG, GIF, WebP, SVG. Maximum file size: 10 MB.
+
+> **Note — deployment:** The V1 uploader writes to the local filesystem. Before deploying to a hosted environment, swap `lib/storage/index.ts` for a Vercel Blob / R2 / S3 implementation. Seed images in `public/uploads/seed/` are committed to the repository and will be available anywhere the repo is cloned.
 
 ---
 

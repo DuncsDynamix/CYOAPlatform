@@ -4,7 +4,7 @@ import { arriveAtNode, findNode, getAllNodes } from "@/lib/engine/executor"
 import { getExperienceById } from "@/lib/db/queries/experience"
 import { requireAuth, getAnthropicKey, canAccessSession } from "@/lib/auth"
 import { checkEngineLimit } from "@/lib/security/ratelimit"
-import type { GeneratedNode, FixedNode, CheckpointNode, DialogueNode, EvaluativeNode, ObservedDialogueNode } from "@/types/experience"
+import type { GeneratedNode, FixedNode, CheckpointNode, DialogueNode, EvaluativeNode, ObservedDialogueNode, SlideDeckNode } from "@/types/experience"
 
 // GET /api/engine/node?sessionId=...
 // Advances from the current prose node to the next node (usually a CHOICE).
@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
   else if (currentNode.type === "CHECKPOINT") nextNodeId = (currentNode as CheckpointNode).nextNodeId
   else if (currentNode.type === "EVALUATIVE") nextNodeId = (currentNode as EvaluativeNode).nextNodeId
   else if (currentNode.type === "OBSERVED_DIALOGUE") nextNodeId = (currentNode as ObservedDialogueNode).nextNodeId
+  else if (currentNode.type === "SLIDE_DECK") nextNodeId = (currentNode as SlideDeckNode).nextNodeId
   else if (currentNode.type === "DIALOGUE") {
     const dialogueNode = currentNode as DialogueNode
     const dialogue = session.state.dialogue

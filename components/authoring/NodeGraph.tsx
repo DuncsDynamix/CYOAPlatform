@@ -14,6 +14,7 @@ const TYPE_COLOURS: Record<string, { bg: string; border: string; text: string }>
   DIALOGUE:          { bg: "#0C1A2E", border: "#06B6D4", text: "#67E8F9" },
   OBSERVED_DIALOGUE: { bg: "#1A1040", border: "#818CF8", text: "#C7D2FE" },
   EVALUATIVE:        { bg: "#2E0A1A", border: "#EC4899", text: "#F9A8D4" },
+  SLIDE_DECK:        { bg: "#0A2E1A", border: "#22C55E", text: "#86EFAC" },
 }
 
 // Dark mode base colours for SVG elements
@@ -38,6 +39,7 @@ const TYPE_ICONS: Record<string, string> = {
   DIALOGUE: "D",
   OBSERVED_DIALOGUE: "👁",
   EVALUATIVE: "E",
+  SLIDE_DECK: "▶",
 }
 
 // ─── VERTICAL LAYOUT ─────────────────────────────────────────
@@ -96,6 +98,8 @@ function getChildIds(node: Node): { id: string; label?: string }[] {
     }
     case "SUBROUTINE_RETURN":
       return []
+    case "SLIDE_DECK":
+      return [{ id: (node as { nextNodeId: string }).nextNodeId }]
   }
 }
 
@@ -345,7 +349,7 @@ interface NodeGraphProps {
   onAdd: (type: Node["type"]) => void
 }
 
-const NODE_TYPES: Node["type"][] = ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT", "DIALOGUE", "OBSERVED_DIALOGUE", "EVALUATIVE"]
+const NODE_TYPES: Node["type"][] = ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT", "DIALOGUE", "OBSERVED_DIALOGUE", "EVALUATIVE", "SLIDE_DECK"]
 
 export function NodeGraph({ nodes, selectedId, onSelect, onAdd }: NodeGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)

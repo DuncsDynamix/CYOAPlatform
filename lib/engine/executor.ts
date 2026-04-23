@@ -16,6 +16,7 @@ import type {
   ObservedDialogueNode,
   EvaluativeNode,
   SubroutineCallNode,
+  SlideDeckNode,
   ChoiceOption,
   Experience,
   Segment,
@@ -131,7 +132,7 @@ export function findNode(nodes: Node[], nodeId: string): Node | undefined {
  */
 export function findFirstNodeId(experience: Experience): string {
   const nodes = getAllNodes(experience)
-  const first = nodes.find((n) => n.type === "FIXED" || n.type === "GENERATED")
+  const first = nodes.find((n) => n.type === "FIXED" || n.type === "GENERATED" || n.type === "SLIDE_DECK")
   if (!first) throw new Error(`Experience ${experience.id} has no starting node`)
   return first.id
 }
@@ -401,6 +402,11 @@ async function resolveNodeContent(
         nodeType: node.type,
         message: `${node.type} is reserved for Phase 2 and is not yet supported.`,
       }
+
+    case "SLIDE_DECK": {
+      const deckNode = node as SlideDeckNode
+      return { type: "slide_deck", slides: deckNode.slides, nextNodeId: deckNode.nextNodeId }
+    }
   }
 }
 
@@ -449,6 +455,8 @@ function getImmediateChildIds(node: Node): string[] {
       return [(node as SubroutineCallNode).targetNodeId]
     case "SUBROUTINE_RETURN":
       return []
+    case "SLIDE_DECK":
+      return [(node as SlideDeckNode).nextNodeId]
   }
 }
 

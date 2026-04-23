@@ -7,6 +7,7 @@ import { ExperienceForm } from "@/components/authoring/ExperienceForm"
 import { ContextPackEditor } from "@/components/authoring/ContextPackEditor"
 import { NodeGraph } from "@/components/authoring/NodeGraph"
 import { NodeEditor } from "@/components/authoring/NodeEditor"
+import { HelpPanel } from "@/components/authoring/HelpPanel"
 
 type Tab = "details" | "context" | "nodes"
 
@@ -33,6 +34,8 @@ function makeNode(type: Node["type"]): Node {
       return { id, type, label: "", targetNodeId: "", returnNodeId: "" }
     case "SUBROUTINE_RETURN":
       return { id, type, label: "" }
+    case "SLIDE_DECK":
+      return { id, type, label: "", slides: [], nextNodeId: "" }
   }
 }
 
@@ -49,6 +52,7 @@ export default function ExperienceEditorPage() {
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>("details")
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const [helpOpen, setHelpOpen] = useState(false)
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved")
   const [publishing, setPublishing] = useState(false)
@@ -360,12 +364,20 @@ export default function ExperienceEditorPage() {
                       {selectedNode.label || "(unnamed)"}
                     </h3>
                     <div className="ng-panel-actions">
+                      <button
+                        className={`ng-help-btn${helpOpen ? " ng-help-btn--active" : ""}`}
+                        onClick={() => setHelpOpen((h) => !h)}
+                        title="Help"
+                      >?</button>
                       <button className="auth-btn-danger" onClick={() => deleteNode(selectedNode.id)}>Delete</button>
-                      <button className="ng-close-btn" onClick={() => setSelectedNodeId(null)}>×</button>
+                      <button className="ng-close-btn" onClick={() => { setSelectedNodeId(null); setHelpOpen(false); }}>×</button>
                     </div>
                   </div>
                   <div className="ng-panel-body">
-                    <NodeEditor node={selectedNode} onChange={updateNode} allNodes={displayNodes} renderingTheme={experience.renderingTheme ?? "retro-book"} />
+                    {helpOpen
+                      ? <HelpPanel nodeType={selectedNode.type} />
+                      : <NodeEditor node={selectedNode} onChange={updateNode} allNodes={displayNodes} renderingTheme={experience.renderingTheme ?? "retro-book"} />
+                    }
                   </div>
                 </>
               ) : (

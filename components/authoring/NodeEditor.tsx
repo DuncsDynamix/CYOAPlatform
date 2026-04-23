@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import type { Node, ChoiceOption, RubricCriterion } from "@/types/experience"
+import type { Node, ChoiceOption, RubricCriterion, Slide } from "@/types/experience"
+import { LayoutPanel, SlideEditor } from "./LayoutEditor"
 
 interface NodeEditorProps {
   node: Node
@@ -152,6 +153,10 @@ function FixedNodeForm({
         />
         Mandatory node
       </label>
+      <LayoutPanel
+        layout={node.layout}
+        onChange={(layout) => onChange({ ...node, layout })}
+      />
     </>
   )
 }
@@ -256,6 +261,10 @@ function GeneratedNodeForm({
           excludeId={node.id}
         />
       </label>
+      <LayoutPanel
+        layout={node.layout}
+        onChange={(layout) => onChange({ ...node, layout })}
+      />
     </>
   )
 }
@@ -834,6 +843,77 @@ function EvaluativeNodeForm({
   )
 }
 
+function SlideDeckNodeForm({
+  node,
+  onChange,
+  allNodes,
+}: {
+  node: Extract<Node, { type: "SLIDE_DECK" }>
+  onChange: (n: Node) => void
+  allNodes?: Node[]
+}) {
+  function addSlide() {
+    const newSlide: Slide = {
+      id: crypto.randomUUID(),
+      template: "text-only",
+      title: "",
+      body: "",
+    }
+    onChange({ ...node, slides: [...node.slides, newSlide] })
+  }
+
+  function updateSlide(idx: number, updated: Slide) {
+    const slides = [...node.slides]
+    slides[idx] = updated
+    onChange({ ...node, slides })
+  }
+
+  function deleteSlide(idx: number) {
+    onChange({ ...node, slides: node.slides.filter((_, i) => i !== idx) })
+  }
+
+  function moveSlide(idx: number, direction: -1 | 1) {
+    const target = idx + direction
+    if (target < 0 || target >= node.slides.length) return
+    const slides = [...node.slides]
+    ;[slides[idx], slides[target]] = [slides[target], slides[idx]]
+    onChange({ ...node, slides })
+  }
+
+  return (
+    <>
+      <div className="auth-section-label" style={{ marginBottom: "0.5rem" }}>
+        Slides ({node.slides.length})
+      </div>
+      {node.slides.map((slide, i) => (
+        <SlideEditor
+          key={slide.id}
+          slide={slide}
+          index={i}
+          onChange={(updated) => updateSlide(i, updated)}
+          onDelete={() => deleteSlide(i)}
+          onMoveUp={() => moveSlide(i, -1)}
+          onMoveDown={() => moveSlide(i, 1)}
+          canMoveUp={i > 0}
+          canMoveDown={i < node.slides.length - 1}
+        />
+      ))}
+      <button type="button" onClick={addSlide} className="auth-btn auth-btn--sm">
+        + Add slide
+      </button>
+      <label className="auth-label" style={{ marginTop: "1rem" }}>
+        Next node (after last slide)
+        <NodeIdSelect
+          value={node.nextNodeId}
+          onChange={(id) => onChange({ ...node, nextNodeId: id })}
+          allNodes={allNodes}
+          excludeId={node.id}
+        />
+      </label>
+    </>
+  )
+}
+
 // ─── MAIN EXPORT ──────────────────────────────────────────────
 
 export function NodeEditor({ node, onChange, allNodes, renderingTheme }: NodeEditorProps) {
@@ -875,6 +955,9 @@ export function NodeEditor({ node, onChange, allNodes, renderingTheme }: NodeEdi
       )}
       {node.type === "EVALUATIVE" && (
         <EvaluativeNodeForm node={node} onChange={onChange} allNodes={allNodes} />
+      )}
+      {node.type === "SLIDE_DECK" && (
+        <SlideDeckNodeForm node={node} onChange={onChange} allNodes={allNodes} />
       )}
     </div>
   )

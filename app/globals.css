@@ -389,6 +389,34 @@
 .ng-panel-empty { display: flex; align-items: center; justify-content: center; height: 100%; width: 260px; padding: 2rem; }
 .ng-panel-empty p { font-family: system-ui, sans-serif; font-size: 0.82rem; color: var(--at3); text-align: center; }
 
+/* Help toggle button */
+.ng-help-btn { background: var(--ae); border: 1px solid var(--aa); border-radius: 4px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: 700; color: var(--aah); cursor: pointer; flex-shrink: 0; }
+.ng-help-btn:hover { background: rgba(99,102,241,0.2); color: var(--at1); }
+.ng-help-btn--active { background: var(--aa); border-color: var(--aa); color: #fff; }
+.ng-help-btn--active:hover { background: var(--aah); border-color: var(--aah); }
+
+/* Help panel body */
+.ng-help-body { display: flex; flex-direction: column; }
+.ng-help-empty { display: flex; align-items: center; justify-content: center; padding: 2rem; }
+.ng-help-empty p { font-size: 0.82rem; color: var(--at3); }
+
+/* Help sections */
+.ng-help-section { padding: 1rem 1rem 0.875rem; border-bottom: 1px solid var(--abr); }
+.ng-help-section:last-child { border-bottom: none; }
+.ng-help-section-title { font-size: 0.65rem; font-weight: 700; color: var(--aah); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 0.65rem; }
+.ng-help-summary { font-size: 0.82rem; line-height: 1.6; color: var(--at1); margin: 0; }
+
+/* Fields */
+.ng-help-fields { display: flex; flex-direction: column; gap: 0.875rem; }
+.ng-help-field { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.5rem 0.625rem; background: var(--ab); border-radius: 5px; border: 1px solid var(--abr); }
+.ng-help-field-name { font-family: ui-monospace, monospace; font-size: 0.75rem; color: var(--aah); font-weight: 600; }
+.ng-help-field-desc { font-size: 0.79rem; line-height: 1.55; color: var(--at2); margin: 0; }
+.ng-help-example { font-family: ui-monospace, monospace; font-size: 0.72rem; color: var(--aah); background: rgba(99,102,241,0.1); border-left: 2px solid var(--aa); padding: 0.3rem 0.5rem; border-radius: 0 3px 3px 0; margin-top: 0.25rem; word-break: break-all; }
+
+/* Tips */
+.ng-help-tips { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.ng-help-tips li { font-size: 0.8rem; line-height: 1.55; color: var(--at1); }
+
 /* Graph container */
 .ng-container { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
@@ -628,4 +656,136 @@
 .observed-dialogue-exchange--b .observed-dialogue-line {
   background: #fff;
   border-radius: 8px 0 8px 8px;
+}
+
+/* Layout / Slide / Callout editors (auth) */
+.auth-input--fill { flex: 1; }
+
+.auth-layout-panel {
+  background: var(--ab);
+  border: 1px solid var(--abr);
+  border-radius: 4px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.auth-layout-image {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.auth-layout-preview {
+  margin-top: 0.5rem;
+  border: 1px solid var(--abr);
+  border-radius: 4px;
+  overflow: hidden;
+  max-width: 360px;
+}
+.auth-layout-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.auth-layout-error {
+  font-family: system-ui, sans-serif;
+  font-size: 0.78rem;
+  color: var(--ad);
+  margin-top: 0.35rem;
+}
+
+.auth-callouts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.auth-callout-image {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  cursor: crosshair;
+  border: 1px solid var(--abr);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.auth-callout-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
+}
+
+.auth-callout-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--aa);
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: default;
+}
+
+.auth-slide {
+  background: var(--ab);
+  border: 1px solid var(--abr);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.auth-slide-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--ae);
+  border-bottom: 1px solid var(--abr);
+}
+
+.auth-slide-index {
+  font-family: system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--at2);
+  flex-shrink: 0;
+}
+
+.auth-slide-title-preview {
+  font-family: system-ui, sans-serif;
+  font-size: 0.82rem;
+  color: var(--at1);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-slide-header-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.auth-slide-body {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }

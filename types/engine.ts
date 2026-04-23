@@ -1,4 +1,4 @@
-import type { Node, ChoiceOption } from "./experience"
+import type { Node, ChoiceOption, Slide, NodeLayout } from "./experience"
 import type { ExperienceSession, DialogueTurn, CompetencyResult } from "./session"
 
 // ─── RESOLVED CONTENT ─────────────────────────────────────────
@@ -37,6 +37,7 @@ export type ResolvedContent =
     }
   | { type: "not_implemented"; nodeType: string; message: string }
   | { type: "redirect"; targetNodeId: string }
+  | { type: "slide_deck"; slides: Slide[]; nextNodeId: string }
 
 // ─── ARRIVAL RESULT ───────────────────────────────────────────
 
@@ -134,7 +135,7 @@ export interface CompetencyProfile {
 
 export type TrainingPlayerStatus =
   | { status: "loading_module" }
-  | { status: "reading_scenario"; content: string; sceneContext?: SceneContext }
+  | { status: "reading_scenario"; content: string; layout?: NodeLayout; sceneContext?: SceneContext }
   | { status: "at_decision"; options: import("./experience").ChoiceOption[]; responseType: "closed" | "open"; prompt?: string; openPrompt?: string; sceneContext?: SceneContext }
   | { status: "reviewing_decision"; feedback: string; feedbackTone: "positive" | "developmental" | "neutral"; competencySignal?: string; choiceLabel: string; onContinue: () => void }
   | { status: "advancing" }
@@ -161,6 +162,11 @@ export type TrainingPlayerStatus =
       results: CompetencyResult[]
       feedback: string
       nextNodeId: string
+    }
+  | {
+      status: "viewing_slides"
+      slides: Slide[]
+      onContinue: () => void
     }
 
 // ─── READER STATE MACHINE ─────────────────────────────────────

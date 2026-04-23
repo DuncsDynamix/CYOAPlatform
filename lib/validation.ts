@@ -37,8 +37,8 @@ export const CreateExperienceSchema = z.object({
 
 export const UpdateExperienceSchema = z.object({
   title: z.string().min(1).max(200).optional(),
-  description: z.string().max(1000).optional(),
-  genre: z.string().max(100).optional(),
+  description: z.string().max(1000).optional().nullable(),
+  genre: z.string().max(100).optional().nullable(),
   type: z.enum(["cyoa_story", "l_and_d", "education", "publisher_ip"]).optional(),
   renderingTheme: z.enum(["retro-book", "training"]).optional(),
   coverImageUrl: z.string().url().optional().nullable(),

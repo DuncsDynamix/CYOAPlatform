@@ -1,4 +1,6 @@
 import { PrismaClient } from "@prisma/client"
+import { copyFile, mkdir } from "fs/promises"
+import path from "path"
 import type {
   Node,
   Segment,
@@ -13,6 +15,19 @@ const db = new PrismaClient()
 
 const AUTHOR_ID = "00000000-0000-0000-0000-000000000001"
 const EXPERIENCE_ID = "00000000-0000-0000-0000-000000000020"
+
+// Images from the source PPTX media folder → copied to public/uploads/seed/ at seed time
+const MEDIA_SRC = path.join(__dirname, "..", "thamesWater", "media", "ppt", "media")
+const SEED_UPLOADS = path.join(__dirname, "..", "public", "uploads", "seed")
+
+const SLIDE_IMAGES: { src: string; dest: string; url: string }[] = [
+  { src: "image10.jpeg",  dest: "tw-training-room.jpeg",      url: "/uploads/seed/tw-training-room.jpeg" },
+  { src: "image129.jpeg", dest: "tw-purification-tablets.jpeg", url: "/uploads/seed/tw-purification-tablets.jpeg" },
+  { src: "image130.jpeg", dest: "tw-sodium-hypochlorite.jpeg", url: "/uploads/seed/tw-sodium-hypochlorite.jpeg" },
+  { src: "image123.jpeg", dest: "tw-container-labelling.jpeg", url: "/uploads/seed/tw-container-labelling.jpeg" },
+  { src: "image124.jpeg", dest: "tw-water-pipes.jpeg",         url: "/uploads/seed/tw-water-pipes.jpeg" },
+  { src: "image117.jpeg", dest: "tw-field-equipment.jpeg",     url: "/uploads/seed/tw-field-equipment.jpeg" },
+]
 
 // ─── NODE GRAPH — "A Day at Lee Valley" ─────────────────────────────────────
 //
@@ -40,6 +55,63 @@ const EXPERIENCE_ID = "00000000-0000-0000-0000-000000000020"
 //                   → n9c (GENERATED) → ep3 (ENDPOINT: Development Required)
 
 const nodes: Node[] = [
+  // ─── INTRO SLIDE DECK ────────────────────────────────────────────────────
+
+  {
+    id: "sd1",
+    type: "SLIDE_DECK",
+    label: "Course introduction — National Water Hygiene overview",
+    nextNodeId: "n1",
+    slides: [
+      {
+        id: "sd1-s1",
+        template: "title",
+        title: "National Water Hygiene",
+        body: "A Day at Lee Valley Water Treatment Works\n\nField Operations Judgement Training",
+      },
+      {
+        id: "sd1-s2",
+        template: "image-right",
+        title: "Your Training Environment",
+        body: "This session takes place at Lee Valley Water Treatment Works, one of the largest drinking water facilities in the UK. You will work through a single shift as a Field Operations Technician and respond to four real operational scenarios.\n\nEach decision you make is assessed against Thames Water's operational standards and the Water Supply (Water Quality) Regulations 2016.",
+        mediaUrl: SLIDE_IMAGES[0].url,
+        caption: "Training centre, Lee Valley Works",
+      },
+      {
+        id: "sd1-s3",
+        template: "image-left",
+        title: "Water Infrastructure",
+        body: "Lee Valley processes raw water from the River Lee through sedimentation, rapid gravity filtration, and chlorination — supplying over 800,000 people across North London and Hertfordshire.\n\nEvery decision you make on site has downstream consequences for water quality and regulatory compliance.",
+        mediaUrl: SLIDE_IMAGES[4].url,
+        caption: "Water main infrastructure on a Thames Water site",
+      },
+      {
+        id: "sd1-s4",
+        template: "image-right",
+        title: "Disinfection & Treatment",
+        body: "Maintaining correct disinfectant levels is a legal requirement under the Water Supply (Water Quality) Regulations 2016. Chlorine residual in the distribution network must not fall below 0.1 mg/l.\n\nYou will be responsible for monitoring dosing logs and escalating any discrepancies through WIMS.",
+        mediaUrl: SLIDE_IMAGES[2].url,
+        caption: "Sodium hypochlorite solution — primary disinfectant",
+      },
+      {
+        id: "sd1-s5",
+        template: "image-left",
+        title: "Safe Labelling & Storage",
+        body: "All containers on site must be correctly labelled. 'Not Drinking Water' containers must never enter the potable supply chain. Diesel, petrol, and chemical containers must be segregated from water quality materials at all times.\n\nFailure to maintain labelling and segregation is a source of contamination risk.",
+        mediaUrl: SLIDE_IMAGES[3].url,
+        caption: "Correctly labelled site containers — a regulatory requirement",
+      },
+      {
+        id: "sd1-s6",
+        template: "image-right",
+        title: "Your Role Today",
+        body: "As a Field Operations Technician, 18 months in post, you are technically competent and still building your regulatory judgement. Your shift supervisor Priya Sharma will be available — but the four decisions today are yours to make.\n\nReady to begin your shift?",
+        mediaUrl: SLIDE_IMAGES[5].url,
+        caption: "Field operations vehicle — Thames Water network team",
+      },
+    ],
+  },
+
   // ─── OPENING ─────────────────────────────────────────────────────────────
 
   {
@@ -627,12 +699,12 @@ const shape: ShapeDefinition = {
   loadBearingChoices: [1, 2, 3, 4],
   convergencePoints: [2, 4],
   pacingModel: "competency_build",
-  mandatoryNodeIds: ["n1"],
+  mandatoryNodeIds: ["sd1", "n1"],
 }
 
 // ─── SEGMENTS ────────────────────────────────────────────────────────────────
 
-const MORNING_NODE_IDS = ["n1", "n2", "q1", "n3a", "n3b", "n4", "q2", "n5a", "n5b", "cp1"]
+const MORNING_NODE_IDS = ["sd1", "n1", "n2", "q1", "n3a", "n3b", "n4", "q2", "n5a", "n5b", "cp1"]
 const AFTERNOON_NODE_IDS = ["n6", "q3", "n7a", "n7b", "q4", "n9a", "n9b", "n9c", "ep1", "ep2", "ep3"]
 
 const segments: Segment[] = [
@@ -656,6 +728,13 @@ const segments: Segment[] = [
 
 async function main() {
   console.log("Seeding Thames Water training experience…")
+
+  // Copy slide images into public/uploads/seed/ so they are served by Next.js
+  await mkdir(SEED_UPLOADS, { recursive: true })
+  for (const img of SLIDE_IMAGES) {
+    await copyFile(path.join(MEDIA_SRC, img.src), path.join(SEED_UPLOADS, img.dest))
+  }
+  console.log(`  ✓ ${SLIDE_IMAGES.length} slide images copied to public/uploads/seed/`)
 
   const existing = await db.experience.findUnique({ where: { id: EXPERIENCE_ID } })
   if (existing) {
@@ -711,7 +790,7 @@ async function main() {
   console.log("  ✓ Experience seeded")
   console.log("    Title: A Day at Lee Valley: Field Operations Judgement")
   console.log("    Type:  l_and_d (Thames Water field operations)")
-  console.log("    Nodes: 21 (4 CHOICE, 10 GENERATED, 1 FIXED, 1 CHECKPOINT, 3 ENDPOINT)")
+  console.log("    Nodes: 22 (1 SLIDE_DECK, 4 CHOICE, 10 GENERATED, 1 FIXED, 1 CHECKPOINT, 3 ENDPOINT)")
   console.log("    Competencies assessed:")
   console.log("      Q1 — Water Quality Monitoring (turbidity alarm response)")
   console.log("      Q2 — Regulatory Record Integrity (WIMS / colleague's missed log)")

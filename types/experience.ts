@@ -110,11 +110,47 @@ export interface EndpointShape {
   emotionalTarget: string
 }
 
+// ─── LAYOUT TYPES ────────────────────────────────────────────
+
+export type LayoutTemplate =
+  | 'text-only'
+  | 'title'
+  | 'image-left'
+  | 'image-right'
+  | 'full-bleed'
+  | 'quote'
+  | 'diagram-with-callouts'
+
+export interface Callout {
+  x: number
+  y: number
+  label: string
+  detail?: string
+}
+
+export interface NodeLayout {
+  template: LayoutTemplate
+  mediaUrl?: string
+  caption?: string
+  callouts?: Callout[]
+}
+
+export interface Slide {
+  id: string
+  template: LayoutTemplate
+  title?: string
+  body?: string
+  mediaUrl?: string
+  caption?: string
+  callouts?: Callout[]
+  notes?: string
+}
+
 // ─── NODE TYPES ───────────────────────────────────────────────
 
-export type NodeType = "FIXED" | "GENERATED" | "CHOICE" | "CHECKPOINT" | "ENDPOINT" | "DIALOGUE" | "OBSERVED_DIALOGUE" | "EVALUATIVE" | "SUBROUTINE_CALL" | "SUBROUTINE_RETURN"
+export type NodeType = "FIXED" | "GENERATED" | "CHOICE" | "CHECKPOINT" | "ENDPOINT" | "DIALOGUE" | "OBSERVED_DIALOGUE" | "EVALUATIVE" | "SUBROUTINE_CALL" | "SUBROUTINE_RETURN" | "SLIDE_DECK"
 
-export type Node = FixedNode | GeneratedNode | ChoiceNode | CheckpointNode | EndpointNode | DialogueNode | ObservedDialogueNode | EvaluativeNode | SubroutineCallNode | SubroutineReturnNode
+export type Node = FixedNode | GeneratedNode | ChoiceNode | CheckpointNode | EndpointNode | DialogueNode | ObservedDialogueNode | EvaluativeNode | SubroutineCallNode | SubroutineReturnNode | SlideDeckNode
 
 interface BaseNode {
   id: string
@@ -128,6 +164,7 @@ export interface FixedNode extends BaseNode {
   content: string
   mandatory: boolean
   nextNodeId: string
+  layout?: NodeLayout
 }
 
 export interface GeneratedNode extends BaseNode {
@@ -141,6 +178,7 @@ export interface GeneratedNode extends BaseNode {
     mustInclude?: string[]
   }
   nextNodeId: string
+  layout?: NodeLayout
 }
 
 export interface ChoiceNode extends BaseNode {
@@ -329,6 +367,12 @@ export interface SubroutineCallNode extends BaseNode {
 
 export interface SubroutineReturnNode extends BaseNode {
   type: "SUBROUTINE_RETURN"
+}
+
+export interface SlideDeckNode extends BaseNode {
+  type: "SLIDE_DECK"
+  slides: Slide[]
+  nextNodeId: string
 }
 
 // ─── SEGMENTS ────────────────────────────────────────────────

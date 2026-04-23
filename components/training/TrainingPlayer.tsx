@@ -9,10 +9,12 @@ import { FeedbackPanel } from "./FeedbackPanel"
 import { DebriefScreen } from "./DebriefScreen"
 import { LoadingModule } from "./LoadingModule"
 import type { TrainingPlayerStatus, LearningObjective, DecisionReview, CompetencyProfile } from "@/types/engine"
-import type { ChoiceOption, ExperienceContextPack } from "@/types/experience"
+import type { ChoiceOption, ExperienceContextPack, FixedNode, GeneratedNode } from "@/types/experience"
 import type { ResolvedContent } from "@/types/engine"
 import type { Node } from "@/types/experience"
 import type { DialogueTurn, CompetencyResult } from "@/types/session"
+import { SlideDeckPanel } from "@/components/traverse-training/SlideDeckPanel"
+import { LayoutRenderer } from "@/components/traverse-training/LayoutRenderer"
 
 interface TrainingPlayerProps {
   experienceSlug: string
@@ -136,9 +138,20 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
     }
 
     if (content.type === "prose") {
+      const layout = (node as FixedNode | GeneratedNode).layout
       setPlayerStatus({
         status: "reading_scenario",
         content: content.content,
+        layout,
+      })
+      return
+    }
+
+    if (content.type === "slide_deck") {
+      setPlayerStatus({
+        status: "viewing_slides",
+        slides: content.slides,
+        onContinue: () => advanceToNextNode(sid),
       })
       return
     }
@@ -360,6 +373,22 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
     )
   }
 
+  if (playerStatus.status === "viewing_slides") {
+    return (
+      <TrainingShell
+        moduleTitle={moduleTitle}
+        totalSteps={totalSteps}
+        currentStep={currentStep}
+        objectives={objectives}
+      >
+        <SlideDeckPanel
+          slides={playerStatus.slides}
+          onContinue={playerStatus.onContinue}
+        />
+      </TrainingShell>
+    )
+  }
+
   if (playerStatus.status === "evaluative_result") {
     return (
       <TrainingShell
@@ -390,10 +419,12 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
     >
       {/* Prose / advancing state */}
       {(playerStatus.status === "reading_scenario" || isAdvancing) && (
-        <SituationText
-          content={playerStatus.status === "reading_scenario" ? playerStatus.content : ""}
-          isGenerating={isAdvancing}
-        />
+        playerStatus.status === "reading_scenario" && playerStatus.layout && playerStatus.layout.template !== "text-only"
+          ? <LayoutRenderer layout={playerStatus.layout} fallbackContent={playerStatus.content} />
+          : <SituationText
+              content={playerStatus.status === "reading_scenario" ? playerStatus.content : ""}
+              isGenerating={isAdvancing}
+            />
       )}
 
       {/* Scene context (if available) */}
