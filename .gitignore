@@ -27,3 +27,19 @@ npm-debug.log*
 # IDE
 .vscode/
 .idea/
+
+# Uploaded media (V1 local filesystem storage)
+public/uploads/
+!public/uploads/seed/
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
+
+# Local tooling state
+.superpowers/
+
+# Ad-hoc test output captures
+test_output.txt
+
+# Source materials — not committed (large binaries, kept locally only)
+thamesWater/
