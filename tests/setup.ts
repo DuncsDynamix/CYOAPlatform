@@ -4,9 +4,20 @@ import { vi } from "vitest"
 // Mock Prisma client in unit tests
 vi.mock("@/lib/db/prisma", () => {
   const db = {
+    user: {
+      // Default: no dev-user row in the DB — requireAuth falls back to DEV_USER
+      findUnique: vi.fn().mockResolvedValue(null),
+      upsert: vi.fn(),
+    },
+    org: {
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
     experience: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      delete: vi.fn(),
     },
     experienceSession: {
       create: vi.fn(),

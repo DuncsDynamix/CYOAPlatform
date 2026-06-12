@@ -37,6 +37,7 @@ vi.mock("@/lib/engine/generator", () => ({
 
 vi.mock("@/lib/security/ratelimit", () => ({
   checkEngineLimit: vi.fn().mockResolvedValue({ success: true }),
+  checkGenerationLimit: vi.fn().mockResolvedValue({ success: true }),
 }))
 
 import { POST as submitChoice } from "@/app/api/v1/engine/choose/route"

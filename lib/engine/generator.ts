@@ -55,6 +55,7 @@ export async function generateNode(
   trackEvent("generation_metric", {
     sessionId: session.id,
     nodeId: node.id,
+    orgId: experience.orgId ?? undefined,
     durationMs: duration,
     inputTokens: message.usage.input_tokens,
     outputTokens: message.usage.output_tokens,

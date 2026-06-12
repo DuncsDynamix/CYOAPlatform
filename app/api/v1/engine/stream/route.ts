@@ -4,10 +4,19 @@ import { getExperienceById } from "@/lib/db/queries/experience"
 import { generateNode } from "@/lib/engine/generator"
 import { writeToCache } from "@/lib/engine/cache"
 import { findFirstNodeId, findNode, getReachableGeneratedChildren, getAllNodes } from "@/lib/engine/executor"
-import { requireAuth, getAnthropicKey } from "@/lib/auth"
+import { requireAuth, getAnthropicKey, canAccessSession } from "@/lib/auth"
+import { checkEngineLimit, checkGenerationLimit } from "@/lib/security/ratelimit"
 import type { GeneratedNode } from "@/types/experience"
 
 export async function GET(req: NextRequest) {
+  // This route fans out parallel generation calls — it must carry the same
+  // rate limiting and session ownership checks as the other engine routes.
+  const ip = req.headers.get("x-forwarded-for") ?? "anonymous"
+  const rateLimit = await checkEngineLimit(ip)
+  if (!rateLimit.success) {
+    return new Response("Too many requests", { status: 429 })
+  }
+
   const { searchParams } = new URL(req.url)
   const sessionId = searchParams.get("sessionId")
 
@@ -21,6 +30,16 @@ export async function GET(req: NextRequest) {
   const session = await getSession(sessionId)
   if (!session) {
     return new Response("Session not found", { status: 404 })
+  }
+
+  if (!(await canAccessSession(user?.id ?? null, session))) {
+    return new Response("Forbidden", { status: 403 })
+  }
+
+  // This route triggers the largest generation fan-out of any endpoint
+  const genLimit = await checkGenerationLimit(user?.id ?? sessionId)
+  if (!genLimit.success) {
+    return new Response("Generation limit reached — try again in a minute.", { status: 429 })
   }
 
   const experience = await getExperienceById(session.experienceId)

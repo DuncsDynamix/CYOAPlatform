@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { createSession } from "@/lib/engine/session"
 import { arriveAtNode, findFirstNodeId, getAllNodes } from "@/lib/engine/executor"
 import { getExperience } from "@/lib/db/queries/experience"
-import { requireAuth, getAnthropicKey, hasActiveSubscription } from "@/lib/auth"
-import { checkEngineLimit } from "@/lib/security/ratelimit"
+import { requireAuth, getAnthropicKey, canAccessExperience } from "@/lib/auth"
+import { hasTrainingTier } from "@/lib/subscriptions"
+import { db } from "@/lib/db/prisma"
+import { checkEngineLimit, checkGenerationLimit } from "@/lib/security/ratelimit"
 import { trackEvent } from "@/lib/analytics"
 import { StartSessionSchema } from "@/lib/validation"
 import { validateExperienceGraph } from "@/lib/authoring/graph"
@@ -40,14 +42,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
 
-  if (experience.status === "published") {
-    if (user && !hasActiveSubscription(user)) {
-      // Free tier gets access — subscription gates explored in Session 6
-    }
-  } else if (experience.status !== "preview") {
-    // Draft experiences: only the author can start a session
-    if (experience.authorId !== user?.id) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 })
+  // Org-owned experiences: members only, anonymous denied (sessions must be
+  // attributable). Non-org content keeps the public B2C behaviour. 404, not
+  // 403, so we don't leak which experiences exist.
+  if (!(await canAccessExperience(user, experience))) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 })
+  }
+
+  // Generation budget: per-user (falls back to IP for anonymous readers).
+  // IP alone is not enough — corporate learners often share a NAT address.
+  const genLimit = await checkGenerationLimit(user?.id ?? ip)
+  if (!genLimit.success) {
+    return NextResponse.json(
+      { error: "Generation limit reached — try again in a minute.", retryable: true },
+      { status: 429 }
+    )
+  }
+
+  // Org content also requires the org to hold an active training tier.
+  if (experience.orgId) {
+    const org = await db.org.findUnique({
+      where: { id: experience.orgId },
+      select: { trainingTier: true },
+    })
+    if (!hasTrainingTier(org?.trainingTier)) {
+      return NextResponse.json(
+        { error: "This organisation does not have an active training subscription" },
+        { status: 403 }
+      )
     }
   }
 
@@ -64,6 +86,7 @@ export async function POST(req: NextRequest) {
       message: "Experience graph invalid at session start",
       code: "graph_invalid_at_start",
       experienceId: experience.id,
+      orgId: experience.orgId ?? undefined,
     })
   }
 
@@ -78,6 +101,7 @@ export async function POST(req: NextRequest) {
   trackEvent("session_started", {
     sessionId: session.id,
     experienceId: experience.id,
+    orgId: experience.orgId ?? undefined,
     userId: user?.id,
     source: req.headers.get("referer") ?? undefined,
   })

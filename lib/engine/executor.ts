@@ -107,6 +107,7 @@ export async function arriveAtNode(
   trackEvent("node_reached", {
     sessionId,
     nodeId,
+    orgId: experience.orgId ?? undefined,
     nodeType: node.type,
     experienceId: experience.id,
     choicesMade: session.state.choicesMade,
@@ -229,6 +230,7 @@ async function resolveNodeContent(
         const state = updatedSession?.state ?? session.state
         trackEvent("checkpoint_reached", {
           sessionId: session.id,
+          orgId: experience.orgId ?? undefined,
           experienceId: experience.id,
           userId: session.userId ?? null,
           checkpointLabel: checkpointNode.marksCompletionOf,
@@ -284,6 +286,7 @@ async function resolveNodeContent(
 
       trackEvent("session_completed", {
         sessionId: session.id,
+        orgId: experience.orgId ?? undefined,
         experienceId: experience.id,
         userId: session.userId,
         endpointId: endpointNode.endpointId,
@@ -440,6 +443,7 @@ async function generateChildrenInParallel(
           sessionId: session.id,
           nodeId: childNode.id,
           experienceId: experience.id,
+          orgId: experience.orgId ?? undefined,
           error: message,
         })
       }

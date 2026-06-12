@@ -19,6 +19,7 @@ vi.mock("@/lib/engine/executor", () => ({
 
 vi.mock("@/lib/security/ratelimit", () => ({
   checkEngineLimit: vi.fn().mockResolvedValue({ success: true }),
+  checkGenerationLimit: vi.fn().mockResolvedValue({ success: true }),
 }))
 
 import { POST as startSession } from "@/app/api/v1/engine/start/route"

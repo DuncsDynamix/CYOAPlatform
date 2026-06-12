@@ -201,6 +201,7 @@ model AnalyticsEvent {
   user         User?   @relation(fields: [userId], references: [id])
   sessionId    String?
   experienceId String?
+  orgId        String? // denormalised for per-org usage/cost reporting
 
   eventType String // session_started, choice_made, node_reached,
   // session_completed, session_abandoned,
@@ -214,6 +215,7 @@ model AnalyticsEvent {
   @@index([sessionId])
   @@index([experienceId, eventType])
   @@index([userId, eventType])
+  @@index([orgId, createdAt])
   @@index([createdAt])
   @@map("analytics_events")
 }

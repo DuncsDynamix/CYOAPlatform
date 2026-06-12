@@ -21,13 +21,17 @@ async function uniqueSlug(base: string): Promise<string> {
   return slug
 }
 
-// GET /api/experience — list all experiences for auth'd user
+// GET /api/experience — list the user's own experiences plus, for org
+// owners/authors, everything belonging to their org (collaboration).
 export async function GET(req: NextRequest) {
   const user = await requireAuth(req)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  const isOrgEditor = !!user.orgId && (user.orgRole === "owner" || user.orgRole === "author")
   const experiences = await db.experience.findMany({
-    where: { authorId: user.id },
+    where: isOrgEditor
+      ? { OR: [{ authorId: user.id }, { orgId: user.orgId }] }
+      : { authorId: user.id },
     orderBy: { updatedAt: "desc" },
     select: {
       id: true,
@@ -50,6 +54,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await requireAuth(req)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  // Learners consume content; they don't author it.
+  if (user.orgRole === "learner") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
 
   const parsed = CreateExperienceSchema.safeParse(await req.json())
   if (!parsed.success) {
@@ -90,6 +99,7 @@ export async function POST(req: NextRequest) {
   const experience = await db.experience.create({
     data: {
       authorId: user.id,
+      orgId: user.orgId ?? null,
       title,
       slug,
       description: description ?? null,

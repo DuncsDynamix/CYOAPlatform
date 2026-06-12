@@ -5,7 +5,7 @@ import { arriveAtNode, findNode, getAllNodes } from "@/lib/engine/executor"
 import { generateDialogueResponse, assessDialogueBreakthrough } from "@/lib/engine/generator"
 import { getExperienceById } from "@/lib/db/queries/experience"
 import { requireAuth, getAnthropicKey, canAccessSession } from "@/lib/auth"
-import { checkEngineLimit } from "@/lib/security/ratelimit"
+import { checkEngineLimit, checkGenerationLimit } from "@/lib/security/ratelimit"
 import { trackEvent } from "@/lib/analytics"
 import { engineErrorResponse } from "@/lib/api/errors"
 import type { DialogueNode, ExperienceContextPack } from "@/types/experience"
@@ -55,6 +55,14 @@ export async function POST(req: NextRequest) {
 
   if (!(await canAccessSession(user?.id ?? null, session))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  const genLimit = await checkGenerationLimit(user?.id ?? sessionId)
+  if (!genLimit.success) {
+    return NextResponse.json(
+      { error: "Generation limit reached — try again in a minute.", retryable: true },
+      { status: 429 }
+    )
   }
 
   if (!session.state.dialogue) {
@@ -143,6 +151,7 @@ export async function POST(req: NextRequest) {
   trackEvent("dialogue_turn", {
     sessionId,
     experienceId: experience.id,
+    orgId: experience.orgId ?? undefined,
     nodeId: currentNode.id,
     turnCount: newTurnCount,
     breakthrough: breakthroughAchieved,

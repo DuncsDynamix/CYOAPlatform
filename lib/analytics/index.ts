@@ -144,6 +144,7 @@ export function trackEvent(
         userId: (properties.userId as string) ?? null,
         sessionId: (properties.sessionId as string) ?? null,
         experienceId: (properties.experienceId as string) ?? null,
+        orgId: (properties.orgId as string) ?? null,
       },
     })
     .catch((err) => {

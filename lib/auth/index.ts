@@ -9,6 +9,8 @@ export interface AuthUser {
   operatorApiKey?: string | null
   subscriptionStatus?: string | null
   subscriptionTier?: string | null
+  orgId?: string | null
+  orgRole?: string | null // "owner" | "author" | "learner"
 }
 
 /**
@@ -21,13 +23,31 @@ const DEV_USER: AuthUser = {
   isOperator: false,
 }
 
+const AUTH_USER_SELECT = {
+  id: true,
+  email: true,
+  isOperator: true,
+  operatorApiKey: true,
+  subscriptionStatus: true,
+  subscriptionTier: true,
+  orgId: true,
+  orgRole: true,
+} as const
+
 export async function requireAuth(
   req: NextRequest,
   _options: { allowAnonymous?: boolean } = {}
 ): Promise<AuthUser | null> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    // Supabase not configured — use the seeded dev user
-    return DEV_USER
+    // Fail closed in production: a missing env var must never silently
+    // disable authentication platform-wide.
+    if (process.env.NODE_ENV === "production") return null
+    // Local dev — use the seeded dev user, with org membership from the DB
+    // so org-gated features stay testable without Supabase.
+    const devUser = await db.user
+      .findUnique({ where: { id: DEV_USER.id }, select: AUTH_USER_SELECT })
+      .catch(() => null)
+    return devUser ?? DEV_USER
   }
 
   const supabase = createServerClient(
@@ -63,14 +83,7 @@ export async function requireAuth(
     update: {
       email: user.email!,
     },
-    select: {
-      id: true,
-      email: true,
-      isOperator: true,
-      operatorApiKey: true,
-      subscriptionStatus: true,
-      subscriptionTier: true,
-    },
+    select: AUTH_USER_SELECT,
   })
 
   return {
@@ -80,6 +93,8 @@ export async function requireAuth(
     operatorApiKey: dbUser.operatorApiKey,
     subscriptionStatus: dbUser.subscriptionStatus,
     subscriptionTier: dbUser.subscriptionTier,
+    orgId: dbUser.orgId,
+    orgRole: dbUser.orgRole,
   }
 }
 
@@ -97,22 +112,61 @@ export function getAnthropicKey(user: AuthUser | null): string {
   return process.env.ANTHROPIC_API_KEY!
 }
 
+// ─── AUTHORIZATION ───────────────────────────────────────────
+// Role matrix: org "owner" = full CRUD/publish on org experiences;
+// "author" = create + edit org experiences (no delete of others' work);
+// "learner" = play published org experiences only.
+
+export function isOrgMember(
+  user: AuthUser | null,
+  orgId: string | null | undefined
+): boolean {
+  return !!(user?.orgId && orgId && user.orgId === orgId)
+}
+
+function isOrgEditor(user: AuthUser | null, orgId: string | null | undefined): boolean {
+  return isOrgMember(user, orgId) && (user!.orgRole === "owner" || user!.orgRole === "author")
+}
+
 export async function canAccessExperience(
-  userId: string | null,
-  experience: { status: string; authorId: string }
+  user: AuthUser | null,
+  experience: { status: string; authorId: string; orgId?: string | null }
 ): Promise<boolean> {
-  if (experience.status === "published") return true
-  if (experience.authorId === userId) return true
-  return false
+  // Org-owned experiences are members-only — anonymous play is denied so
+  // pilot sessions stay attributable.
+  if (experience.orgId) {
+    if (!user) return false
+    if (user.isOperator) return true
+    if (experience.authorId === user.id) return true
+    if (experience.status === "published") return isOrgMember(user, experience.orgId)
+    return isOrgEditor(user, experience.orgId)
+  }
+  // Non-org (B2C): published and preview are public, drafts are author-only.
+  if (experience.status === "published" || experience.status === "preview") return true
+  return experience.authorId === user?.id
 }
 
 export async function canEditExperience(
-  userId: string | null,
-  experience: { authorId: string }
+  user: AuthUser | null,
+  experience: { authorId: string; orgId?: string | null }
 ): Promise<boolean> {
-  return experience.authorId === userId
+  if (!user) return false
+  if (experience.authorId === user.id) return true
+  return isOrgEditor(user, experience.orgId)
 }
 
+export async function canDeleteExperience(
+  user: AuthUser | null,
+  experience: { authorId: string; orgId?: string | null }
+): Promise<boolean> {
+  if (!user) return false
+  if (experience.authorId === user.id) return true
+  return isOrgMember(user, experience.orgId) && user.orgRole === "owner"
+}
+
+// Anonymous sessions can only exist for non-org experiences (org-owned play
+// requires an authenticated member at session start), so the open access for
+// userId-less sessions below is a B2C-only path.
 export async function canAccessSession(
   userId: string | null,
   session: { userId?: string | null }
