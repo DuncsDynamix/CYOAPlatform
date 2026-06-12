@@ -4,6 +4,7 @@ import { arriveAtNode, findNode, getAllNodes } from "@/lib/engine/executor"
 import { getExperienceById } from "@/lib/db/queries/experience"
 import { requireAuth, getAnthropicKey, canAccessSession } from "@/lib/auth"
 import { checkEngineLimit } from "@/lib/security/ratelimit"
+import { engineErrorResponse } from "@/lib/api/errors"
 import type { GeneratedNode, FixedNode, CheckpointNode, DialogueNode, EvaluativeNode, ObservedDialogueNode, SlideDeckNode } from "@/types/experience"
 
 // GET /api/engine/node?sessionId=...
@@ -72,15 +73,19 @@ export async function GET(req: NextRequest) {
   }
 
   const apiKey = getAnthropicKey(user)
-  let arrival = await arriveAtNode(sessionId, nextNodeId, experience, apiKey)
+  try {
+    let arrival = await arriveAtNode(sessionId, nextNodeId, experience, apiKey)
 
-  // Transparent mandatory-node redirect: re-arrive at the target so nodesVisited is updated correctly
-  if (arrival.content.type === "redirect") {
-    arrival = await arriveAtNode(sessionId, arrival.content.targetNodeId, experience, apiKey)
+    // Transparent mandatory-node redirect: re-arrive at the target so nodesVisited is updated correctly
+    if (arrival.content.type === "redirect") {
+      arrival = await arriveAtNode(sessionId, arrival.content.targetNodeId, experience, apiKey)
+    }
+
+    return NextResponse.json({
+      node: arrival.node,
+      content: arrival.content,
+    })
+  } catch (err) {
+    return engineErrorResponse(err, { route: "engine/node", sessionId, experienceId: experience.id })
   }
-
-  return NextResponse.json({
-    node: arrival.node,
-    content: arrival.content,
-  })
 }

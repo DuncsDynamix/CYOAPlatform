@@ -114,8 +114,11 @@ export async function arriveAtNode(
     isMandatory: (experience.shape.mandatoryNodeIds ?? []).includes(nodeId),
   })
 
-  // Fire-and-forget: pre-generate all GENERATED children
-  generateChildrenInParallel(node, nodes, session, experience, apiKey).catch(console.error)
+  // Fire-and-forget: pre-generate all GENERATED children.
+  // Per-child failures are tracked inside; this catch covers anything outside the loop.
+  generateChildrenInParallel(node, nodes, session, experience, apiKey).catch((err) => {
+    console.warn(`[pre-generation] batch failed for session ${sessionId}:`, err instanceof Error ? err.message : err)
+  })
 
   return { node, content, session }
 }
@@ -419,14 +422,27 @@ async function generateChildrenInParallel(
 ): Promise<void> {
   const children = getReachableGeneratedChildren(node, nodes)
 
+  // Per-child failure tracking: allSettled would otherwise swallow rejections
+  // and pre-generation problems (rate limits, outages) stay invisible.
   await Promise.allSettled(
     children.map(async (childNode) => {
-      const existing = await getFromCache(session.id, childNode.id)
-      if (existing) return
+      try {
+        const existing = await getFromCache(session.id, childNode.id)
+        if (existing) return
 
-      const generated = await generateNode(childNode, session, experience, apiKey)
-      await writeToCache(session.id, childNode.id, generated)
-      await saveGeneratedNode(session.id, childNode.id, generated, session)
+        const generated = await generateNode(childNode, session, experience, apiKey)
+        await writeToCache(session.id, childNode.id, generated)
+        await saveGeneratedNode(session.id, childNode.id, generated, session)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        console.warn(`[pre-generation] node ${childNode.id} failed for session ${session.id}: ${message}`)
+        trackEvent("pre_generation_failed", {
+          sessionId: session.id,
+          nodeId: childNode.id,
+          experienceId: experience.id,
+          error: message,
+        })
+      }
     })
   )
 }

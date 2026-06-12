@@ -17,6 +17,7 @@ export type EventType =
   | "dialogue_turn"
   | "checkpoint_reached"
   | "scaffold_generation_failed"
+  | "pre_generation_failed"
   | "error"
 
 // Typed properties per event — used for callsite type safety
@@ -111,6 +112,12 @@ export interface EventProperties {
       flags: Record<string, string | boolean>
       counters: Record<string, number>
     }
+  }
+  pre_generation_failed: {
+    sessionId: string
+    nodeId: string
+    experienceId?: string
+    error: string
   }
   error: {
     message: string

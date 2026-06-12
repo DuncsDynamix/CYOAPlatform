@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createSession } from "@/lib/engine/session"
-import { arriveAtNode, findFirstNodeId } from "@/lib/engine/executor"
+import { arriveAtNode, findFirstNodeId, getAllNodes } from "@/lib/engine/executor"
 import { getExperience } from "@/lib/db/queries/experience"
 import { requireAuth, getAnthropicKey, hasActiveSubscription } from "@/lib/auth"
 import { checkEngineLimit } from "@/lib/security/ratelimit"
 import { trackEvent } from "@/lib/analytics"
 import { StartSessionSchema } from "@/lib/validation"
+import { validateExperienceGraph } from "@/lib/authoring/graph"
+import { engineErrorResponse } from "@/lib/api/errors"
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "anonymous"
@@ -49,6 +51,22 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Safety net: publish-time validation should have caught this, but content
+  // published before validation existed (or edited post-publish) can still be
+  // broken. Track it so failures are attributable — don't block live content.
+  const graphCheck = validateExperienceGraph(getAllNodes(experience))
+  if (!graphCheck.valid) {
+    console.warn(
+      `[engine/start] Experience ${experience.id} has an invalid graph:`,
+      JSON.stringify({ brokenLinks: graphCheck.brokenLinks, deadEnds: graphCheck.deadEnds })
+    )
+    trackEvent("error", {
+      message: "Experience graph invalid at session start",
+      code: "graph_invalid_at_start",
+      experienceId: experience.id,
+    })
+  }
+
   const session = await createSession({
     experienceId: experience.id,
     userId: user?.id ?? null,
@@ -64,17 +82,21 @@ export async function POST(req: NextRequest) {
     source: req.headers.get("referer") ?? undefined,
   })
 
-  let arrival = await arriveAtNode(session.id, firstNodeId, experience, apiKey)
+  try {
+    let arrival = await arriveAtNode(session.id, firstNodeId, experience, apiKey)
 
-  // Transparent mandatory-node redirect: re-arrive at the target so nodesVisited is updated correctly
-  if (arrival.content.type === "redirect") {
-    arrival = await arriveAtNode(session.id, arrival.content.targetNodeId, experience, apiKey)
+    // Transparent mandatory-node redirect: re-arrive at the target so nodesVisited is updated correctly
+    if (arrival.content.type === "redirect") {
+      arrival = await arriveAtNode(session.id, arrival.content.targetNodeId, experience, apiKey)
+    }
+
+    return NextResponse.json({
+      sessionId: session.id,
+      node: arrival.node,
+      content: arrival.content,
+      experienceTitle: experience.title,
+    })
+  } catch (err) {
+    return engineErrorResponse(err, { route: "engine/start", sessionId: session.id, experienceId: experience.id })
   }
-
-  return NextResponse.json({
-    sessionId: session.id,
-    node: arrival.node,
-    content: arrival.content,
-    experienceTitle: experience.title,
-  })
 }

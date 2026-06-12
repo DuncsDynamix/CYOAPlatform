@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db/prisma"
 import { requireAuth, canEditExperience } from "@/lib/auth"
+import { validateExperienceGraph } from "@/lib/authoring/graph"
+import { getAllNodes } from "@/lib/engine/executor"
+import type { Experience } from "@/types/experience"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -18,6 +21,22 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { action } = await req.json().catch(() => ({ action: "publish" }))
   const isPublish = action !== "unpublish"
+
+  if (isPublish) {
+    const validation = validateExperienceGraph(getAllNodes(experience as unknown as Experience))
+    if (!validation.valid) {
+      return NextResponse.json(
+        {
+          error: "Experience graph has problems that would break playthroughs",
+          startNodeId: validation.startNodeId,
+          brokenLinks: validation.brokenLinks,
+          deadEnds: validation.deadEnds,
+          unreachable: validation.unreachable,
+        },
+        { status: 400 }
+      )
+    }
+  }
 
   const updated = await db.experience.update({
     where: { id },

@@ -2,8 +2,12 @@ import "@testing-library/jest-dom"
 import { vi } from "vitest"
 
 // Mock Prisma client in unit tests
-vi.mock("@/lib/db/prisma", () => ({
-  db: {
+vi.mock("@/lib/db/prisma", () => {
+  const db = {
+    experience: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
     experienceSession: {
       create: vi.fn(),
       findUnique: vi.fn(),
@@ -15,8 +19,11 @@ vi.mock("@/lib/db/prisma", () => ({
     analyticsEvent: {
       create: vi.fn(),
     },
-  },
-}))
+    // Interactive transaction: hand the same mock client to the callback
+    $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(db)),
+  }
+  return { db }
+})
 
 // Mock Redis cache in unit tests
 vi.mock("@/lib/engine/cache", () => ({
