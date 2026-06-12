@@ -1,5 +1,14 @@
 # CYOAPlatform Code Audit — Actionable Fix Plan
 
+> **Status update (2026-06-13, branch `improve/pilot-readiness`):**
+> Closed: P1-1, P1-2, P1-3, P1-4, P1-6, P1-7 (all P1s), P2-1, P2-2, P2-4,
+> P2-5 is N/A-deferred (error boundaries — deploy-day checklist), P2-6, P2-7,
+> P2-9, P2-10, P3-6. Plus org-level access control, engine start gating,
+> stream-route lockdown, operator-gated analytics, per-org analytics, and the
+> React Flow builder rebuild — see the four milestone commits from 6c63376.
+> Still open: P2-3 (Zod-typed contextPack/shape/nodes), P2-8 partially
+> (goldtap seed has a guard; older seeds vary), P3-2, P3-7.
+
 ## Context
 
 Full audit of the Traverse platform codebase: engine layer, API routes, React components, database schema, types, tests, config, and utilities. The audit was motivated by a desire to understand real risk exposure and prioritise technical work post-Phase 6 completion. Three independent agent sweeps covered (1) engine/API, (2) frontend/CSS, (3) DB/types/config/tests.
