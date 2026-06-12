@@ -53,3 +53,12 @@ describe("middleware fail-closed", () => {
     expect(res.status).toBe(200)
   })
 })
+
+describe("validateConfig build-phase exemption", () => {
+  it("does not block `next build` even in production mode", () => {
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("NEXT_PHASE", "phase-production-build")
+    vi.stubEnv("DATABASE_URL", undefined)
+    expect(() => validateConfig()).not.toThrow()
+  })
+})

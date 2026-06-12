@@ -16,6 +16,9 @@ const REQUIRED_IN_PRODUCTION = [
 
 export function validateConfig(): void {
   if (process.env.NODE_ENV !== "production") return
+  // `next build` runs with NODE_ENV=production on any machine — the guard is
+  // for serving traffic, not compiling. Deployment env vars land at runtime.
+  if (process.env.NEXT_PHASE === "phase-production-build") return
 
   const missing = REQUIRED_IN_PRODUCTION.filter((key) => !process.env[key])
   if (missing.length > 0) {

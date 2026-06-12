@@ -148,18 +148,8 @@ export async function getNodeReachStats(
 
 // ─── AI COST TRACKING ─────────────────────────────────────────
 
-export async function getGenerationCosts(
-  dateFrom: Date,
-  dateTo: Date
-): Promise<CostSummary> {
-  const events = await db.analyticsEvent.findMany({
-    where: {
-      eventType: "generation_metric",
-      createdAt: { gte: dateFrom, lte: dateTo },
-    },
-    select: { properties: true },
-  })
-
+/** Sums token usage and estimated USD cost over generation_metric events. */
+function summariseGenerationEvents(events: { properties: unknown }[]): CostSummary {
   let estimatedCostUSD = 0
   const totals = events.reduce(
     (acc, event) => {
@@ -180,9 +170,58 @@ export async function getGenerationCosts(
     { totalInputTokens: 0, totalOutputTokens: 0, totalRequests: 0, totalDurationMs: 0 }
   )
 
+  return { ...totals, estimatedCostUSD }
+}
+
+export async function getGenerationCosts(
+  dateFrom: Date,
+  dateTo: Date
+): Promise<CostSummary> {
+  const events = await db.analyticsEvent.findMany({
+    where: {
+      eventType: "generation_metric",
+      createdAt: { gte: dateFrom, lte: dateTo },
+    },
+    select: { properties: true },
+  })
+
+  return summariseGenerationEvents(events)
+}
+
+// ─── PER-ORG USAGE (org owner reporting) ─────────────────────
+
+export interface OrgUsageSummary {
+  sessionsStarted: number
+  sessionsCompleted: number
+  completionRate: number
+  generation: CostSummary
+}
+
+export async function getOrgUsage(
+  orgId: string,
+  dateFrom: Date,
+  dateTo: Date
+): Promise<OrgUsageSummary> {
+  const range = { gte: dateFrom, lte: dateTo }
+
+  const [sessionsStarted, sessionsCompleted, generationEvents] = await Promise.all([
+    db.analyticsEvent.count({
+      where: { orgId, eventType: "session_started", createdAt: range },
+    }),
+    db.analyticsEvent.count({
+      where: { orgId, eventType: "session_completed", createdAt: range },
+    }),
+    db.analyticsEvent.findMany({
+      where: { orgId, eventType: "generation_metric", createdAt: range },
+      select: { properties: true },
+    }),
+  ])
+
   return {
-    ...totals,
-    estimatedCostUSD,
+    sessionsStarted,
+    sessionsCompleted,
+    completionRate: sessionsStarted > 0 ? Math.round((sessionsCompleted / sessionsStarted) * 100) : 0,
+    generation: summariseGenerationEvents(generationEvents),
   }
 }
 

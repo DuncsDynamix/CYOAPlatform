@@ -15,7 +15,7 @@ vi.mock("@/lib/db/prisma", () => {
     experience: {
       findUnique: vi.fn(),
       update: vi.fn(),
-      findMany: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
       create: vi.fn(),
       delete: vi.fn(),
     },
@@ -29,6 +29,8 @@ vi.mock("@/lib/db/prisma", () => {
     },
     analyticsEvent: {
       create: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
+      findMany: vi.fn().mockResolvedValue([]),
     },
     // Interactive transaction: hand the same mock client to the callback
     $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(db)),
