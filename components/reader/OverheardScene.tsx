@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 interface OverheardSceneProps {
   exchanges: { speaker: string; line: string }[]
@@ -14,6 +14,14 @@ interface OverheardSceneProps {
 export function OverheardScene({ exchanges, openingContext, onContinue }: OverheardSceneProps) {
   const [revealed, setRevealed] = useState(1)
   const isComplete = revealed >= exchanges.length
+
+  // Reset the reveal when a new scene arrives. BookView renders this without
+  // a key, so consecutive observed_dialogue nodes reuse the instance — each
+  // engine dispatch creates a fresh `exchanges` array reference, making this
+  // a reliable per-node reset.
+  useEffect(() => {
+    setRevealed(1)
+  }, [exchanges])
 
   return (
     <div className="lib-overheard">
