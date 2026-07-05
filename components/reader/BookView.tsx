@@ -306,7 +306,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
         {status.responseType === "open" ? (
           <MarginInput
             prompt={status.prompt ?? status.openPrompt}
-            onSubmit={(text) => choose(status.sessionId, text)}
+            onSubmit={(text) => choose(status.sessionId, text, undefined, text)}
           />
         ) : (
           <ChoiceFoot

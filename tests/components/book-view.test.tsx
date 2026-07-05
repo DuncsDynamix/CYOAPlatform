@@ -103,6 +103,37 @@ describe("BookView", () => {
     expect(screen.getByText(/one of 3 endings/i)).toBeInTheDocument()
   })
 
+  it("submits margin-input text as freeTextResponse, not choiceId", async () => {
+    const fetchMock = vi.fn((input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes("/engine/start"))
+        return jsonResponse({
+          sessionId: "s1",
+          node: { id: "c1", type: "CHOICE", responseType: "open", openPrompt: "What now?" },
+          content: { type: "choice", prompt: "What now?", options: [] },
+          experienceTitle: "T",
+        })
+      if (url.includes("/engine/choose"))
+        return jsonResponse({ node: { id: "n2", type: "GENERATED" }, content: proseContent })
+      return jsonResponse({}, 500)
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    render(<BookView {...bookProps()} />)
+    fireEvent.click(screen.getByRole("button", { name: /begin/i }))
+
+    const box = await screen.findByPlaceholderText(/what do you do/i)
+    fireEvent.change(box, { target: { value: "run away" } })
+    fireEvent.click(screen.getByRole("button", { name: /write/i }))
+
+    await waitFor(() => expect(screen.getByText(/gate stands open/i)).toBeInTheDocument())
+    const chooseCall = fetchMock.mock.calls.find((call) => String(call[0]).includes("/engine/choose"))
+    expect(chooseCall).toBeDefined()
+    const body = JSON.parse((chooseCall![1] as RequestInit).body as string)
+    expect(body.freeTextResponse).toBe("run away")
+    expect(body.choiceId).toBeUndefined()
+  })
+
   it("shows a graceful misbound page for training-only content types", async () => {
     const fetchMock = vi.fn(() => jsonResponse({ sessionId: "s1", node: { id: "d1", type: "DIALOGUE" }, content: { type: "dialogue", actorName: "Sam", actorRole: "", characterLine: "…", turnCount: 0, maxTurns: 5 }, experienceTitle: "T" }))
     vi.stubGlobal("fetch", fetchMock)
