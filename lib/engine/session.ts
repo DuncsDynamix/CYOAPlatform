@@ -262,6 +262,11 @@ export async function appendNarrativeHistory(
   entry: NarrativeHistoryEntry
 ): Promise<void> {
   await commitSessionMutation(sessionId, (draft) => {
+    // Idempotent: a node can reach history via more than one path (e.g. the
+    // choose route's requiresFresh generation appends before arrival, then
+    // arrival cache-hits the same node and would otherwise append again).
+    // Skip rather than dedupe-after-the-fact so callers can append freely.
+    if (draft.narrativeHistory.some((h) => h.nodeId === entry.nodeId)) return
     appendNarrativeEntry(draft.narrativeHistory, entry)
   })
 }

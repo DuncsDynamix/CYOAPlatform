@@ -42,6 +42,8 @@ vi.mock("@/lib/db/prisma", () => {
 vi.mock("@/lib/engine/cache", () => ({
   getFromCache: vi.fn().mockResolvedValue(null),
   writeToCache: vi.fn().mockResolvedValue(undefined),
+  getScaffoldFromCache: vi.fn().mockResolvedValue(null),
+  writeScaffoldToCache: vi.fn().mockResolvedValue(undefined),
   clearSessionCache: vi.fn().mockResolvedValue(undefined),
 }))
 
