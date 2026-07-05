@@ -37,7 +37,9 @@ export function PageSpread({ prose, nodeId, turnKey, lastChoice, progressPct, ch
           ))}
         </div>
         {children}
-        <p className="lib-page-number">· {decorativePageNumber(nodeId)} ·</p>
+        {/* turnKey ?? nodeId: on a merged prose→choice page the sheet never
+            turned, so its printed number must not shift under the reader. */}
+        <p className="lib-page-number">· {decorativePageNumber(turnKey ?? nodeId)} ·</p>
       </div>
     </div>
   )

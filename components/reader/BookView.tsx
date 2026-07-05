@@ -88,6 +88,16 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
   const prefetchAbortRef = useRef<AbortController | null>(null)
   const prefetchPromiseRef = useRef<Promise<"merged" | "stashed" | "failed"> | null>(null)
 
+  // Re-entrancy guard for continueFromProse: a second Continue click while
+  // the first is still being serviced (stash consumption, or an awaited
+  // in-flight prefetch) must be ignored, or it would fall through to a
+  // second live advance() and silently skip a node. Cleared whenever
+  // content dispatches, and on advance()'s failure paths so the smudged
+  // page's retry still works. prefetchNext also reads it: once Continue
+  // has been clicked, a resolving choice prefetch stashes instead of
+  // merging, so the settle handler can dispatch it as a normal page turn.
+  const continuingRef = useRef(false)
+
   useEffect(() => {
     return () => {
       abortRef.current?.abort()
@@ -130,7 +140,12 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
         if (!res.ok) return "failed"
         const data = (await res.json()) as { node: Node; content: ResolvedContent }
 
-        if (data.content.type === "choice") {
+        // A choice merges onto the page being read — but only while the
+        // reader is still reading it. If Continue has already been clicked
+        // (continuingRef), the reader explicitly asked to advance and is
+        // watching the turning interstitial, so stash instead: the settle
+        // handler in continueFromProse dispatches it as a normal page turn.
+        if (data.content.type === "choice" && !continuingRef.current) {
           setStatus((prev) => {
             // Stale if the reader already moved on (e.g. a live advance beat
             // this prefetch, or a new prose page has since been dispatched).
@@ -165,6 +180,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
   }
 
   const dispatchContent = useCallback((sessionId: string, node: Node, content: ResolvedContent) => {
+    continuingRef.current = false // content is landing — Continue may be pressed again
     if (content.type === "prose") {
       lastProseRef.current = content.content
       setStatus({ phase: "prose", sessionId, nodeId: node.id, content: content.content, lastChoice: lastChoiceRef.current })
@@ -221,6 +237,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
       const res = await fetch(`/api/v1/engine/node?sessionId=${sessionId}`, { signal: nextSignal() })
       if (!res.ok) {
         const failure = await readFailure(res, "Could not turn the page")
+        continuingRef.current = false // unblock the smudged page's retry
         setStatus({ phase: "smudged", ...failure, retry: () => advance(sessionId) })
         return
       }
@@ -228,6 +245,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
       dispatchContent(sessionId, data.node, data.content)
     } catch (err) {
       if (isAbort(err)) return
+      continuingRef.current = false // unblock the smudged page's retry
       setStatus({ phase: "smudged", message: "Network error — please try again", retryable: true, retry: () => advance(sessionId) })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,34 +258,47 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
    * Race safety: if a prefetch for this node is still in flight, we AWAIT
    * that promise rather than aborting it and firing a second GET — the
    * prefetch is already on the wire, so racing it would only waste a
-   * request. Once it settles we either dispatch what it stashed, do
-   * nothing (it already merged us into "choice" itself), or fall back to
-   * a normal turning-phase advance() if it failed.
+   * request (and, since the GET advances the server session, could skip a
+   * node). While we wait, the "turning" phase shows TurningLeaf's staged
+   * messages — this is exactly the long-generation wait they were built
+   * for. Because continuingRef is set before the prefetch settles, its
+   * choice branch stashes rather than merging (the prose page is gone),
+   * and the settle handler here dispatches the result exactly once.
+   *
+   * Re-entrant clicks are ignored via continuingRef: without it, a second
+   * click would attach a second settle handler whose stash read comes up
+   * empty and falls through to a live advance(), skipping a node.
    */
   const continueFromProse = useCallback((sessionId: string) => {
+    if (continuingRef.current) return
+    continuingRef.current = true
+
     const stashed = prefetchedRef.current
     if (stashed) {
       prefetchedRef.current = null
-      dispatchContent(sessionId, stashed.node, stashed.content)
+      dispatchContent(sessionId, stashed.node, stashed.content) // clears continuingRef
       return
     }
 
     const inFlight = prefetchPromiseRef.current
     if (inFlight) {
+      // Cover the wait — the page really is still being written.
+      setStatus({ phase: "turning", sessionId })
       inFlight.then((outcome) => {
-        if (outcome === "merged") return // already transitioned to the choice phase
         const settled = prefetchedRef.current
-        if (outcome === "stashed" && settled) {
+        if (settled) {
           prefetchedRef.current = null
-          dispatchContent(sessionId, settled.node, settled.content)
+          dispatchContent(sessionId, settled.node, settled.content) // clears continuingRef
           return
         }
+        continuingRef.current = false
+        if (outcome === "merged") return // merged before this click was serviced — the choice page is already up
         advance(sessionId) // failed — no prefetch to fall back on
       })
       return
     }
 
-    advance(sessionId)
+    advance(sessionId) // clears continuingRef via dispatchContent or its failure paths
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatchContent, advance])
 

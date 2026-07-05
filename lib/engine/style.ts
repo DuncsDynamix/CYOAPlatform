@@ -12,12 +12,17 @@
  * author-written FIXED content, which is left exactly as authored.
  */
 export function stripEmDashes(text: string): string {
+  // Spaced-dash patterns match only horizontal whitespace ([ \t]) so a dash
+  // sitting against a newline can never swallow a paragraph break.
   return text
-    .replace(/\s+—\s+/g, ", ") // spaced em-dash
+    .replace(/[ \t]+—[ \t]+/g, ", ") // spaced em-dash
     .replace(/—/g, ", ") // tight em-dash
-    .replace(/\s+–\s+/g, ", ") // spaced en-dash used as a clause break (tight en-dashes, e.g. "10–20", are left alone)
+    .replace(/[ \t]+–[ \t]+/g, ", ") // spaced en-dash used as a clause break (tight en-dashes, e.g. "10–20", are left alone)
+    .replace(/[ \t]+--[ \t]+/g, ", ") // spaced double-hyphen clause break
+    .replace(/(\w)--(?=\w)/g, "$1, ") // tight double-hyphen clause break between words
     .replace(/ {2,}/g, " ") // collapse any double spaces the substitutions above introduced
-    .replace(/,\s*,/g, ",") // collapse any double commas
+    .replace(/,[ \t]*,/g, ",") // collapse any double commas
     .replace(/ ,/g, ",") // a comma left with a stray leading space
-    .replace(/,\./g, ".") // a comma immediately before a full stop
+    .replace(/,[ \t]*\./g, ".") // a comma (however spaced) immediately before a full stop
+    .replace(/[ \t]+\n/g, "\n") // trailing spaces a dash-before-newline substitution left behind
 }

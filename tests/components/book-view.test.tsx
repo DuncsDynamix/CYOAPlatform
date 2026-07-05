@@ -259,6 +259,77 @@ describe("BookView", () => {
     expect(nodeCalls).toBe(3)
   })
 
+  it("double-clicking Continue during an in-flight prefetch consumes exactly one node — no skip, no extra fetch", async () => {
+    const secondProse = { type: "prose", content: "The second page turns quietly." }
+    let resolvePrefetch: ((value: Response) => void) | null = null
+    let nodeCalls = 0
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/engine/start"))
+        return jsonResponse({ sessionId: "s1", node: { id: "n1", type: "FIXED" }, content: proseContent, experienceTitle: "T" })
+      if (url.includes("/engine/node")) {
+        nodeCalls++
+        if (nodeCalls === 1)
+          return new Promise<Response>((resolve) => { resolvePrefetch = resolve }) // held open until we release it
+        return new Promise<Response>(() => {}) // page 2's own background prefetch — never resolves
+      }
+      return jsonResponse({}, 500)
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    render(<BookView {...bookProps()} />)
+    fireEvent.click(screen.getByRole("button", { name: /begin/i }))
+    await screen.findByText(/gate stands open/i)
+    await waitFor(() => expect(resolvePrefetch).not.toBeNull())
+
+    // Two rapid Continue clicks while the prefetch is still on the wire.
+    const continueBtn = screen.getByRole("button", { name: /continue/i })
+    fireEvent.click(continueBtn)
+    fireEvent.click(continueBtn)
+
+    resolvePrefetch!({ ok: true, status: 200, json: () => Promise.resolve({ node: { id: "n2", type: "FIXED" }, content: secondProse }) } as Response)
+
+    await screen.findByText(/second page turns quietly/i)
+
+    // 1: the held prefetch (consumed once). 2: page 2's own background prefetch.
+    // A re-entrant second click would have fired a THIRD live fetch and
+    // skipped past n2 entirely.
+    expect(nodeCalls).toBe(2)
+  })
+
+  it("shows the turning interstitial when Continue is clicked while the prefetch is still in flight", async () => {
+    const secondProse = { type: "prose", content: "The second page turns quietly." }
+    let resolvePrefetch: ((value: Response) => void) | null = null
+    let nodeCalls = 0
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/engine/start"))
+        return jsonResponse({ sessionId: "s1", node: { id: "n1", type: "FIXED" }, content: proseContent, experienceTitle: "T" })
+      if (url.includes("/engine/node")) {
+        nodeCalls++
+        if (nodeCalls === 1)
+          return new Promise<Response>((resolve) => { resolvePrefetch = resolve })
+        return new Promise<Response>(() => {})
+      }
+      return jsonResponse({}, 500)
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    render(<BookView {...bookProps()} />)
+    fireEvent.click(screen.getByRole("button", { name: /begin/i }))
+    await screen.findByText(/gate stands open/i)
+    await waitFor(() => expect(resolvePrefetch).not.toBeNull())
+
+    fireEvent.click(screen.getByRole("button", { name: /continue/i }))
+
+    // The reader asked to advance while the page is still being written — the
+    // turning interstitial (with its staged messages) must cover the wait.
+    await screen.findByText(/turning the page/i)
+
+    resolvePrefetch!({ ok: true, status: 200, json: () => Promise.resolve({ node: { id: "n2", type: "FIXED" }, content: secondProse }) } as Response)
+    await screen.findByText(/second page turns quietly/i)
+  })
+
   it("shows a graceful misbound page for training-only content types", async () => {
     const fetchMock = vi.fn(() => jsonResponse({ sessionId: "s1", node: { id: "d1", type: "DIALOGUE" }, content: { type: "dialogue", actorName: "Sam", actorRole: "", characterLine: "…", turnCount: 0, maxTurns: 5 }, experienceTitle: "T" }))
     vi.stubGlobal("fetch", fetchMock)

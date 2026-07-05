@@ -37,6 +37,22 @@ describe("stripEmDashes", () => {
     expect(result).not.toMatch(/ {2,}/)
     expect(result).not.toMatch(/,\s*,/)
   })
+
+  it("never collapses a paragraph break when an em-dash sits against a newline", () => {
+    expect(stripEmDashes("The lamp gutters —\n\nMorning comes.")).toBe("The lamp gutters,\n\nMorning comes.")
+  })
+
+  it("replaces a spaced double-hyphen clause break with a comma", () => {
+    expect(stripEmDashes("She paused -- listening hard -- then moved.")).toBe("She paused, listening hard, then moved.")
+  })
+
+  it("replaces a tight double-hyphen clause break with a comma", () => {
+    expect(stripEmDashes("Wait--stop right there.")).toBe("Wait, stop right there.")
+  })
+
+  it("cleans up a tight dash immediately before a period", () => {
+    expect(stripEmDashes("He reached for the handle—.")).toBe("He reached for the handle.")
+  })
 })
 
 describe("buildSystemPrompt — anti-AI writing rules", () => {
