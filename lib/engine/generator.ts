@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk"
-import { buildSystemPrompt, buildGenerationPrompt, buildEndpointSummaryPrompt } from "./prompts"
+import { buildSystemPrompt, buildGenerationPrompt, buildEndpointSummaryPrompt, WRITING_STYLE_RULES } from "./prompts"
+import { stripEmDashes } from "./style"
 import { buildArcAwareness } from "./arc"
 import { USE_CASE_PACKS } from "./usecases"
 import { generationQueue } from "./queue"
@@ -51,7 +52,7 @@ export async function generateNode(
   if (!message) throw new Error("Generation queue returned undefined")
 
   const duration = Date.now() - startTime
-  const content = message.content[0].type === "text" ? message.content[0].text : ""
+  const content = stripEmDashes(message.content[0].type === "text" ? message.content[0].text : "")
 
   trackEvent("generation_metric", {
     sessionId: session.id,
@@ -169,7 +170,9 @@ export async function generateEndpointSummary(
   const choiceHistory = session.choiceHistory as ChoiceHistoryEntry[]
 
   const prompt = buildEndpointSummaryPrompt(narrativeSummary, choiceHistory, summaryInstruction, session.state.counters)
-  const systemPrompt = `You are a master storyteller writing a personalised ending reflection. ${contextPack.style?.styleNotes ?? ""}`
+  const systemPrompt = `You are a master storyteller writing a personalised ending reflection. ${contextPack.style?.styleNotes ?? ""}
+
+${WRITING_STYLE_RULES}`
 
   const message = await generationQueue.add(() =>
     anthropic.messages.create({
@@ -183,7 +186,7 @@ export async function generateEndpointSummary(
 
   if (!message) throw new Error("Generation queue returned undefined")
 
-  return message.content[0].type === "text" ? message.content[0].text : ""
+  return stripEmDashes(message.content[0].type === "text" ? message.content[0].text : "")
 }
 
 // ─── DIALOGUE GENERATORS ─────────────────────────────────────
@@ -209,7 +212,9 @@ Your relationship to the protagonist: ${actor.relationshipToProtagonist}
 Setting: ${contextPack.world?.description ?? ""}
 Tone: ${contextPack.style?.tone ?? "professional"}
 
-Write ONLY your character's spoken line — no action descriptions, no stage directions, no quotation marks. 1–3 sentences maximum.`
+Write ONLY your character's spoken line — no action descriptions, no stage directions, no quotation marks. 1–3 sentences maximum.
+
+${WRITING_STYLE_RULES}`
 
   const userPrompt = `The participant (${contextPack.protagonist?.role ?? "learner"}) has just arrived at this scene.
 Start the conversation to set up this situation: ${node.breakthroughCriteria}
@@ -227,7 +232,7 @@ Write your opening line now.`
   )
 
   if (!message) throw new Error("Generation queue returned undefined")
-  return message.content[0].type === "text" ? message.content[0].text.trim() : ""
+  return stripEmDashes(message.content[0].type === "text" ? message.content[0].text.trim() : "")
 }
 
 /**
@@ -252,7 +257,9 @@ Your relationship to the protagonist: ${actor.relationshipToProtagonist}
 Setting: ${contextPack.world?.description ?? ""}
 Tone: ${contextPack.style?.tone ?? "professional"}
 
-Write ONLY your character's spoken response — no action descriptions, no stage directions, no quotation marks. 1–4 sentences maximum. Respond naturally to what the participant just said.`
+Write ONLY your character's spoken response — no action descriptions, no stage directions, no quotation marks. 1–4 sentences maximum. Respond naturally to what the participant just said.
+
+${WRITING_STYLE_RULES}`
 
   const conversationMessages: Anthropic.MessageParam[] = []
   for (const turn of turns) {
@@ -279,7 +286,7 @@ Write ONLY your character's spoken response — no action descriptions, no stage
   )
 
   if (!message) throw new Error("Generation queue returned undefined")
-  return message.content[0].type === "text" ? message.content[0].text.trim() : ""
+  return stripEmDashes(message.content[0].type === "text" ? message.content[0].text.trim() : "")
 }
 
 /**
@@ -356,7 +363,9 @@ Tone: ${contextPack.style?.tone ?? "professional"}
 Character A — ${actorA.name}: ${actorA.role}. ${actorA.personality} Speech: ${actorA.speech}
 Character B — ${actorB.name}: ${actorB.role}. ${actorB.personality} Speech: ${actorB.speech}
 
-Write realistic, natural dialogue. Each line should be 1–3 sentences. Include occasional brief action beats in parentheses if they add clarity (e.g., "(glances at the clipboard)"). Keep it grounded and authentic to the workplace context.`
+Write realistic, natural dialogue. Each line should be 1–3 sentences. Include occasional brief action beats in parentheses if they add clarity (e.g., "(glances at the clipboard)"). Keep it grounded and authentic to the workplace context.
+
+${WRITING_STYLE_RULES}`
 
     const userPrompt = `Write a dialogue exchange of exactly ${node.turns} turns (${node.turns} lines total, alternating speakers) between ${actorA.name} and ${actorB.name}.
 
@@ -388,7 +397,7 @@ Alternate speakers starting with ${actorA.name}. Return exactly ${node.turns} ob
     const parsed = JSON.parse(raw) as { speaker: string; line: string }[]
 
     if (!Array.isArray(parsed) || parsed.length === 0) return fallback
-    return parsed
+    return parsed.map((turn) => ({ ...turn, line: stripEmDashes(turn.line) }))
   } catch (err) {
     console.error(`[observed-dialogue] Generation failed for node ${node.id}:`, err)
     return fallback

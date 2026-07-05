@@ -64,9 +64,25 @@ Register: ${contextPack.style.register}
 Length: ${contextPack.style.targetLength.min}–${contextPack.style.targetLength.max} words per scene
 ${contextPack.style.styleNotes}
 
+${WRITING_STYLE_RULES}
+
 Write ONLY the narrative prose. No titles, no headings, no labels.
   `.trim()
 }
+
+/**
+ * Appended to every prose-generation system prompt (and, in generator.ts,
+ * folded into the endpoint-summary and dialogue system prompts too) to push
+ * back on the stock tics that read as machine-written — heavy em-dash use
+ * chief among them. Kept as an exported constant so callers building their
+ * own system prompts (endpoint summaries, dialogue) can reuse it verbatim.
+ */
+export const WRITING_STYLE_RULES = `WRITING STYLE — HARD RULES:
+- Never use em-dashes (—) or double hyphens. Restructure into separate sentences, or use a comma or colon.
+- Avoid stock constructions that read as machine-written: "not X, but Y"; "the way X does Y"; endings that rename what was just said; "something about..."; three-item parallel lists used more than once per page.
+- Vary sentence length. Let some sentences be short and plain. Do not give every paragraph the same rhythm.
+- Prefer concrete nouns and active verbs. At most one simile per page.
+- Show, don't summarize: never tell the reader what they understand or feel about what just happened.`
 
 /**
  * Builds the user-turn generation prompt with arc awareness,
