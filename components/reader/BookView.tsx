@@ -20,7 +20,7 @@ type BookStatus =
   | { phase: "cover" }
   | { phase: "opening"; sessionId: string; message: string; progress: number }
   | { phase: "prose"; sessionId: string; nodeId: string; content: string; lastChoice: string | null }
-  | { phase: "choice"; sessionId: string; nodeId: string; prompt?: string; options: ChoiceOption[]; responseType: "closed" | "open"; openPrompt?: string; lastProse: string }
+  | { phase: "choice"; sessionId: string; nodeId: string; prompt?: string; options: ChoiceOption[]; responseType: "closed" | "open"; openPrompt?: string; lastProse: string; turnKey?: string }
   | { phase: "overheard"; sessionId: string; exchanges: { speaker: string; line: string }[]; openingContext?: string }
   | { phase: "turning"; sessionId: string }
   | { phase: "colophon"; sessionId: string; closingLine: string; summary: string; outcomeCard: OutcomeCardData }
@@ -73,8 +73,26 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
 
   // Abort in-flight requests on unmount so late responses can't set state.
   const abortRef = useRef<AbortController | null>(null)
+
+  // ─── Background prefetch (prose → next node) ───────────────────
+  // Fired the moment prose content is dispatched, so a Continue click can
+  // land instantly instead of paying for a live fetch behind a page-turn.
+  //
+  // prefetchedRef holds a non-choice result until Continue consumes it.
+  // prefetchNodeIdRef guards "one prefetch per node" so re-renders of the
+  // same prose page never fire a second request.
+  // prefetchAbortRef/PromiseRef track the in-flight request so Continue can
+  // await it instead of racing a second, redundant fetch (see continueFromProse).
+  const prefetchedRef = useRef<{ node: Node; content: ResolvedContent } | null>(null)
+  const prefetchNodeIdRef = useRef<string | null>(null)
+  const prefetchAbortRef = useRef<AbortController | null>(null)
+  const prefetchPromiseRef = useRef<Promise<"merged" | "stashed" | "failed"> | null>(null)
+
   useEffect(() => {
-    return () => abortRef.current?.abort()
+    return () => {
+      abortRef.current?.abort()
+      prefetchAbortRef.current?.abort()
+    }
   }, [])
 
   function nextSignal(): AbortSignal {
@@ -87,10 +105,70 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
     return err instanceof DOMException && err.name === "AbortError"
   }
 
+  /**
+   * Fires the same GET /engine/node call `advance()` makes, but in the
+   * background and without ever entering the "turning" phase — the reader
+   * keeps reading the current prose while the next node is fetched.
+   *
+   * A choice result merges straight onto the page being read (turnKey keeps
+   * the recto from remounting, so no page-turn plays). Anything else is
+   * stashed for Continue to dispatch synchronously. Failures are silent:
+   * Continue simply falls back to a live advance(), same as if there had
+   * been no prefetch at all.
+   */
+  function prefetchNext(sessionId: string, nodeId: string) {
+    if (prefetchNodeIdRef.current === nodeId) return // one prefetch per node
+    prefetchNodeIdRef.current = nodeId
+    prefetchedRef.current = null
+
+    const controller = new AbortController()
+    prefetchAbortRef.current = controller
+
+    const promise = (async (): Promise<"merged" | "stashed" | "failed"> => {
+      try {
+        const res = await fetch(`/api/v1/engine/node?sessionId=${sessionId}`, { signal: controller.signal })
+        if (!res.ok) return "failed"
+        const data = (await res.json()) as { node: Node; content: ResolvedContent }
+
+        if (data.content.type === "choice") {
+          setStatus((prev) => {
+            // Stale if the reader already moved on (e.g. a live advance beat
+            // this prefetch, or a new prose page has since been dispatched).
+            if (prev.phase !== "prose" || prev.nodeId !== nodeId) return prev
+            return {
+              phase: "choice",
+              sessionId,
+              nodeId: data.node.id,
+              prompt: data.content.type === "choice" ? data.content.prompt : undefined,
+              options: data.content.type === "choice" ? data.content.options : [],
+              responseType: (data.node as Extract<Node, { type: "CHOICE" }>).responseType ?? "closed",
+              openPrompt: (data.node as Extract<Node, { type: "CHOICE" }>).openPrompt,
+              lastProse: lastProseRef.current,
+              turnKey: nodeId, // keep the prose page's key — this is not a page-turn
+            }
+          })
+          return "merged"
+        }
+
+        prefetchedRef.current = { node: data.node, content: data.content }
+        return "stashed"
+      } catch {
+        return "failed" // covers both network errors and the abort-on-unmount case
+      }
+    })()
+
+    prefetchPromiseRef.current = promise
+    promise.finally(() => {
+      if (prefetchAbortRef.current === controller) prefetchAbortRef.current = null
+      if (prefetchPromiseRef.current === promise) prefetchPromiseRef.current = null
+    })
+  }
+
   const dispatchContent = useCallback((sessionId: string, node: Node, content: ResolvedContent) => {
     if (content.type === "prose") {
       lastProseRef.current = content.content
       setStatus({ phase: "prose", sessionId, nodeId: node.id, content: content.content, lastChoice: lastChoiceRef.current })
+      prefetchNext(sessionId, node.id)
       return
     }
 
@@ -154,6 +232,44 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatchContent])
+
+  /**
+   * The prose-phase Continue button's handler. Prefers whatever the
+   * background prefetch already produced over firing a live request.
+   *
+   * Race safety: if a prefetch for this node is still in flight, we AWAIT
+   * that promise rather than aborting it and firing a second GET — the
+   * prefetch is already on the wire, so racing it would only waste a
+   * request. Once it settles we either dispatch what it stashed, do
+   * nothing (it already merged us into "choice" itself), or fall back to
+   * a normal turning-phase advance() if it failed.
+   */
+  const continueFromProse = useCallback((sessionId: string) => {
+    const stashed = prefetchedRef.current
+    if (stashed) {
+      prefetchedRef.current = null
+      dispatchContent(sessionId, stashed.node, stashed.content)
+      return
+    }
+
+    const inFlight = prefetchPromiseRef.current
+    if (inFlight) {
+      inFlight.then((outcome) => {
+        if (outcome === "merged") return // already transitioned to the choice phase
+        const settled = prefetchedRef.current
+        if (outcome === "stashed" && settled) {
+          prefetchedRef.current = null
+          dispatchContent(sessionId, settled.node, settled.content)
+          return
+        }
+        advance(sessionId) // failed — no prefetch to fall back on
+      })
+      return
+    }
+
+    advance(sessionId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatchContent, advance])
 
   const begin = useCallback(async () => {
     // A rapid double-click on Begin must not fire two /engine/start requests
@@ -323,7 +439,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
           lastChoice={status.lastChoice}
           progressPct={progressPct}
         >
-          <button className="lib-btn lib-btn--quiet lib-continue" onClick={() => advance(status.sessionId)}>Continue →</button>
+          <button className="lib-btn lib-btn--quiet lib-continue" onClick={() => continueFromProse(status.sessionId)}>Continue →</button>
         </PageSpread>
       </Stage>
     )
@@ -335,6 +451,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
         <PageSpread
           prose={status.lastProse}
           nodeId={status.nodeId}
+          turnKey={status.turnKey}
           lastChoice={lastChoiceRef.current}
           progressPct={progressPct}
         >

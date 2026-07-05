@@ -105,7 +105,11 @@
 .lib-page-turn-enter { transform-origin: left center; animation: lib-page-in 480ms cubic-bezier(0.3, 0.6, 0.2, 1); backface-visibility: hidden; }
 
 /* ── Choices set into the page foot ── */
-.lib-choice-foot { margin-top: 1.8rem; border-top: 3px double color-mix(in srgb, var(--lib-gilt) 70%, transparent); padding-top: 1.4rem; display: flex; flex-direction: column; gap: 0.7rem; }
+/* When a prefetched choice merges onto the page the reader is already on
+   (no page-turn), this quiet rise-and-fade gives the foot a deliberate
+   arrival instead of just popping into place. */
+@keyframes lib-choice-foot-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.lib-choice-foot { margin-top: 1.8rem; border-top: 3px double color-mix(in srgb, var(--lib-gilt) 70%, transparent); padding-top: 1.4rem; display: flex; flex-direction: column; gap: 0.7rem; animation: lib-choice-foot-in 300ms ease; }
 .lib-choice-prompt { font-family: 'Playfair Display', serif; font-style: italic; color: var(--lib-ink-2); margin: 0 0 0.4rem; }
 .lib-choice {
   display: block; width: 100%; text-align: left; cursor: pointer;
@@ -188,4 +192,5 @@
   .lib-book--opening .lib-cover { transform: none; opacity: 0; }
   .lib-page-turn-enter { animation: none; }
   .lib-turning-msg--fade { animation: none; }
+  .lib-choice-foot { animation: none; }
 }

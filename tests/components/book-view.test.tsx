@@ -137,7 +137,7 @@ describe("BookView", () => {
     expect(body.choiceId).toBeUndefined()
   })
 
-  it("keeps the last prose visible on the choice page after passing through the turning phase", async () => {
+  it("keeps the last prose visible on the choice page after a background prefetch merges it in — no Continue click, single fetch", async () => {
     // Minimal EventSource stub: erroring immediately makes Opening fall
     // through to onReady, which dispatches the held prose content.
     class InstantErrorEventSource {
@@ -161,10 +161,102 @@ describe("BookView", () => {
     render(<BookView {...bookProps()} />)
     fireEvent.click(screen.getByRole("button", { name: /begin/i }))
 
-    fireEvent.click(await screen.findByRole("button", { name: /continue/i }))
-
+    // The choice should appear on its own, from a background prefetch fired
+    // the moment the prose landed — no Continue click required.
     await screen.findByRole("button", { name: /step through/i })
     expect(screen.getByText(/gate stands open/i)).toBeInTheDocument()
+
+    const nodeCalls = fetchMock.mock.calls.filter((call) => String(call[0]).includes("/engine/node"))
+    expect(nodeCalls).toHaveLength(1)
+  })
+
+  it("prefetches the next node from a prose page: prefetched choices merge onto the same page with a single fetch", async () => {
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/engine/start"))
+        return jsonResponse({ sessionId: "s1", node: { id: "n1", type: "FIXED" }, content: proseContent, experienceTitle: "T" })
+      if (url.includes("/engine/node"))
+        return jsonResponse({ node: { id: "c1", type: "CHOICE" }, content: choiceContent })
+      return jsonResponse({}, 500)
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    render(<BookView {...bookProps()} />)
+    fireEvent.click(screen.getByRole("button", { name: /begin/i }))
+
+    const enabled = await screen.findByRole("button", { name: /step through/i })
+    expect(enabled).toBeEnabled()
+    expect(screen.getByText(/gate stands open/i)).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /continue/i })).not.toBeInTheDocument()
+
+    const nodeCalls = fetchMock.mock.calls.filter((call) => String(call[0]).includes("/engine/node"))
+    expect(nodeCalls).toHaveLength(1)
+  })
+
+  it("stashes a prefetched non-choice node and dispatches it on Continue without waiting on a second fetch", async () => {
+    const secondProse = { type: "prose", content: "The second page turns quietly." }
+    let nodeCalls = 0
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/engine/start"))
+        return jsonResponse({ sessionId: "s1", node: { id: "n1", type: "FIXED" }, content: proseContent, experienceTitle: "T" })
+      if (url.includes("/engine/node")) {
+        nodeCalls++
+        if (nodeCalls === 1) return jsonResponse({ node: { id: "n2", type: "FIXED" }, content: secondProse })
+        return new Promise(() => {}) // page 2's own background prefetch — deliberately never resolves
+      }
+      return jsonResponse({}, 500)
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    render(<BookView {...bookProps()} />)
+    fireEvent.click(screen.getByRole("button", { name: /begin/i }))
+    await screen.findByText(/gate stands open/i)
+
+    // Let the background prefetch resolve and stash before pressing Continue.
+    await waitFor(() => expect(nodeCalls).toBe(1))
+    expect(screen.getByText(/gate stands open/i)).toBeInTheDocument() // nothing visible changed yet
+
+    fireEvent.click(screen.getByRole("button", { name: /continue/i }))
+    await screen.findByText(/second page turns quietly/i)
+
+    // The second /engine/node call is page 2's own (never-resolving) background
+    // prefetch — proof that landing on page 2 did not wait on a network round trip.
+    expect(nodeCalls).toBe(2)
+  })
+
+  it("discards a failed prefetch silently and falls back to a live advance on Continue", async () => {
+    let nodeCalls = 0
+    const laterProse = { type: "prose", content: "A slower page, fetched live." }
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/engine/start"))
+        return jsonResponse({ sessionId: "s1", node: { id: "n1", type: "FIXED" }, content: proseContent, experienceTitle: "T" })
+      if (url.includes("/engine/node")) {
+        nodeCalls++
+        if (nodeCalls === 1) return jsonResponse({}, 500) // the failed background prefetch
+        if (nodeCalls === 2) return jsonResponse({ node: { id: "n2", type: "FIXED" }, content: laterProse })
+        return new Promise(() => {}) // page 2's own background prefetch — never resolves
+      }
+      return jsonResponse({}, 500)
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    render(<BookView {...bookProps()} />)
+    fireEvent.click(screen.getByRole("button", { name: /begin/i }))
+    await screen.findByText(/gate stands open/i)
+
+    await waitFor(() => expect(nodeCalls).toBe(1))
+    // Nothing visible changes for a failed prefetch — no smudged page.
+    expect(screen.getByText(/gate stands open/i)).toBeInTheDocument()
+    expect(screen.queryByText(/ink has smudged/i)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: /continue/i }))
+    await screen.findByText(/slower page, fetched live/i)
+
+    // 1: the failed background prefetch. 2: Continue's live advance(), which
+    // succeeded. 3: the new page's own (never-resolving) background prefetch.
+    expect(nodeCalls).toBe(3)
   })
 
   it("shows a graceful misbound page for training-only content types", async () => {

@@ -4,13 +4,21 @@ import { decorativePageNumber } from "@/lib/library/covers"
 interface PageSpreadProps {
   prose: string
   nodeId: string
+  /**
+   * Key for the recto's page-turn animation. Defaults to `nodeId`, which
+   * remounts (and re-plays the turn animation) whenever the node changes.
+   * BookView overrides this to the *previous* node's id when a prefetched
+   * choice merges onto the page the reader is already looking at, so the
+   * recto does not remount — no page-turn plays for a page that never turned.
+   */
+  turnKey?: string
   lastChoice: string | null
   progressPct: number
   children: ReactNode
 }
 
 /** The open book: a verso (left, ambient furniture) and recto (right, prose + controls) page. */
-export function PageSpread({ prose, nodeId, lastChoice, progressPct, children }: PageSpreadProps) {
+export function PageSpread({ prose, nodeId, turnKey, lastChoice, progressPct, children }: PageSpreadProps) {
   const paragraphs = prose.split("\n\n")
 
   return (
@@ -22,7 +30,7 @@ export function PageSpread({ prose, nodeId, lastChoice, progressPct, children }:
         )}
         <span className="lib-ornament" aria-hidden="true">❧</span>
       </div>
-      <div className="lib-page lib-page--recto lib-page-turn-enter" key={nodeId}>
+      <div className="lib-page lib-page--recto lib-page-turn-enter" key={turnKey ?? nodeId}>
         <div className="lib-prose">
           {paragraphs.map((para, i) => (
             <p key={i}>{para}</p>
