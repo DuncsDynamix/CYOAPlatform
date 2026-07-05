@@ -7,7 +7,7 @@ import { trackEvent } from "@/lib/analytics"
 import type { GeneratedNode, EndpointNode, Experience, ExperienceContextPack, GroundTruthSource, Actor, DialogueNode, EvaluativeNode, ObservedDialogueNode } from "@/types/experience"
 import type { ExperienceSession, NarrativeHistoryEntry, ChoiceHistoryEntry, NarrativeScaffold, DialogueTurn, CompetencyResult } from "@/types/session"
 
-const MODEL = "claude-sonnet-4-20250514"
+const MODEL = "claude-sonnet-5"
 const SCAFFOLD_MODEL = "claude-haiku-4-5-20251001"
 
 // 30s timeout + 2 SDK-managed retries (exponential backoff on 429/5xx) so a
@@ -41,7 +41,8 @@ export async function generateNode(
   const message = await generationQueue.add(() =>
     anthropic.messages.create({
       model: MODEL,
-      max_tokens: 600,
+      max_tokens: 800,
+      thinking: { type: "disabled" },
       system: systemPrompt,
       messages: [{ role: "user", content: prompt }],
     })
@@ -173,7 +174,8 @@ export async function generateEndpointSummary(
   const message = await generationQueue.add(() =>
     anthropic.messages.create({
       model: MODEL,
-      max_tokens: 300,
+      max_tokens: 400,
+      thinking: { type: "disabled" },
       system: systemPrompt,
       messages: [{ role: "user", content: prompt }],
     })
@@ -217,7 +219,8 @@ Write your opening line now.`
   const message = await generationQueue.add(() =>
     anthropic.messages.create({
       model: MODEL,
-      max_tokens: 200,
+      max_tokens: 280,
+      thinking: { type: "disabled" },
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     })
@@ -268,7 +271,8 @@ Write ONLY your character's spoken response — no action descriptions, no stage
   const message = await generationQueue.add(() =>
     anthropic.messages.create({
       model: MODEL,
-      max_tokens: 250,
+      max_tokens: 340,
+      thinking: { type: "disabled" },
       system: systemPrompt,
       messages: conversationMessages,
     })
@@ -370,7 +374,8 @@ Alternate speakers starting with ${actorA.name}. Return exactly ${node.turns} ob
     const message = await generationQueue.add(() =>
       anthropic.messages.create({
         model: MODEL,
-        max_tokens: 800,
+        max_tokens: 1100,
+        thinking: { type: "disabled" },
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
       })

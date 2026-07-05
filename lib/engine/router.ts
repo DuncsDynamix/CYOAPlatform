@@ -3,7 +3,7 @@ import type { ChoiceNode } from "@/types/experience"
 import type { ExperienceSession } from "@/types/session"
 import type { Experience } from "@/types/experience"
 
-const MODEL = "claude-sonnet-4-20250514"
+const MODEL = "claude-sonnet-5"
 
 /**
  * For open/free-text choices, use Claude to determine which branch to route to
@@ -51,7 +51,8 @@ Reply with ONLY the option ID (e.g. "opt-police"), nothing else.
 
   const message = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 50,
+    max_tokens: 64,
+    thinking: { type: "disabled" },
     system:
       "You are a routing assistant for an interactive story engine. Your job is to match a reader's free-text response to the most appropriate story branch. Reply with only the branch ID.",
     messages: [{ role: "user", content: prompt }],
