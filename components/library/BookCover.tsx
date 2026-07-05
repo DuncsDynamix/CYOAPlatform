@@ -19,7 +19,12 @@ function wrapTitle(title: string): string[] {
     else line = (line + " " + w).trim()
   }
   if (line) lines.push(line)
-  return lines.slice(0, 4)
+  if (lines.length > 4) {
+    const kept = lines.slice(0, 4)
+    kept[3] += "…"
+    return kept
+  }
+  return lines
 }
 
 // Ornaments: small inline SVG groups keyed by ornament id. Deliberately
@@ -65,7 +70,8 @@ export function BookCover({ title, author, genre, coverImageUrl, className }: Bo
   }
 
   const lines = wrapTitle(title)
-  const titleSize = lines.some((l) => l.length > 10) ? 44 : 54
+  const longest = Math.max(...lines.map((l) => l.length))
+  const titleSize = longest > 18 ? 30 : longest > 14 ? 38 : longest > 10 ? 44 : 54
   // Layout variants move the title block / ornament / rules around
   const titleY = [200, 290, 160, 250, 330, 210][design.layout]
   const ornamentY = [470, 150, 500, 480, 170, 520][design.layout]

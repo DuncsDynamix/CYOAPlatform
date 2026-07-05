@@ -23,4 +23,18 @@ describe("BookCover", () => {
     )
     expect(container.querySelector("img")?.getAttribute("src")).toBe("/uploads/x.png")
   })
+
+  it("truncates very long titles at four lines with an ellipsis", () => {
+    const { container } = render(
+      <BookCover title="The Extraordinarily Meandering Chronicle Of Seven Restless Kingdoms" author="Y" genre="fantasy" />
+    )
+    const texts = Array.from(container.querySelectorAll("text")).map((t) => t.textContent ?? "")
+    expect(texts.some((t) => t.endsWith("…"))).toBe(true)
+  })
+
+  it("steps the font size down for long single words instead of overflowing", () => {
+    const { container } = render(<BookCover title="Supercalifragilistic" author="Y" genre="fantasy" />)
+    const titleText = Array.from(container.querySelectorAll("text")).find((t) => t.textContent === "Supercalifragilistic")
+    expect(titleText?.getAttribute("font-size")).toBe("30")
+  })
 })
