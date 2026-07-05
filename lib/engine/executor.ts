@@ -186,13 +186,26 @@ export function getReachableGeneratedChildren(
 // in cache.ts. Fine for dev/single-instance; a Redis-backed multi-instance
 // deployment would need a distributed lock to dedupe across processes,
 // which is out of scope here.
+//
+// Stashed on globalThis (same trick as lib/db/prisma.ts and the memCache in
+// cache.ts) — Next.js dev (Turbopack) compiles each API route file as its
+// own module graph, so a plain module-level `const` here gets a fresh Map
+// per route. That silently defeats the whole point of this registry: the
+// pre-generation fired from POST /start's arrival lives in that route's
+// copy of the Map, so the GET /node (or POST /choose) request that actually
+// needs the result never sees it in-flight and regenerates from scratch.
 
 interface GenerationResult {
   content: string
   scaffold: NarrativeScaffold
 }
 
-const inFlightGenerations = new Map<string, Promise<GenerationResult>>()
+const globalForExecutor = globalThis as unknown as {
+  __traverseInFlightGenerations: Map<string, Promise<GenerationResult>> | undefined
+}
+const inFlightGenerations =
+  globalForExecutor.__traverseInFlightGenerations ?? new Map<string, Promise<GenerationResult>>()
+if (process.env.NODE_ENV !== "production") globalForExecutor.__traverseInFlightGenerations = inFlightGenerations
 
 /**
  * Generates prose + scaffold for a GENERATED node, joining an existing
