@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { BookCover } from "@/components/library/BookCover"
+import { Opening } from "@/components/reader/Opening"
 import { decorativePageNumber, turnToPageNumber } from "@/lib/library/covers"
 import type { ChoiceOption, Node } from "@/types/experience"
 import type { OutcomeCardData, ResolvedContent } from "@/types/engine"
@@ -46,6 +47,10 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
   // fresh value in the very same tick — state would still read stale via the
   // closure captured before the setter took effect.
   const lastChoiceRef = useRef<string | null>(null)
+
+  // Holds the already-fetched start payload while the opening ritual plays,
+  // so onReady can dispatch it without a second network round trip.
+  const pendingStartRef = useRef<{ sessionId: string; node: Node; content: ResolvedContent } | null>(null)
 
   // Abort in-flight requests on unmount so late responses can't set state.
   const abortRef = useRef<AbortController | null>(null)
@@ -144,13 +149,28 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
         return
       }
       const data = (await res.json()) as { sessionId: string; node: Node; content: ResolvedContent; experienceTitle?: string }
-      dispatchContent(data.sessionId, data.node, data.content)
+      // Mirrors BookReader's old condition for showing the generation ritual:
+      // the very first content is GENERATED prose, so its reachable children
+      // are still being written server-side when /start returns.
+      if (data.content.type === "prose" && data.node.type === "GENERATED") {
+        pendingStartRef.current = { sessionId: data.sessionId, node: data.node, content: data.content }
+        setStatus({ phase: "opening", sessionId: data.sessionId, message: "Opening the book…", progress: 0 })
+      } else {
+        dispatchContent(data.sessionId, data.node, data.content)
+      }
     } catch (err) {
       if (isAbort(err)) return
       setStatus({ phase: "smudged", message: "Network error — please try again", retryable: true, retry: () => begin() })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, dispatchContent])
+
+  const handleOpeningReady = useCallback(() => {
+    const held = pendingStartRef.current
+    pendingStartRef.current = null
+    if (held) dispatchContent(held.sessionId, held.node, held.content)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatchContent])
 
   const choose = useCallback(async (sessionId: string, choiceLabel: string, choiceId?: string, freeText?: string) => {
     setStatus({ phase: "turning", sessionId })
@@ -226,7 +246,11 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
     )
   }
 
-  if (status.phase === "turning" || status.phase === "opening") {
+  if (status.phase === "opening") {
+    return <Opening sessionId={status.sessionId} genre={genre} onReady={handleOpeningReady} />
+  }
+
+  if (status.phase === "turning") {
     return (
       <div className="lib-spread">
         <p>Turning the page…</p>
