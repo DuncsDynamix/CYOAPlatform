@@ -17,10 +17,10 @@ export function PageSpread({ prose, nodeId, lastChoice, progressPct, children }:
     <div className="lib-spread">
       <div className="lib-page lib-page--verso">
         <div className="lib-ribbon" style={{ height: `${20 + progressPct * 0.6}%` }} />
-        <span className="lib-ornament" aria-hidden="true">❧</span>
         {lastChoice !== null && (
           <p className="lib-margin-note">You chose: {lastChoice}</p>
         )}
+        <span className="lib-ornament" aria-hidden="true">❧</span>
       </div>
       <div className="lib-page lib-page--recto lib-page-turn-enter" key={nodeId}>
         <div className="lib-prose">

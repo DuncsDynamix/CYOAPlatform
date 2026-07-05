@@ -160,6 +160,25 @@
   .lib-spread::before { display: none; }
 }
 
+/* ── M1 composition fixes (screenshot review) ─────────────────── */
+
+/* cover metadata below the closed book */
+.lib-cover-meta { text-align: center; margin-top: 1.6rem; display: flex; flex-direction: column; align-items: center; gap: 0.45rem; }
+.lib-cover-meta h1 { font-family: 'Playfair Display', serif; font-size: 1.65rem; margin: 0; color: var(--lib-ink); }
+.lib-cover-author { font-style: italic; color: var(--lib-ink-2); margin: 0; }
+.lib-cover-desc { color: var(--lib-ink-2); max-width: 44ch; margin: 0.3rem 0 0; line-height: 1.65; }
+.lib-cover-endings { color: var(--lib-muted); font-size: 0.85rem; letter-spacing: 0.08em; font-style: italic; margin: 0 0 0.7rem; }
+
+/* the page-turn interstitial */
+.lib-spread--turning { display: flex; align-items: center; justify-content: center; }
+.lib-turning-msg { font-style: italic; color: var(--lib-muted); letter-spacing: 0.04em; }
+
+/* in-page continue: quiet, content-sized, set at the recto's foot */
+.lib-continue { align-self: flex-end; margin-top: 1.4rem; }
+
+/* verso ornament: rests at the foot of the blank page */
+.lib-ornament { display: block; margin-top: auto; text-align: center; color: var(--lib-muted); opacity: 0.6; font-size: 1.35rem; }
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .lib-cover { transition: opacity 300ms ease; }

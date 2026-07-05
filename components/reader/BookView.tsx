@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import type { ReactNode } from "react"
 import Link from "next/link"
 import { BookCover } from "@/components/library/BookCover"
 import { Opening } from "@/components/reader/Opening"
@@ -212,110 +213,140 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
 
   if (status.phase === "cover") {
     return (
-      <div className="lib-book lib-book--cover">
-        <BookCover title={title} author={author} genre={genre} coverImageUrl={coverImageUrl} />
-        <h1>{title}</h1>
-        <p>{author}</p>
-        {description && <p>{description}</p>}
-        <p>{endingsCount} endings await.</p>
-        <button className="lib-btn" onClick={begin}>Begin</button>
-      </div>
+      <Stage book="cover">
+        <div className="lib-cover">
+          <BookCover title={title} author={author} genre={genre} coverImageUrl={coverImageUrl} />
+        </div>
+        <div className="lib-cover-meta">
+          <h1>{title}</h1>
+          <p className="lib-cover-author">{author}</p>
+          {description && <p className="lib-cover-desc">{description}</p>}
+          <p className="lib-cover-endings">{endingsCount} endings await.</p>
+          <button className="lib-btn" onClick={begin}>Begin</button>
+        </div>
+      </Stage>
     )
   }
 
   if (status.phase === "smudged") {
     return (
-      <div className="lib-error-page">
-        <p>The ink has smudged on this page.</p>
-        <p>{status.message}</p>
-        {status.retryable && status.retry && (
-          <button className="lib-btn" onClick={status.retry}>Try the page again</button>
-        )}
-        <Link href="/" className="lib-btn lib-btn--quiet">Return to the library</Link>
-      </div>
+      <Stage>
+        <div className="lib-error-page">
+          <p>The ink has smudged on this page.</p>
+          <p>{status.message}</p>
+          {status.retryable && status.retry && (
+            <button className="lib-btn" onClick={status.retry}>Try the page again</button>
+          )}
+          <Link href="/" className="lib-btn lib-btn--quiet">Return to the library</Link>
+        </div>
+      </Stage>
     )
   }
 
   if (status.phase === "misbound") {
     return (
-      <div className="lib-error-page">
-        <p>This page belongs to another binding.</p>
-        <Link href="/" className="lib-btn lib-btn--quiet">Return to the library</Link>
-      </div>
+      <Stage>
+        <div className="lib-error-page">
+          <p>This page belongs to another binding.</p>
+          <Link href="/" className="lib-btn lib-btn--quiet">Return to the library</Link>
+        </div>
+      </Stage>
     )
   }
 
   if (status.phase === "colophon") {
     return (
-      <Colophon
-        title={title}
-        outcomeCard={status.outcomeCard}
-        closingLine={status.closingLine}
-        summary={status.summary}
-        endingsCount={endingsCount}
-      />
+      <Stage>
+        <Colophon
+          title={title}
+          outcomeCard={status.outcomeCard}
+          closingLine={status.closingLine}
+          summary={status.summary}
+          endingsCount={endingsCount}
+        />
+      </Stage>
     )
   }
 
   if (status.phase === "opening") {
-    return <Opening sessionId={status.sessionId} genre={genre} onReady={handleOpeningReady} />
+    return (
+      <div className="lib-stage">
+        <Opening sessionId={status.sessionId} genre={genre} onReady={handleOpeningReady} />
+      </div>
+    )
   }
 
   if (status.phase === "turning") {
     return (
-      <div className="lib-spread">
-        <p>Turning the page…</p>
-      </div>
+      <Stage>
+        <div className="lib-spread lib-spread--turning">
+          <p className="lib-turning-msg">Turning the page…</p>
+        </div>
+      </Stage>
     )
   }
 
   if (status.phase === "overheard") {
     return (
-      <OverheardScene
-        exchanges={status.exchanges}
-        openingContext={status.openingContext}
-        onContinue={() => advance(status.sessionId)}
-      />
+      <Stage>
+        <OverheardScene
+          exchanges={status.exchanges}
+          openingContext={status.openingContext}
+          onContinue={() => advance(status.sessionId)}
+        />
+      </Stage>
     )
   }
 
   if (status.phase === "prose") {
     return (
-      <PageSpread
-        prose={status.content}
-        nodeId={status.nodeId}
-        lastChoice={status.lastChoice}
-        progressPct={progressPct}
-      >
-        <button className="lib-btn" onClick={() => advance(status.sessionId)}>Continue →</button>
-      </PageSpread>
+      <Stage>
+        <PageSpread
+          prose={status.content}
+          nodeId={status.nodeId}
+          lastChoice={status.lastChoice}
+          progressPct={progressPct}
+        >
+          <button className="lib-btn lib-btn--quiet lib-continue" onClick={() => advance(status.sessionId)}>Continue →</button>
+        </PageSpread>
+      </Stage>
     )
   }
 
   if (status.phase === "choice") {
     return (
-      <PageSpread
-        prose={status.lastProse}
-        nodeId={status.nodeId}
-        lastChoice={lastChoiceRef.current}
-        progressPct={progressPct}
-      >
-        {status.responseType === "open" ? (
-          <MarginInput
-            prompt={status.prompt ?? status.openPrompt}
-            onSubmit={(text) => choose(status.sessionId, text, undefined, text)}
-          />
-        ) : (
-          <ChoiceFoot
-            nodeId={status.nodeId}
-            prompt={status.prompt}
-            options={status.options}
-            onChoose={(id, label) => choose(status.sessionId, label, id)}
-          />
-        )}
-      </PageSpread>
+      <Stage>
+        <PageSpread
+          prose={status.lastProse}
+          nodeId={status.nodeId}
+          lastChoice={lastChoiceRef.current}
+          progressPct={progressPct}
+        >
+          {status.responseType === "open" ? (
+            <MarginInput
+              prompt={status.prompt ?? status.openPrompt}
+              onSubmit={(text) => choose(status.sessionId, text, undefined, text)}
+            />
+          ) : (
+            <ChoiceFoot
+              nodeId={status.nodeId}
+              prompt={status.prompt}
+              options={status.options}
+              onChoose={(id, label) => choose(status.sessionId, label, id)}
+            />
+          )}
+        </PageSpread>
+      </Stage>
     )
   }
 
   return null
+}
+
+function Stage({ book, children }: { book?: "cover"; children: ReactNode }) {
+  return (
+    <div className="lib-stage">
+      <div className={book ? `lib-book lib-book--${book}` : "lib-book"}>{children}</div>
+    </div>
+  )
 }
