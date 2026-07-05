@@ -35,10 +35,10 @@ describe("User-facing brand strings", () => {
     assertNoBrandStrings(readSource("app/(auth)/signup/page.tsx"), "app/(auth)/signup/page.tsx")
   })
 
-  it("OutcomeCard contains no old brand names", () => {
+  it("Colophon contains no old brand names", () => {
     assertNoBrandStrings(
-      readSource("components/reader/OutcomeCard.tsx"),
-      "components/reader/OutcomeCard.tsx"
+      readSource("components/reader/Colophon.tsx"),
+      "components/reader/Colophon.tsx"
     )
   })
 
