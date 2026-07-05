@@ -6,6 +6,7 @@ import Link from "next/link"
 import { BookCover } from "@/components/library/BookCover"
 import { Opening } from "@/components/reader/Opening"
 import { PageSpread } from "@/components/reader/PageSpread"
+import { TurningLeaf } from "@/components/reader/TurningLeaf"
 import { ChoiceFoot } from "@/components/reader/ChoiceFoot"
 import { MarginInput } from "@/components/reader/MarginInput"
 import { OverheardScene } from "@/components/reader/OverheardScene"
@@ -296,9 +297,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
   if (status.phase === "turning") {
     return (
       <Stage>
-        <div className="lib-spread lib-spread--turning">
-          <p className="lib-turning-msg">Turning the page…</p>
-        </div>
+        <TurningLeaf />
       </Stage>
     )
   }

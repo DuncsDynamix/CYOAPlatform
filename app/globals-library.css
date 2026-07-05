@@ -173,6 +173,8 @@
 /* the page-turn interstitial */
 .lib-spread--turning { display: flex; align-items: center; justify-content: center; }
 .lib-turning-msg { font-style: italic; color: var(--lib-muted); letter-spacing: 0.04em; }
+@keyframes lib-turning-msg-fade { from { opacity: 0; } to { opacity: 1; } }
+.lib-turning-msg--fade { animation: lib-turning-msg-fade 400ms ease; }
 
 /* in-page continue: quiet, content-sized, set at the recto's foot */
 .lib-continue { align-self: flex-end; margin-top: 1.4rem; }
@@ -185,4 +187,5 @@
   .lib-cover { transition: opacity 300ms ease; }
   .lib-book--opening .lib-cover { transform: none; opacity: 0; }
   .lib-page-turn-enter { animation: none; }
+  .lib-turning-msg--fade { animation: none; }
 }
