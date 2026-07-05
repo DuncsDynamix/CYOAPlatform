@@ -23,7 +23,7 @@ beforeEach(() => vi.restoreAllMocks())
 
 describe("BookView", () => {
   it("shows the cover first and only starts the session on Begin", async () => {
-    const fetchMock = vi.fn(() => jsonResponse({ sessionId: "s1", node: { id: "n1", type: "FIXED" }, content: proseContent, experienceTitle: "The Hollow Crown" }))
+    const fetchMock = vi.fn((_input: RequestInfo | URL) => jsonResponse({ sessionId: "s1", node: { id: "n1", type: "FIXED" }, content: proseContent, experienceTitle: "The Hollow Crown" }))
     vi.stubGlobal("fetch", fetchMock)
 
     render(<BookView {...bookProps()} />)
