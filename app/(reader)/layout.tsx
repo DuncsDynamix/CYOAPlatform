@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next"
+import "@/app/globals-library.css"
 
 export const metadata: Metadata = {
   title: "TraverseStories",
@@ -63,7 +64,7 @@ export default function ReaderLayout({ children }: { children: React.ReactNode }
         </a>
       </header>
 
-      <main>{children}</main>
+      <main><div className="library-theme">{children}</div></main>
     </div>
   )
 }

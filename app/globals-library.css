@@ -1,0 +1,168 @@
+/* ─── THE GRAND LIBRARY — Book reading experience (Milestone 1) ─────────
+   Scoped under .library-theme. Base identity = the library's own voice;
+   hall identity arrives via [data-hall] custom properties (Milestone 2
+   extends; Milestone 1 uses them for endpapers/covers only). */
+
+.library-theme {
+  --lib-paper: #F5F0E8;
+  --lib-paper-dark: #EDE7D4;
+  --lib-ink: #1A1209;
+  --lib-ink-2: #5C4A32;
+  --lib-muted: #8B7355;
+  --lib-accent: #C41E3A;
+  --lib-accent-dark: #8B1428;
+  --lib-board: #1A1A2E;          /* book board / choice ink */
+  --lib-board-2: #2D2D4E;
+  --lib-gilt: #C4A882;
+  --lib-shadow: rgba(26, 18, 9, 0.18);
+
+  /* hall-tintable (defaults = Common Room; JS sets these from getHall()) */
+  --hall-paper: var(--lib-paper);
+  --hall-ink: var(--lib-ink);
+  --hall-glow: var(--lib-gilt);
+
+  min-height: 100vh;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(196, 168, 130, 0.14), transparent 60%),
+    var(--lib-paper);
+  color: var(--lib-ink);
+  font-family: 'Lora', serif;
+}
+
+/* ── Stage: centers the book, gives it a desk to sit on ── */
+.lib-stage {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3rem 1rem 4rem;
+  perspective: 2200px;
+}
+
+/* ── The book object ── */
+.lib-book { position: relative; width: min(96vw, 1040px); transform-style: preserve-3d; }
+.lib-book--cover { width: min(92vw, 420px); }
+
+/* Cover state: the closed book facing the reader */
+.lib-cover {
+  aspect-ratio: 5 / 7.6;
+  border-radius: 6px 12px 12px 6px;
+  box-shadow:
+    -6px 0 0 -2px rgba(0,0,0,0.25) inset,
+    2px 2px 0 var(--lib-gilt),
+    10px 14px 32px var(--lib-shadow);
+  overflow: hidden;
+  transform-origin: left center;
+  transition: transform 900ms cubic-bezier(0.7, 0, 0.25, 1);
+}
+.lib-book--opening .lib-cover { transform: rotateY(-112deg); }
+
+/* Endpapers: shown behind the opening cover; loading ritual lives here */
+.lib-endpaper {
+  position: absolute; inset: 0;
+  border-radius: 6px;
+  background:
+    repeating-radial-gradient(circle at 20% 30%, transparent 0 14px, color-mix(in srgb, var(--hall-glow) 12%, transparent) 15px 16px),
+    color-mix(in srgb, var(--hall-paper) 88%, var(--hall-glow));
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1.25rem; padding: 2rem; text-align: center;
+}
+.lib-endpaper-msg { font-style: italic; color: var(--lib-ink-2); font-size: 1.05rem; min-height: 1.6em; }
+.lib-endpaper-rule { width: 60%; height: 3px; background: color-mix(in srgb, var(--hall-glow) 55%, var(--lib-gilt)); transform-origin: left; transition: transform 400ms ease; }
+
+/* ── Open book: the spread ── */
+.lib-spread {
+  display: grid; grid-template-columns: 1fr 1.35fr; gap: 0;
+  background: var(--lib-paper);
+  border: 1px solid var(--lib-gilt);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 var(--lib-gilt), 10px 14px 36px var(--lib-shadow);
+  min-height: 72vh;
+  position: relative;
+}
+/* spine shadow down the gutter */
+.lib-spread::before {
+  content: ""; position: absolute; inset: 0 auto 0 calc(42.55% - 14px); width: 28px;
+  background: linear-gradient(90deg, transparent, rgba(26,18,9,0.10) 45%, rgba(26,18,9,0.16) 50%, rgba(26,18,9,0.10) 55%, transparent);
+  pointer-events: none;
+}
+.lib-page { padding: 2.6rem 2.8rem 2.2rem; display: flex; flex-direction: column; }
+.lib-page--verso { border-right: 1px solid color-mix(in srgb, var(--lib-gilt) 45%, transparent); background: var(--lib-paper-dark); border-radius: 8px 0 0 8px; }
+.lib-page--recto { border-radius: 0 8px 8px 0; }
+
+/* verso furniture */
+.lib-margin-note { font-size: 0.85rem; font-style: italic; color: var(--lib-ink-2); border-left: 2px solid var(--lib-accent); padding-left: 0.75rem; margin-top: 1rem; }
+.lib-ribbon { width: 14px; margin: -2.6rem auto 0; background: var(--lib-accent); box-shadow: 0 2px 4px var(--lib-shadow); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), 50% 100%, 0 calc(100% - 7px)); transition: height 600ms ease; }
+
+/* prose */
+.lib-prose { font-size: 1.1rem; line-height: 1.85; color: var(--lib-ink); flex: 1; }
+.lib-prose p { margin: 0 0 1.1em; }
+.lib-prose p:first-of-type::first-letter { font-family: 'Playfair Display', serif; font-size: 3.1em; float: left; line-height: 0.85; padding: 0.04em 0.08em 0 0; color: var(--lib-accent-dark); }
+.lib-page-number { text-align: center; color: var(--lib-muted); font-size: 0.85rem; letter-spacing: 0.35em; margin-top: 1.6rem; }
+
+/* page turn */
+@keyframes lib-page-in { from { transform: rotateY(-24deg); opacity: 0; } to { transform: rotateY(0); opacity: 1; } }
+.lib-page-turn-enter { transform-origin: left center; animation: lib-page-in 480ms cubic-bezier(0.3, 0.6, 0.2, 1); backface-visibility: hidden; }
+
+/* ── Choices set into the page foot ── */
+.lib-choice-foot { margin-top: 1.8rem; border-top: 3px double color-mix(in srgb, var(--lib-gilt) 70%, transparent); padding-top: 1.4rem; display: flex; flex-direction: column; gap: 0.7rem; }
+.lib-choice {
+  display: block; width: 100%; text-align: left; cursor: pointer;
+  background: var(--lib-board); color: var(--lib-paper);
+  border: 1px solid transparent; border-radius: 4px;
+  padding: 0.85rem 1.1rem; font-family: 'Lora', serif; font-size: 1rem; line-height: 1.5;
+  transition: background 150ms ease, transform 150ms ease;
+}
+.lib-choice:hover:not(:disabled), .lib-choice:focus-visible { background: var(--lib-board-2); transform: translateX(4px); outline: 2px solid var(--lib-accent); outline-offset: 2px; }
+.lib-choice-eyebrow { display: block; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lib-accent); margin-bottom: 0.25rem; font-family: 'Playfair Display', serif; }
+.lib-choice--disabled, .lib-choice:disabled {
+  background: transparent; color: var(--lib-muted); cursor: default;
+  border: 1px dashed color-mix(in srgb, var(--lib-muted) 55%, transparent);
+}
+.lib-choice--disabled .lib-choice-eyebrow { color: var(--lib-muted); }
+
+/* free text = writing in the margin */
+.lib-margin-input { width: 100%; min-height: 96px; background: transparent; border: none; border-bottom: 1px solid var(--lib-gilt); font-family: 'Lora', serif; font-style: italic; font-size: 1.05rem; color: var(--lib-ink); line-height: 1.8; background-image: repeating-linear-gradient(transparent, transparent 1.75em, color-mix(in srgb, var(--lib-gilt) 40%, transparent) 1.78em); resize: vertical; padding: 0.2rem 0; }
+.lib-margin-input:focus { outline: none; border-bottom-color: var(--lib-accent); }
+
+/* ── Overheard scene (observed dialogue) ── */
+.lib-overheard { background: var(--lib-paper-dark); border: 1px solid var(--lib-gilt); border-radius: 6px; padding: 1.4rem 1.6rem; margin: 1.4rem 0; }
+.lib-overheard-label { text-align: center; font-style: italic; color: var(--lib-muted); font-size: 0.85rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 1rem; }
+.lib-overheard-line { margin: 0.7rem 0; }
+.lib-overheard-speaker { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 0.85rem; color: var(--lib-accent-dark); letter-spacing: 0.04em; }
+
+/* ── Colophon (ending leaf) ── */
+.lib-colophon { background: var(--lib-board); color: var(--lib-paper); border-radius: 8px; padding: 3rem 2.6rem; text-align: center; box-shadow: 2px 2px 0 var(--lib-gilt), 10px 14px 36px var(--lib-shadow); }
+.lib-colophon-rule { width: 72px; height: 4px; background: var(--lib-accent); margin: 0 auto 1.6rem; }
+.lib-colophon-eyebrow { font-family: 'Playfair Display', serif; font-size: 0.75rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--lib-gilt); }
+.lib-colophon-title { font-family: 'Playfair Display', serif; font-size: 2rem; margin: 0.6rem 0 1.2rem; }
+.lib-colophon-closing { font-style: italic; border-left: 3px solid var(--lib-accent); padding-left: 1rem; text-align: left; margin: 0 auto 1.4rem; max-width: 46ch; color: #E9E4D8; }
+.lib-colophon-summary { color: #CFC9BC; max-width: 52ch; margin: 0 auto 1.6rem; line-height: 1.75; }
+.lib-colophon-stats { color: var(--lib-muted); font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 2rem; }
+.lib-colophon-actions { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; }
+
+/* ── Error page (in-fiction) ── */
+.lib-error-page { text-align: center; padding: 3rem 1rem; }
+.lib-error-page p { font-style: italic; color: var(--lib-ink-2); margin-bottom: 1.4rem; }
+
+/* buttons */
+.lib-btn { font-family: 'Playfair Display', serif; letter-spacing: 0.06em; background: var(--lib-accent); color: #fff; border: none; border-radius: 4px; padding: 0.7rem 1.4rem; cursor: pointer; font-size: 0.95rem; }
+.lib-btn:hover { background: var(--lib-accent-dark); }
+.lib-btn--quiet { background: transparent; color: var(--lib-ink-2); border: 1px solid var(--lib-gilt); }
+.lib-btn--quiet:hover { background: var(--lib-paper-dark); color: var(--lib-ink); }
+.lib-colophon .lib-btn--quiet { color: var(--lib-gilt); border-color: var(--lib-board-2); }
+
+/* ── Responsive: single page on narrow screens ── */
+@media (max-width: 860px) {
+  .lib-spread { grid-template-columns: 1fr; min-height: unset; }
+  .lib-page--verso { display: none; }
+  .lib-page { padding: 1.8rem 1.4rem 1.6rem; }
+  .lib-spread::before { display: none; }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .lib-cover { transition: opacity 300ms ease; }
+  .lib-book--opening .lib-cover { transform: none; opacity: 0; }
+  .lib-page-turn-enter { animation: none; }
+}
