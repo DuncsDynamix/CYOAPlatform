@@ -261,8 +261,10 @@ async function resolveNodeContent(
           await writeScaffoldToCache(session.id, node.id, scaffold)
         }
 
-        // Await before returning: children pre-generation fires right after
-        // arrival and needs this node's history present for prompt context.
+        // Await before returning so the entry is persisted before the route
+        // responds — the NEXT arrival's getSession() must see this node's
+        // history. (The children pre-generation fired by this same arrival
+        // reads the session object captured earlier, so it does not benefit.)
         await appendNarrativeHistory(session.id, {
           nodeId: node.id,
           content: cached,
