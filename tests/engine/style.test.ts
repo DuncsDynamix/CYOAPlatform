@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { stripEmDashes } from "@/lib/engine/style"
+import { stripEmDashes, stripJsonFence } from "@/lib/engine/style"
 import { buildSystemPrompt } from "@/lib/engine/prompts"
 import { USE_CASE_PACKS } from "@/lib/engine/usecases"
 import { createTestContextPack } from "../helpers/factories"
@@ -60,5 +60,32 @@ describe("buildSystemPrompt — anti-AI writing rules", () => {
     const prompt = buildSystemPrompt(USE_CASE_PACKS.cyoa_story, createTestContextPack())
     expect(prompt).toContain("WRITING STYLE — HARD RULES")
     expect(prompt).toContain("Never use em-dashes")
+  })
+})
+
+describe("stripJsonFence", () => {
+  it("strips a ```json ... ``` fence", () => {
+    const wrapped = '```json\n{"a": 1}\n```'
+    expect(stripJsonFence(wrapped)).toBe('{"a": 1}')
+  })
+
+  it("strips a bare ``` ... ``` fence with no language tag", () => {
+    const wrapped = '```\n{"a": 1}\n```'
+    expect(stripJsonFence(wrapped)).toBe('{"a": 1}')
+  })
+
+  it("leaves plain JSON with no fence unchanged", () => {
+    const plain = '{"a": 1}'
+    expect(stripJsonFence(plain)).toBe('{"a": 1}')
+  })
+
+  it("trims surrounding whitespace along with the fence", () => {
+    const wrapped = '  \n```json\n  {"a": 1}  \n```\n  '
+    expect(stripJsonFence(wrapped)).toBe('{"a": 1}')
+  })
+
+  it("strips a fence around a JSON array", () => {
+    const wrapped = '```json\n[{"a": 1}]\n```'
+    expect(stripJsonFence(wrapped)).toBe('[{"a": 1}]')
   })
 })

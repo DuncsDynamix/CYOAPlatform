@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { buildSystemPrompt, buildGenerationPrompt, buildEndpointSummaryPrompt, WRITING_STYLE_RULES } from "./prompts"
-import { stripEmDashes } from "./style"
+import { stripEmDashes, stripJsonFence } from "./style"
 import { buildArcAwareness } from "./arc"
 import { USE_CASE_PACKS } from "./usecases"
 import { generationQueue } from "./queue"
@@ -119,7 +119,9 @@ Do not include choiceMade — that is added separately when the reader makes the
     if (!message) return fallback
 
     const duration = Date.now() - startTime
-    const raw = message.content[0].type === "text" ? message.content[0].text.trim() : ""
+    const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
+    // Strip markdown fences if the model wraps the JSON despite being asked not to
+    const raw = stripJsonFence(rawText)
 
     trackEvent("generation_metric", {
       sessionId: session.id,
@@ -326,7 +328,8 @@ Has the participant achieved the breakthrough described above? Answer with a sin
     )
 
     if (!message) return false
-    const raw = message.content[0].type === "text" ? message.content[0].text.trim() : ""
+    const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
+    const raw = stripJsonFence(rawText)
     const parsed = JSON.parse(raw) as { breakthrough: boolean }
     return parsed.breakthrough === true
   } catch {
@@ -393,7 +396,7 @@ Alternate speakers starting with ${actorA.name}. Return exactly ${node.turns} ob
     if (!message) return fallback
 
     const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
-    const raw = rawText.replace(/^```[a-z]*\n?/m, "").replace(/\n?```$/m, "").trim()
+    const raw = stripJsonFence(rawText)
     const parsed = JSON.parse(raw) as { speaker: string; line: string }[]
 
     if (!Array.isArray(parsed) || parsed.length === 0) return fallback
@@ -489,7 +492,7 @@ Include all ${node.rubric.length} criteria in results. No markdown fences — ju
 
     const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
     // Strip markdown fences if the model wraps the JSON despite being asked not to
-    const raw = rawText.replace(/^```[a-z]*\n?/m, "").replace(/\n?```$/m, "").trim()
+    const raw = stripJsonFence(rawText)
     const parsed = JSON.parse(raw) as {
       results: { rubricCriterionId: string; passed: boolean; evidence: string }[]
       feedback: string
