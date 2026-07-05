@@ -7,6 +7,8 @@ import { Opening } from "@/components/reader/Opening"
 import { PageSpread } from "@/components/reader/PageSpread"
 import { ChoiceFoot } from "@/components/reader/ChoiceFoot"
 import { MarginInput } from "@/components/reader/MarginInput"
+import { OverheardScene } from "@/components/reader/OverheardScene"
+import { Colophon } from "@/components/reader/Colophon"
 import type { ChoiceOption, Node } from "@/types/experience"
 import type { OutcomeCardData, ResolvedContent } from "@/types/engine"
 
@@ -245,14 +247,13 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
 
   if (status.phase === "colophon") {
     return (
-      <div className="lib-colophon">
-        <span className="lib-colophon-eyebrow">The End</span>
-        <h2 className="lib-colophon-title">{status.outcomeCard.outcomeLabel}</h2>
-        <p className="lib-colophon-closing">{status.closingLine}</p>
-        <p className="lib-colophon-summary">{status.summary}</p>
-        <p className="lib-colophon-stats">This is one of {endingsCount} endings.</p>
-        <Link href="/" className="lib-btn lib-btn--quiet">Return to the library</Link>
-      </div>
+      <Colophon
+        title={title}
+        outcomeCard={status.outcomeCard}
+        closingLine={status.closingLine}
+        summary={status.summary}
+        endingsCount={endingsCount}
+      />
     )
   }
 
@@ -270,15 +271,11 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
 
   if (status.phase === "overheard") {
     return (
-      <div className="lib-spread">
-        {status.openingContext && <p>{status.openingContext}</p>}
-        <ul>
-          {status.exchanges.map((ex, i) => (
-            <li key={i}><strong>{ex.speaker}:</strong> {ex.line}</li>
-          ))}
-        </ul>
-        <button className="lib-btn" onClick={() => advance(status.sessionId)}>Continue →</button>
-      </div>
+      <OverheardScene
+        exchanges={status.exchanges}
+        openingContext={status.openingContext}
+        onContinue={() => advance(status.sessionId)}
+      />
     )
   }
 
