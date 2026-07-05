@@ -33,6 +33,7 @@ export function Opening({ sessionId, genre, onReady }: OpeningProps) {
 
   useEffect(() => {
     const evtSource = new EventSource(`/api/v1/engine/stream?sessionId=${sessionId}`)
+    let readyTimer: ReturnType<typeof setTimeout> | null = null
 
     evtSource.onmessage = (e) => {
       try {
@@ -50,7 +51,8 @@ export function Opening({ sessionId, genre, onReady }: OpeningProps) {
         if (data.status === "ready") {
           setProgress(100)
           evtSource.close()
-          onReady()
+          // Settle beat: let the reader see the rule reach 100% before the page turns.
+          readyTimer = setTimeout(onReady, 400)
         }
 
         if (data.status === "error") {
@@ -69,7 +71,10 @@ export function Opening({ sessionId, genre, onReady }: OpeningProps) {
       onReady()
     }
 
-    return () => evtSource.close()
+    return () => {
+      evtSource.close()
+      if (readyTimer !== null) clearTimeout(readyTimer)
+    }
   }, [sessionId, onReady])
 
   return (

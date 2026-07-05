@@ -12,6 +12,7 @@ class FakeEventSource {
 
 describe("Opening", () => {
   it("plays ritual messages from the stream and fires onReady on ready", () => {
+    vi.useFakeTimers()
     vi.stubGlobal("EventSource", FakeEventSource as unknown as typeof EventSource)
     const onReady = vi.fn()
     render(<Opening sessionId="s1" genre="fantasy" onReady={onReady} />)
@@ -20,7 +21,11 @@ describe("Opening", () => {
     expect(screen.getByText(/story stirs/i)).toBeInTheDocument()
 
     act(() => FakeEventSource.last!.onmessage!({ data: JSON.stringify({ status: "ready", progress: 100, sessionId: "s1" }) }))
+    // 400ms settle beat: the reader sees the rule reach 100% before the page turns.
+    expect(onReady).not.toHaveBeenCalled()
+    act(() => vi.advanceTimersByTime(400))
     expect(onReady).toHaveBeenCalled()
+    vi.useRealTimers()
   })
 
   it("falls through to onReady on stream error (content already cached)", () => {
