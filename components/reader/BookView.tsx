@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { BookCover } from "@/components/library/BookCover"
 import { Opening } from "@/components/reader/Opening"
-import { decorativePageNumber, turnToPageNumber } from "@/lib/library/covers"
+import { PageSpread } from "@/components/reader/PageSpread"
+import { ChoiceFoot } from "@/components/reader/ChoiceFoot"
+import { MarginInput } from "@/components/reader/MarginInput"
 import type { ChoiceOption, Node } from "@/types/experience"
 import type { OutcomeCardData, ResolvedContent } from "@/types/engine"
 
@@ -47,6 +49,10 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
   // fresh value in the very same tick — state would still read stale via the
   // closure captured before the setter took effect.
   const lastChoiceRef = useRef<string | null>(null)
+
+  // Counts choices made this session, for the verso ribbon's progress estimate.
+  // Presentation-only — not part of the state machine.
+  const [choicesMade, setChoicesMade] = useState(0)
 
   // Holds the already-fetched start payload while the opening ritual plays,
   // so onReady can dispatch it without a second network round trip.
@@ -188,6 +194,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
       }
       const data = (await res.json()) as { node: Node; content: ResolvedContent }
       lastChoiceRef.current = choiceLabel
+      setChoicesMade((n) => n + 1)
       dispatchContent(sessionId, data.node, data.content)
     } catch (err) {
       if (isAbort(err)) return
@@ -197,6 +204,9 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
   }, [dispatchContent])
 
   // ─── RENDER ────────────────────────────────────────────────
+
+  // Same rough estimate the old ProgressBar used — 9 choices ≈ a full read.
+  const progressPct = Math.min(100, Math.round((choicesMade / 9) * 100))
 
   if (status.phase === "cover") {
     return (
@@ -274,67 +284,41 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
 
   if (status.phase === "prose") {
     return (
-      <div className="lib-spread">
-        <p>{status.content}</p>
+      <PageSpread
+        prose={status.content}
+        nodeId={status.nodeId}
+        lastChoice={status.lastChoice}
+        progressPct={progressPct}
+      >
         <button className="lib-btn" onClick={() => advance(status.sessionId)}>Continue →</button>
-        <p className="lib-page-number">· {decorativePageNumber(status.nodeId)} ·</p>
-      </div>
+      </PageSpread>
     )
   }
 
   if (status.phase === "choice") {
     return (
-      <div className="lib-spread">
-        {status.lastProse && <p>{status.lastProse}</p>}
-        {status.prompt && <p>{status.prompt}</p>}
-        <div className="lib-choice-foot">
-          {status.responseType === "open" ? (
-            <OpenChoiceForm
-              openPrompt={status.openPrompt}
-              onSubmit={(text) => choose(status.sessionId, text)}
-            />
-          ) : (
-            status.options.map((opt) => (
-              <button
-                key={opt.id}
-                className={opt.disabled ? "lib-choice lib-choice--disabled" : "lib-choice"}
-                disabled={opt.disabled}
-                onClick={() => choose(status.sessionId, opt.label, opt.id)}
-              >
-                <span className="lib-choice-eyebrow">Turn to page {turnToPageNumber(status.nodeId, opt.id)} →</span>
-                {opt.label}
-              </button>
-            ))
-          )}
-        </div>
-        <p className="lib-page-number">· {decorativePageNumber(status.nodeId)} ·</p>
-      </div>
+      <PageSpread
+        prose={status.lastProse}
+        nodeId={status.nodeId}
+        lastChoice={lastChoiceRef.current}
+        progressPct={progressPct}
+      >
+        {status.responseType === "open" ? (
+          <MarginInput
+            prompt={status.prompt ?? status.openPrompt}
+            onSubmit={(text) => choose(status.sessionId, text)}
+          />
+        ) : (
+          <ChoiceFoot
+            nodeId={status.nodeId}
+            prompt={status.prompt}
+            options={status.options}
+            onChoose={(id, label) => choose(status.sessionId, label, id)}
+          />
+        )}
+      </PageSpread>
     )
   }
 
   return null
-}
-
-function OpenChoiceForm({ openPrompt, onSubmit }: { openPrompt?: string; onSubmit: (text: string) => void }) {
-  const [draft, setDraft] = useState("")
-  const canSubmit = draft.trim().length >= 3
-
-  return (
-    <div className="lib-choice">
-      {openPrompt && <span className="lib-choice-eyebrow">{openPrompt}</span>}
-      <textarea
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        maxLength={500}
-        placeholder="Write your reply…"
-      />
-      <button
-        className="lib-btn"
-        disabled={!canSubmit}
-        onClick={() => onSubmit(draft.trim())}
-      >
-        Continue →
-      </button>
-    </div>
-  )
 }
