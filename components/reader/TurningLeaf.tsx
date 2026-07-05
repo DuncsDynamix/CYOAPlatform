@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 
 const INITIAL_MESSAGE = "Turning the page…"
-const WET_INK_MESSAGE = "The ink is still wet — this page is being written…"
+const WET_INK_MESSAGE = "The ink is still wet. This page is being written…"
 const ROTATION_MESSAGES = [
   "The scribe does not hurry.",
   "Somewhere, a quill scratches on.",
