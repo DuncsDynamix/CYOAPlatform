@@ -134,6 +134,36 @@ describe("BookView", () => {
     expect(body.choiceId).toBeUndefined()
   })
 
+  it("keeps the last prose visible on the choice page after passing through the turning phase", async () => {
+    // Minimal EventSource stub: erroring immediately makes Opening fall
+    // through to onReady, which dispatches the held prose content.
+    class InstantErrorEventSource {
+      onmessage: ((e: { data: string }) => void) | null = null
+      onerror: (() => void) | null = null
+      constructor() { setTimeout(() => this.onerror?.(), 0) }
+      close() {}
+    }
+    vi.stubGlobal("EventSource", InstantErrorEventSource as unknown as typeof EventSource)
+
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/engine/start"))
+        return jsonResponse({ sessionId: "s1", node: { id: "n1", type: "GENERATED", nextNodeId: "c1" }, content: proseContent, experienceTitle: "T" })
+      if (url.includes("/engine/node"))
+        return jsonResponse({ node: { id: "c1", type: "CHOICE" }, content: choiceContent })
+      return jsonResponse({}, 500)
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    render(<BookView {...bookProps()} />)
+    fireEvent.click(screen.getByRole("button", { name: /begin/i }))
+
+    fireEvent.click(await screen.findByRole("button", { name: /continue/i }))
+
+    await screen.findByRole("button", { name: /step through/i })
+    expect(screen.getByText(/gate stands open/i)).toBeInTheDocument()
+  })
+
   it("shows a graceful misbound page for training-only content types", async () => {
     const fetchMock = vi.fn(() => jsonResponse({ sessionId: "s1", node: { id: "d1", type: "DIALOGUE" }, content: { type: "dialogue", actorName: "Sam", actorRole: "", characterLine: "…", turnCount: 0, maxTurns: 5 }, experienceTitle: "T" }))
     vi.stubGlobal("fetch", fetchMock)

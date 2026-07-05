@@ -53,6 +53,11 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
   // closure captured before the setter took effect.
   const lastChoiceRef = useRef<string | null>(null)
 
+  // The most recent prose content, carried across the turning phase — every
+  // fetch transition passes through "turning", so by the time choice content
+  // dispatches, prev.phase is no longer "prose" and the prose would be lost.
+  const lastProseRef = useRef("")
+
   // Counts choices made this session, for the verso ribbon's progress estimate.
   // Presentation-only — not part of the state machine.
   const [choicesMade, setChoicesMade] = useState(0)
@@ -79,13 +84,14 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
 
   const dispatchContent = useCallback((sessionId: string, node: Node, content: ResolvedContent) => {
     if (content.type === "prose") {
+      lastProseRef.current = content.content
       setStatus({ phase: "prose", sessionId, nodeId: node.id, content: content.content, lastChoice: lastChoiceRef.current })
       return
     }
 
     if (content.type === "choice") {
       setStatus((prev) => {
-        const lastProse = prev.phase === "prose" ? prev.content : prev.phase === "choice" ? prev.lastProse : ""
+        const lastProse = prev.phase === "prose" ? prev.content : prev.phase === "choice" ? prev.lastProse : lastProseRef.current
         return {
           phase: "choice",
           sessionId,
