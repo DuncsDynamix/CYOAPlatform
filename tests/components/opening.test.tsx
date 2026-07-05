@@ -15,7 +15,9 @@ describe("Opening", () => {
     vi.useFakeTimers()
     vi.stubGlobal("EventSource", FakeEventSource as unknown as typeof EventSource)
     const onReady = vi.fn()
-    render(<Opening sessionId="s1" genre="fantasy" onReady={onReady} />)
+    render(<Opening sessionId="s1" genre="fantasy" title="The Hollow Crown" author="D. Brown" onReady={onReady} />)
+
+    expect(screen.getByRole("img", { name: /the hollow crown/i })).toBeInTheDocument()
 
     act(() => FakeEventSource.last!.onmessage!({ data: JSON.stringify({ status: "progress", progress: 60, message: "The story stirs..." }) }))
     expect(screen.getByText(/story stirs/i)).toBeInTheDocument()
@@ -31,7 +33,7 @@ describe("Opening", () => {
   it("falls through to onReady on stream error (content already cached)", () => {
     vi.stubGlobal("EventSource", FakeEventSource as unknown as typeof EventSource)
     const onReady = vi.fn()
-    render(<Opening sessionId="s1" genre="fantasy" onReady={onReady} />)
+    render(<Opening sessionId="s1" genre="fantasy" title="The Hollow Crown" author="D. Brown" onReady={onReady} />)
     act(() => FakeEventSource.last!.onerror!())
     expect(onReady).toHaveBeenCalled()
   })

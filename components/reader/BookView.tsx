@@ -66,6 +66,10 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
   // so onReady can dispatch it without a second network round trip.
   const pendingStartRef = useRef<{ sessionId: string; node: Node; content: ResolvedContent } | null>(null)
 
+  // Guards against a rapid double-click on Begin firing two /engine/start
+  // requests (and thus two server sessions). Cleared on failure so retry works.
+  const beginningRef = useRef(false)
+
   // Abort in-flight requests on unmount so late responses can't set state.
   const abortRef = useRef<AbortController | null>(null)
   useEffect(() => {
@@ -151,6 +155,11 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
   }, [dispatchContent])
 
   const begin = useCallback(async () => {
+    // A rapid double-click on Begin must not fire two /engine/start requests
+    // (each creates its own server session). Cleared on every failure path
+    // so the retry button — which also calls begin() — still works.
+    if (beginningRef.current) return
+    beginningRef.current = true
     try {
       const res = await fetch("/api/v1/engine/start", {
         method: "POST",
@@ -159,6 +168,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
         signal: nextSignal(),
       })
       if (!res.ok) {
+        beginningRef.current = false
         const failure = await readFailure(res, "Could not open the book")
         setStatus({ phase: "smudged", ...failure, retry: () => begin() })
         return
@@ -174,6 +184,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
         dispatchContent(data.sessionId, data.node, data.content)
       }
     } catch (err) {
+      beginningRef.current = false
       if (isAbort(err)) return
       setStatus({ phase: "smudged", message: "Network error — please try again", retryable: true, retry: () => begin() })
     }
@@ -227,7 +238,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
           <h1>{title}</h1>
           <p className="lib-cover-author">{author}</p>
           {description && <p className="lib-cover-desc">{description}</p>}
-          <p className="lib-cover-endings">{endingsCount} endings await.</p>
+          <p className="lib-cover-endings">{endingsCount === 1 ? "A single ending awaits." : `${endingsCount} endings await.`}</p>
           <button className="lib-btn" onClick={begin}>Begin</button>
         </div>
       </Stage>
@@ -277,7 +288,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
   if (status.phase === "opening") {
     return (
       <div className="lib-stage">
-        <Opening sessionId={status.sessionId} genre={genre} onReady={handleOpeningReady} />
+        <Opening sessionId={status.sessionId} genre={genre} title={title} author={author} coverImageUrl={coverImageUrl} onReady={handleOpeningReady} />
       </div>
     )
   }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { getHall, normalizeGenre } from "@/lib/library/halls"
+import { BookCover } from "@/components/library/BookCover"
 
 const RITUAL_MESSAGES = [
   "Opening the book…",
@@ -14,6 +15,9 @@ const RITUAL_MESSAGES = [
 interface OpeningProps {
   sessionId: string
   genre: string | null | undefined
+  title: string
+  author: string
+  coverImageUrl?: string | null
   onReady: () => void
 }
 
@@ -25,7 +29,7 @@ interface OpeningProps {
  * /engine/start call has already produced (and cached) real content —
  * this screen is purely cosmetic narration on top of that.
  */
-export function Opening({ sessionId, genre, onReady }: OpeningProps) {
+export function Opening({ sessionId, genre, title, author, coverImageUrl, onReady }: OpeningProps) {
   const [progress, setProgress] = useState(0)
   const [message, setMessage] = useState(RITUAL_MESSAGES[0])
 
@@ -79,7 +83,9 @@ export function Opening({ sessionId, genre, onReady }: OpeningProps) {
 
   return (
     <div className="lib-book lib-book--opening">
-      <div className="lib-cover" />
+      <div className="lib-cover">
+        <BookCover title={title} author={author} genre={genre} coverImageUrl={coverImageUrl} />
+      </div>
       <div
         className="lib-endpaper"
         style={{

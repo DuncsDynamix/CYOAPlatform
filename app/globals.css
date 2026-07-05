@@ -24,25 +24,6 @@
 
 * { box-sizing: border-box; }
 
-/* ─── PROGRESS BAR ─────────────────────────────────────────── */
-
-.progress-bar-wrapper { width: 100%; max-width: 680px; margin: 0 auto; padding: 0.5rem 1rem 0; display: flex; align-items: center; gap: 0.75rem; }
-.progress-bar-label { font-family: 'Playfair Display', Georgia, serif; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--colour-text-muted); white-space: nowrap; }
-.progress-bar-track { flex: 1; height: 3px; background: var(--colour-border); }
-.progress-bar-fill { height: 100%; background: var(--colour-accent); transition: width 0.4s ease; }
-
-/* ─── TYPING INDICATOR ─────────────────────────────────────── */
-
-.typing-indicator { display: flex; gap: 6px; padding: 1rem 0; }
-.typing-dot { width: 8px; height: 8px; background: var(--colour-text-muted); border-radius: 50%; animation: typing-bounce 1.2s ease-in-out infinite; }
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes typing-bounce {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-  40% { transform: translateY(-6px); opacity: 1; }
-}
-
 /* ─── STORY LIBRARY ────────────────────────────────────────── */
 
 .story-card { background: var(--colour-page); border: 1px solid var(--colour-border); padding: 1.5rem; cursor: pointer; transition: box-shadow 0.15s ease; text-decoration: none; display: block; color: inherit; }

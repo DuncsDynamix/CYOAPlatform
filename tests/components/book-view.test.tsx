@@ -19,7 +19,10 @@ function bookProps() {
   return { slug: "the-hollow-crown", title: "The Hollow Crown", author: "D. Brown", genre: "fantasy", coverImageUrl: null, description: "A crown, hollow.", endingsCount: 3 }
 }
 
-beforeEach(() => vi.restoreAllMocks())
+beforeEach(() => {
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
 
 describe("BookView", () => {
   it("shows the cover first and only starts the session on Begin", async () => {

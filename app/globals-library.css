@@ -41,7 +41,7 @@
 
 /* ── The book object ── */
 .lib-book { position: relative; width: min(96vw, 1040px); transform-style: preserve-3d; }
-.lib-book--cover { width: min(92vw, 420px); }
+.lib-book--cover, .lib-book--opening { width: min(92vw, 420px); }
 
 /* Cover state: the closed book facing the reader */
 .lib-cover {
@@ -106,6 +106,7 @@
 
 /* ── Choices set into the page foot ── */
 .lib-choice-foot { margin-top: 1.8rem; border-top: 3px double color-mix(in srgb, var(--lib-gilt) 70%, transparent); padding-top: 1.4rem; display: flex; flex-direction: column; gap: 0.7rem; }
+.lib-choice-prompt { font-family: 'Playfair Display', serif; font-style: italic; color: var(--lib-ink-2); margin: 0 0 0.4rem; }
 .lib-choice {
   display: block; width: 100%; text-align: left; cursor: pointer;
   background: var(--lib-board); color: var(--lib-paper);
