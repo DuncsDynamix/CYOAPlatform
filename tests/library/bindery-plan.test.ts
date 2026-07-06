@@ -51,6 +51,36 @@ describe("chapter proposals", () => {
   it("rejects unknown kinds and fenced garbage", () => {
     expect(ChapterProposalSchema.safeParse({ nodes: [{ kind: "dialogue" }] }).success).toBe(false)
   })
+
+  it("rejects duplicate labels within a proposal", () => {
+    const dupe = {
+      nodes: [
+        { kind: "page", mode: "told", label: "Twice", text: "First take", next: "EXIT:1" },
+        { kind: "page", mode: "written", label: "Twice", text: "Second take", next: "EXIT:1" },
+      ],
+    }
+    expect(ChapterProposalSchema.safeParse(dupe).success).toBe(false)
+  })
+
+  it("rejects a next ref that matches no label and is not EXIT/END", () => {
+    const dangling = {
+      nodes: [
+        { kind: "page", mode: "told", label: "The chamber", text: "Dust", next: "No Such Label" },
+      ],
+    }
+    expect(ChapterProposalSchema.safeParse(dangling).success).toBe(false)
+  })
+
+  it("accepts EXIT:<i> and END:<n> refs", () => {
+    const symbolic = {
+      nodes: [
+        { kind: "page", mode: "told", label: "Fork", text: "A split in the stacks", next: "EXIT:2" },
+        { kind: "choice", label: "Pick", prompt: "Which way?",
+          options: [{ label: "Out", next: "EXIT:2" }, { label: "Done", next: "END:1" }] },
+      ],
+    }
+    expect(ChapterProposalSchema.safeParse(symbolic).success).toBe(true)
+  })
 })
 
 describe("derivePlan + looseStitches", () => {
@@ -67,5 +97,17 @@ describe("derivePlan + looseStitches", () => {
     expect(plan[3].isRejoin).toBe(true)
     const stitches = looseStitches(validateExperienceGraph(all), all)
     expect(stitches.some((s) => s.nodeId === d.id && /leads nowhere yet/.test(s.message))).toBe(true)
+  })
+
+  it("collapses an unwired choice into exactly one stitch", () => {
+    const page = makeBinderyPage("written")
+    const choice = makeBinderyChoice() as ChoiceNode
+    choice.label = "The reader decides"
+    page.nextNodeId = choice.id // reachable, so only the unwired options misbehave
+    const all = [page, choice]
+    const stitches = looseStitches(validateExperienceGraph(all), all)
+    const forChoice = stitches.filter((s) => s.nodeId === choice.id)
+    expect(forChoice).toHaveLength(1)
+    expect(forChoice[0].message).toBe("a thread from 'The reader decides' is not yet tied to a page")
   })
 })

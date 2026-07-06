@@ -2,7 +2,7 @@
 // Chapters ARE segments; this module never talks to the DB or the model.
 import { z } from "zod"
 import type { ChoiceNode, EndpointNode, FixedNode, GeneratedNode, Node, Segment } from "@/types/experience"
-import { getChildLinks, makeNode, validateExperienceGraph, type GraphValidationResult } from "@/lib/authoring/graph"
+import { getChildLinks, makeNode, type GraphValidationResult } from "@/lib/authoring/graph"
 import { USE_CASE_PACKS } from "@/lib/engine/usecases"
 
 export interface ChapterOutline {
@@ -145,7 +145,43 @@ const ProposedNodeSchema = z.discriminatedUnion("kind", [
   }),
 ])
 
-export const ChapterProposalSchema = z.object({ nodes: z.array(ProposedNodeSchema).min(1) })
+const SYMBOLIC_REF = /^(EXIT:\d+|END:\d+)$/
+
+/**
+ * Beyond per-node shape, a proposal must be internally coherent — bad model
+ * output is *rejected* here so the draft-chapter endpoint's retry-on-Zod-failure
+ * path kicks in, rather than silently materialising dangling wires.
+ */
+export const ChapterProposalSchema = z
+  .object({ nodes: z.array(ProposedNodeSchema).min(1) })
+  .superRefine((proposal, ctx) => {
+    const labels = new Set<string>()
+    for (const [i, node] of proposal.nodes.entries()) {
+      if (labels.has(node.label)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["nodes", i, "label"],
+          message: `Duplicate node label "${node.label}" — labels must be unique within a proposal`,
+        })
+      }
+      labels.add(node.label)
+    }
+    const checkRef = (ref: string, path: (string | number)[]) => {
+      if (!labels.has(ref) && !SYMBOLIC_REF.test(ref)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path,
+          message: `Ref "${ref}" matches no node label and is not EXIT:<chapterIndex> or END:<n>`,
+        })
+      }
+    }
+    for (const [i, node] of proposal.nodes.entries()) {
+      if (node.kind === "page") checkRef(node.next, ["nodes", i, "next"])
+      if (node.kind === "choice") {
+        node.options.forEach((opt, j) => checkRef(opt.next, ["nodes", i, "options", j, "next"]))
+      }
+    }
+  })
 export type ChapterProposal = z.infer<typeof ChapterProposalSchema>
 type ProposedNode = z.infer<typeof ProposedNodeSchema>
 
@@ -171,10 +207,18 @@ function resolveRef(ref: string, labelToId: Map<string, string>): { targetId: st
 
 /** Materialises a chapter proposal's symbolic refs into real node ids and wiring. */
 export function proposalToNodes(proposal: ChapterProposal): Node[] {
-  const ids = new Map<string, string>(proposal.nodes.map((n) => [n.label, crypto.randomUUID()]))
+  // Every node gets its own id; the ref map keeps the FIRST id per label.
+  // The schema rejects duplicate labels, but if that refinement is ever
+  // bypassed, refs resolve to the first occurrence rather than silently
+  // rewiring to the last.
+  const nodeIds = proposal.nodes.map(() => crypto.randomUUID())
+  const ids = new Map<string, string>()
+  proposal.nodes.forEach((n, i) => {
+    if (!ids.has(n.label)) ids.set(n.label, nodeIds[i])
+  })
 
-  return proposal.nodes.map((proposed: ProposedNode) => {
-    const id = ids.get(proposed.label)!
+  return proposal.nodes.map((proposed: ProposedNode, index) => {
+    const id = nodeIds[index]
 
     switch (proposed.kind) {
       case "page": {
@@ -335,27 +379,36 @@ export interface LooseStitch {
  * treats a link as "required" (and thus reports it under `brokenLinks`) for
  * CHOICE options and DIALOGUE's `next` — a FIXED/GENERATED page's single
  * unset `next` is *not* a required handle, so it is reported exclusively
- * under `deadEnds`, never `brokenLinks`. For that single-thread case to read
- * as "the thread from '<label>' leads nowhere yet" (the natural in-fiction
- * phrasing for an unfinished page), `deadEnds` is mapped to that copy, and
- * `brokenLinks` — a handle a node exposes but has left dangling — is mapped
- * to the more severe "traps the reader with no way onward".
+ * under `deadEnds`, never `brokenLinks`. So: `deadEnds` -> "the thread from
+ * '<label>' leads nowhere yet" (an unfinished page); `brokenLinks` -> "a
+ * thread from '<label>' is not yet tied to a page" (an unset option or a ref
+ * to a page that doesn't exist).
+ *
+ * A node gets at most one stitch per category, and its dead-end stitch is
+ * suppressed when it already has a broken-link stitch — a fully-unwired
+ * choice is both "all links unset" and "no way onward", and the broken-link
+ * message is the more specific of the two.
  */
 export function looseStitches(result: GraphValidationResult, allNodes: Node[]): LooseStitch[] {
   const nodeMap = new Map(allNodes.map((n) => [n.id, n]))
+  const labelOf = (nodeId: string) => nodeMap.get(nodeId)?.label ?? ""
   const stitches: LooseStitch[] = []
 
+  const brokenNodeIds = new Set<string>()
   for (const issue of result.brokenLinks) {
-    const label = nodeMap.get(issue.nodeId)?.label ?? ""
+    if (brokenNodeIds.has(issue.nodeId)) continue
+    brokenNodeIds.add(issue.nodeId)
+    const label = labelOf(issue.nodeId)
     stitches.push({
       nodeId: issue.nodeId,
       nodeLabel: label,
-      message: `'${label}' traps the reader with no way onward`,
+      message: `a thread from '${label}' is not yet tied to a page`,
     })
   }
 
-  for (const nodeId of result.deadEnds) {
-    const label = nodeMap.get(nodeId)?.label ?? ""
+  for (const nodeId of new Set(result.deadEnds)) {
+    if (brokenNodeIds.has(nodeId)) continue
+    const label = labelOf(nodeId)
     stitches.push({
       nodeId,
       nodeLabel: label,
@@ -363,8 +416,8 @@ export function looseStitches(result: GraphValidationResult, allNodes: Node[]): 
     })
   }
 
-  for (const nodeId of result.unreachable) {
-    const label = nodeMap.get(nodeId)?.label ?? ""
+  for (const nodeId of new Set(result.unreachable)) {
+    const label = labelOf(nodeId)
     stitches.push({
       nodeId,
       nodeLabel: label,
