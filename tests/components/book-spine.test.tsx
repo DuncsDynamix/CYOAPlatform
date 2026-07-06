@@ -19,4 +19,11 @@ describe("BookSpine", () => {
     )
     expect(container.textContent).toMatch(/…/)
   })
+
+  it("falls back to the general hall for a null genre", () => {
+    const { container } = render(<BookSpine title="Untitled Folio" author="?" genre={null} />)
+    const svg = container.querySelector("svg")
+    expect(svg).not.toBeNull()
+    expect(container.innerHTML).toContain(spineDesign("Untitled Folio", null).background)
+  })
 })
