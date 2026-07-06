@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import { Desk } from "@/components/library/bindery/Desk"
 
 function jsonResponse(body: unknown, status = 200) {
@@ -14,6 +14,10 @@ const drafts = [
 beforeEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe("Desk", () => {
@@ -66,5 +70,66 @@ describe("Desk", () => {
     expect(screen.getByRole("button", { name: /the cover/i })).toBeDisabled()
     expect(screen.getByRole("button", { name: /the pages/i })).toBeDisabled()
     expect(screen.getByRole("button", { name: /bind & shelve/i })).toBeDisabled()
+  })
+
+  it("a failed discard keeps the drawer item and reports the stove's refusal", async () => {
+    const fetchMock = vi.fn(() => jsonResponse({ error: "nope" }, 500))
+    vi.stubGlobal("fetch", fetchMock)
+
+    render(<Desk drafts={drafts} />)
+    fireEvent.click(screen.getAllByRole("button", { name: /^discard$/i })[0])
+    fireEvent.click(screen.getByRole("button", { name: /yes, discard/i }))
+
+    await screen.findByText(/the stove refuses it\. try again\./i)
+    expect(screen.getByRole("button", { name: /the glass orchard/i })).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/experience/exp-1", { method: "DELETE" })
+  })
+
+  it("rapid double-trigger of the first save issues exactly ONE POST", async () => {
+    vi.useFakeTimers()
+    let resolveCreate: ((r: Response) => void) | null = null
+    const fetchMock = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === "POST") {
+        // Held open past both debounce windows — the second debounce fires
+        // while this create is still on the wire.
+        return new Promise<Response>((resolve) => {
+          resolveCreate = resolve
+        })
+      }
+      return jsonResponse({ id: "exp-9" })
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    render(<Desk drafts={[]} />)
+    fireEvent.click(screen.getByRole("button", { name: /begin a new binding/i }))
+
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: "First" } })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000) // debounce 1 fires → POST goes out (held)
+    })
+
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: "First, refined" } })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000) // debounce 2 fires while POST is in flight
+    })
+
+    const postCalls = fetchMock.mock.calls.filter((c) => (c[1] as RequestInit | undefined)?.method === "POST")
+    expect(postCalls).toHaveLength(1)
+
+    // Release the create; the deferred save must now PUT against the new id, not POST again.
+    await act(async () => {
+      resolveCreate!({
+        ok: true,
+        status: 201,
+        json: () => Promise.resolve({ id: "exp-9", title: "First", genre: null, description: null }),
+      } as Response)
+      await vi.advanceTimersByTimeAsync(4000)
+    })
+
+    const finalPostCalls = fetchMock.mock.calls.filter((c) => (c[1] as RequestInit | undefined)?.method === "POST")
+    expect(finalPostCalls).toHaveLength(1)
+    const putCalls = fetchMock.mock.calls.filter((c) => (c[1] as RequestInit | undefined)?.method === "PUT")
+    expect(putCalls.length).toBeGreaterThanOrEqual(1)
+    expect(String(putCalls[0][0])).toBe("/api/v1/experience/exp-9")
   })
 })

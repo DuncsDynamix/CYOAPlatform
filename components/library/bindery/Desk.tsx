@@ -48,6 +48,11 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const experienceRef = useRef<BinderyDraft | null>(null)
   experienceRef.current = experience
+  // True while the first save's POST is on the wire. A debounce that fires
+  // during that window must NOT issue a second POST (duplicate draft rows) —
+  // it defers itself and retries once the create has resolved and
+  // experienceRef holds the new id, at which point it PUTs.
+  const creatingRef = useRef(false)
 
   useEffect(() => {
     return () => {
@@ -80,23 +85,39 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
 
   async function save(fields: SheetFields) {
     if (!fields.title.trim()) return
+    const current = experienceRef.current
+    if (!current && creatingRef.current) {
+      // A create is already in flight. Firing a second POST now would bind a
+      // duplicate draft — defer this save and let it re-run once the id lands.
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => {
+        save(fields)
+      }, 2000)
+      return
+    }
     setSaveStatus("saving")
     try {
-      const current = experienceRef.current
       if (!current) {
-        const res = await fetch("/api/v1/experience", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: fields.title,
-            // "general" isn't a real genre for creation — it means "unset".
-            genre: fields.genre === "general" ? undefined : fields.genre,
-            description: fields.description || undefined,
-            type: "cyoa_story",
-          }),
-        })
-        if (!res.ok) throw new Error("create failed")
-        const created = await res.json()
+        creatingRef.current = true
+        let created: BinderyDraft
+        try {
+          const res = await fetch("/api/v1/experience", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: fields.title,
+              // "general" isn't a real genre for creation — it means "unset".
+              genre: fields.genre === "general" ? undefined : fields.genre,
+              description: fields.description || undefined,
+              type: "cyoa_story",
+            }),
+          })
+          if (!res.ok) throw new Error("create failed")
+          created = await res.json()
+        } finally {
+          creatingRef.current = false
+        }
+        experienceRef.current = created
         setExperience(created)
       } else {
         const res = await fetch(`/api/v1/experience/${current.id}`, {

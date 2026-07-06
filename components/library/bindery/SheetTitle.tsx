@@ -52,7 +52,7 @@ export function SheetTitle({
         <textarea
           id="bindery-description"
           value={description}
-          placeholder="A sentence or two — the Bindery will ask more, later."
+          placeholder="A sentence or two. The Bindery will ask more, later."
           onChange={(e) => onChange({ description: e.target.value })}
         />
         <p className="lib-field-hint">You can say more on the next sheet.</p>
