@@ -13,24 +13,6 @@ function shelvedDate(publishedAt: string | null): string {
   return new Date(publishedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long" })
 }
 
-// Room names repeat verbatim in both the arrivals table and the doorway list.
-// Splitting the doorway rendering word-by-word keeps it out of the arrivals
-// row's way for exact-text lookups while leaving the link's accessible name
-// (built from the concatenated text) unaffected.
-function DoorwayName({ roomName }: { roomName: string }) {
-  const words = roomName.split(" ")
-  return (
-    <span className="lib-doorway-name">
-      {words.map((word, i) => (
-        <span key={i}>
-          {word}
-          {i < words.length - 1 ? " " : ""}
-        </span>
-      ))}
-    </span>
-  )
-}
-
 export function Atrium({ stories }: { stories: LibraryStory[] }) {
   const arrivals = stories.slice(0, 6)
   const grouped = groupStoriesByHall(stories)
@@ -69,7 +51,7 @@ export function Atrium({ stories }: { stories: LibraryStory[] }) {
               <li key={id}>
                 <Link href={`/hall/${id}`} className="lib-doorway">
                   <span className="lib-doorway-label">{hall.genreLabel}</span>
-                  <DoorwayName roomName={hall.roomName} />
+                  <span className="lib-doorway-name">{hall.roomName}</span>
                   <span className="lib-doorway-count">{doorwayCount(count)}</span>
                 </Link>
               </li>

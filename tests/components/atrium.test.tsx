@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import { Atrium } from "@/components/library/Atrium"
 
 const story = (id: string, title: string, slug: string, genre: string | null, publishedAt: string | null) =>
@@ -10,7 +10,7 @@ describe("Atrium", () => {
     render(<Atrium stories={[story("1", "The Hollow Crown", "the-hollow-crown", "fantasy", "2026-07-01T00:00:00Z")]} />)
     const link = screen.getByRole("link", { name: /the hollow crown/i })
     expect(link.getAttribute("href")).toBe("/story/the-hollow-crown")
-    expect(screen.getByText(/the candlelit archive/i)).toBeInTheDocument()
+    expect(within(screen.getByRole("table")).getByText(/the candlelit archive/i)).toBeInTheDocument()
   })
 
   it("shows a doorway for every hall with in-fiction counts", () => {
