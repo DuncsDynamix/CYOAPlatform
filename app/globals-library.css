@@ -194,3 +194,96 @@
   .lib-turning-msg--fade { animation: none; }
   .lib-choice-foot { animation: none; }
 }
+
+/* ─── THE GRAND LIBRARY — Milestone 2: Atrium & Halls ─────────────────
+   [data-hall] swaps the room; markup is identical in every hall. */
+
+/* ── Library header (replaces the old reader header styles) ── */
+.lib-header { display: flex; align-items: baseline; justify-content: space-between; max-width: 1180px; margin: 0 auto; padding: 1.1rem 1.5rem 0.9rem; border-bottom: 1px solid color-mix(in srgb, var(--lib-gilt) 60%, transparent); }
+.lib-header-wordmark { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.15rem; color: var(--lib-ink); text-decoration: none; letter-spacing: 0.02em; }
+.lib-header-wordmark em { font-style: italic; color: var(--lib-accent-dark); }
+.lib-header-nav { display: flex; gap: 1.4rem; font-family: 'Playfair Display', serif; font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.lib-header-nav a { color: var(--lib-muted); text-decoration: none; }
+.lib-header-nav a:hover, .lib-header-nav a:focus-visible { color: var(--lib-accent-dark); }
+
+/* ── Scene shell: every room sits on this ── */
+.lib-scene { position: relative; min-height: calc(100vh - 60px); background: var(--hall-backdrop, var(--lib-paper)); color: var(--hall-ink, var(--lib-ink)); overflow: hidden; }
+.lib-ambience { position: absolute; inset: 0; pointer-events: none; background: var(--hall-ambience, none); opacity: 0.85; }
+.lib-scene > *:not(.lib-ambience) { position: relative; }
+
+/* ── Hall variable layers (registry values live in lib/library/halls.ts) ── */
+[data-hall="fantasy"] { --hall-paper: #F3E9D2; --hall-ink: #2B1D0E; --hall-glow: #E8A33D;
+  --hall-wood: #4A3118; --hall-backdrop: linear-gradient(180deg, #2B1D0E 0%, #4A3118 26%, #F3E9D2 26.2%);
+  --hall-ambience: radial-gradient(2px 2px at 18% 34%, rgba(232,163,61,0.5), transparent 60%), radial-gradient(1.5px 1.5px at 64% 22%, rgba(232,163,61,0.4), transparent 60%), radial-gradient(2px 2px at 82% 58%, rgba(232,163,61,0.35), transparent 60%); }
+[data-hall="sci-fi"] { --hall-paper: #E7EDF2; --hall-ink: #0D1B2A; --hall-glow: #5BC8D8;
+  --hall-wood: #16232E; --hall-backdrop: linear-gradient(180deg, #0D1B2A 0%, #16232E 26%, #E7EDF2 26.2%);
+  --hall-ambience: radial-gradient(1px 1px at 12% 8%, rgba(91,200,216,0.7), transparent 55%), radial-gradient(1px 1px at 38% 16%, rgba(231,237,242,0.55), transparent 55%), radial-gradient(1.5px 1.5px at 71% 6%, rgba(91,200,216,0.5), transparent 55%), radial-gradient(1px 1px at 89% 19%, rgba(231,237,242,0.45), transparent 55%); }
+[data-hall="horror"] { --hall-paper: #E4E1D5; --hall-ink: #141410; --hall-glow: #7C8F6C;
+  --hall-wood: #1C1B16; --hall-backdrop: linear-gradient(180deg, #0E0E0B 0%, #1C1B16 26%, #E4E1D5 26.2%);
+  --hall-ambience: radial-gradient(120% 70% at 50% 0%, transparent 40%, rgba(14,14,11,0.28) 100%); }
+[data-hall="mystery"] { --hall-paper: #EDE6D6; --hall-ink: #17201B; --hall-glow: #3F7A5A;
+  --hall-wood: #2A1A12; --hall-backdrop: linear-gradient(180deg, #17201B 0%, #2A1A12 26%, #EDE6D6 26.2%);
+  --hall-ambience: radial-gradient(60% 34% at 50% 12%, rgba(63,122,90,0.24), transparent 70%); }
+[data-hall="romance"] { --hall-paper: #F7EEE7; --hall-ink: #3B2430; --hall-glow: #D9899B;
+  --hall-wood: #7E5A70; --hall-backdrop: linear-gradient(180deg, #8C4A5E 0%, #7E5A70 26%, #F7EEE7 26.2%);
+  --hall-ambience: radial-gradient(50% 30% at 72% 8%, rgba(247,238,231,0.5), transparent 70%); }
+[data-hall="adventure"] { --hall-paper: #F0E6CE; --hall-ink: #2E2414; --hall-glow: #C98A3D;
+  --hall-wood: #5C4A1E; --hall-backdrop: linear-gradient(180deg, #2E2414 0%, #5C4A1E 26%, #F0E6CE 26.2%);
+  --hall-ambience: radial-gradient(46% 30% at 30% 10%, rgba(201,138,61,0.28), transparent 70%); }
+[data-hall="general"] { --hall-paper: #F5F0E8; --hall-ink: #1A1209; --hall-glow: #C4A882;
+  --hall-wood: #3A2E20; --hall-backdrop: linear-gradient(180deg, #1A1A2E 0%, #3A2E20 26%, #F5F0E8 26.2%);
+  --hall-ambience: radial-gradient(70% 40% at 50% 8%, rgba(196,168,130,0.22), transparent 70%); }
+
+@keyframes lib-drift { from { transform: translateY(0); } to { transform: translateY(-14px); } }
+[data-hall="fantasy"] .lib-ambience, [data-hall="sci-fi"] .lib-ambience { animation: lib-drift 16s ease-in-out infinite alternate; }
+
+/* ── Atrium ── */
+.lib-atrium { max-width: 1180px; margin: 0 auto; padding: 3.2rem 1.5rem 4rem; }
+.lib-atrium-title { font-family: 'Playfair Display', serif; font-size: 2.4rem; margin: 0 0 0.3rem; color: var(--lib-paper); text-shadow: 0 1px 0 rgba(0,0,0,0.4); }
+.lib-atrium-sub { font-style: italic; color: color-mix(in srgb, var(--lib-paper) 75%, transparent); margin: 0 0 2.6rem; }
+.lib-arrivals { background: var(--lib-paper); border: 1px solid var(--lib-gilt); border-radius: 8px; box-shadow: 2px 2px 0 var(--lib-gilt), 10px 14px 36px var(--lib-shadow); padding: 1.6rem 1.8rem; margin-bottom: 2.6rem; }
+.lib-arrivals-title { font-family: 'Playfair Display', serif; font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--lib-accent-dark); margin: 0 0 1rem; }
+.lib-arrivals-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.lib-arrivals-table td { padding: 0.55rem 0.4rem; border-top: 1px solid color-mix(in srgb, var(--lib-gilt) 40%, transparent); }
+.lib-arrivals-table tr:first-child td { border-top: none; }
+.lib-arrivals-table a { color: var(--lib-ink); font-family: 'Playfair Display', serif; text-decoration: none; }
+.lib-arrivals-table a:hover, .lib-arrivals-table a:focus-visible { color: var(--lib-accent-dark); text-decoration: underline; }
+.lib-arrivals-hall { color: var(--lib-muted); font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.lib-arrivals-date { color: var(--lib-muted); font-style: italic; text-align: right; white-space: nowrap; }
+
+.lib-doorways { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1.1rem; list-style: none; margin: 0; padding: 0; }
+.lib-doorway { display: block; border: 1px solid var(--lib-gilt); border-radius: 8px 8px 2px 2px; background: linear-gradient(180deg, color-mix(in srgb, var(--lib-board) 88%, #000) 0%, var(--lib-board) 100%); color: var(--lib-paper); text-decoration: none; padding: 1.5rem 1.2rem 1.2rem; min-height: 118px; transition: transform 160ms ease, box-shadow 160ms ease; }
+.lib-doorway:hover, .lib-doorway:focus-visible { transform: translateY(-3px); box-shadow: 0 10px 22px var(--lib-shadow); outline: 2px solid var(--lib-accent); outline-offset: 2px; }
+.lib-doorway-name { font-family: 'Playfair Display', serif; font-size: 1.15rem; display: block; margin-bottom: 0.25rem; }
+.lib-doorway-label { font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--lib-gilt); display: block; margin-bottom: 0.55rem; }
+.lib-doorway-count { font-style: italic; font-size: 0.85rem; color: color-mix(in srgb, var(--lib-paper) 70%, transparent); }
+.lib-doorway--latched { opacity: 0.55; cursor: default; }
+.lib-doorway--latched:hover { transform: none; box-shadow: none; }
+
+/* ── Hall ── */
+.lib-hall { max-width: 1180px; margin: 0 auto; padding: 2.6rem 1.5rem 4rem; }
+.lib-hall-header { margin-bottom: 2.2rem; }
+.lib-hall-back { font-family: 'Playfair Display', serif; font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: color-mix(in srgb, var(--lib-paper) 80%, transparent); text-decoration: none; }
+.lib-hall-back:hover, .lib-hall-back:focus-visible { color: var(--lib-paper); text-decoration: underline; }
+.lib-hall-title { font-family: 'Playfair Display', serif; font-size: 2.1rem; margin: 0.5rem 0 0.2rem; color: var(--lib-paper); text-shadow: 0 1px 0 rgba(0,0,0,0.4); }
+.lib-hall-sub { font-style: italic; color: color-mix(in srgb, var(--lib-paper) 72%, transparent); margin: 0; }
+.lib-hall-empty { background: var(--hall-paper); border: 1px solid var(--lib-gilt); border-radius: 8px; padding: 2.4rem; font-style: italic; color: var(--lib-ink-2); text-align: center; }
+
+/* ── Shelf: a wooden row of spine links ── */
+.lib-shelf { list-style: none; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.35rem; margin: 0 0 2rem; padding: 1.2rem 1.4rem 0; background: var(--hall-paper); border: 1px solid var(--lib-gilt); border-bottom: 12px solid var(--hall-wood, #3A2E20); border-radius: 6px; min-height: 190px; }
+.lib-spine-slot { display: block; }
+.lib-spine-link { display: block; text-decoration: none; transition: transform 180ms ease; transform: rotate(calc(var(--spine-lean, 0) * 1.6deg)); transform-origin: bottom center; }
+.lib-spine-link:hover, .lib-spine-link:focus-visible { transform: translateY(-10px) rotate(0deg); outline: 2px solid var(--lib-accent); outline-offset: 3px; }
+/* width/height steps set inline via CSS vars from spineDesign */
+.lib-spine-link svg { display: block; width: calc(34px + var(--spine-width, 0) * 7px); height: calc(150px + var(--spine-height, 0) * 14px); }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .lib-ambience { animation: none !important; }
+  .lib-doorway, .lib-spine-link { transition: none; }
+}
+
+@media (max-width: 700px) {
+  .lib-arrivals-date { display: none; }
+  .lib-atrium, .lib-hall { padding-top: 2rem; }
+}
