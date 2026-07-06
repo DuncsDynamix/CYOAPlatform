@@ -3,8 +3,8 @@ import { render, screen } from "@testing-library/react"
 import { Shelf } from "@/components/library/Shelf"
 
 const stories = [
-  { id: "1", title: "The Hollow Crown", slug: "the-hollow-crown", description: null, genre: "fantasy", coverImageUrl: null, authorName: "D. Brown", totalCompletions: 3, publishedAt: null },
-  { id: "2", title: "Starfall", slug: "starfall", description: null, genre: "sci-fi", coverImageUrl: null, authorName: null, totalCompletions: 0, publishedAt: null },
+  { id: "1", title: "The Hollow Crown", slug: "the-hollow-crown", description: null, genre: "fantasy", coverImageUrl: null, authorName: "D. Brown", totalCompletions: 3, publishedAt: null, coverVariant: 0 },
+  { id: "2", title: "Starfall", slug: "starfall", description: null, genre: "sci-fi", coverImageUrl: null, authorName: null, totalCompletions: 0, publishedAt: null, coverVariant: 0 },
 ]
 
 describe("Shelf", () => {

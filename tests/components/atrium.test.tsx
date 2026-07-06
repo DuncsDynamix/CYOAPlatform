@@ -3,7 +3,7 @@ import { render, screen, within } from "@testing-library/react"
 import { Atrium } from "@/components/library/Atrium"
 
 const story = (id: string, title: string, slug: string, genre: string | null, publishedAt: string | null) =>
-  ({ id, title, slug, description: null, genre, coverImageUrl: null, authorName: null, totalCompletions: 0, publishedAt })
+  ({ id, title, slug, description: null, genre, coverImageUrl: null, authorName: null, totalCompletions: 0, publishedAt, coverVariant: 0 })
 
 describe("Atrium", () => {
   it("lists new arrivals with hall names and links", () => {

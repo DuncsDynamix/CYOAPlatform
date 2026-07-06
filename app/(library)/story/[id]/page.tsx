@@ -24,6 +24,7 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
       renderingTheme: true,
       authorId: true,
       totalCompletions: true,
+      shape: true,
     },
   })
 
@@ -46,6 +47,7 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
     segments: experience.segments,
   } as unknown as Experience)
   const endingsCount = allNodes.filter((node) => node.type === "ENDPOINT").length || 1
+  const coverVariant = (experience.shape as { coverVariant?: number } | null)?.coverVariant ?? 0
 
   return (
     <BookView
@@ -57,6 +59,7 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
       description={experience.description}
       endingsCount={endingsCount}
       timesRead={experience.totalCompletions}
+      coverVariant={coverVariant}
     />
   )
 }

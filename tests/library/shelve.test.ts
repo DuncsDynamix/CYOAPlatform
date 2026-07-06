@@ -4,7 +4,7 @@ import { HALL_IDS } from "@/lib/library/halls"
 
 const story = (over: Partial<LibraryStory>): LibraryStory => ({
   id: "x", title: "T", slug: "t", description: null, genre: null,
-  coverImageUrl: null, authorName: null, totalCompletions: 0, publishedAt: null, ...over,
+  coverImageUrl: null, authorName: null, totalCompletions: 0, publishedAt: null, coverVariant: 0, ...over,
 })
 
 describe("groupStoriesByHall", () => {

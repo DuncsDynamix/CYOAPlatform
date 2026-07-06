@@ -9,7 +9,7 @@ export async function getLibraryStories(): Promise<LibraryStory[]> {
     orderBy: { publishedAt: "desc" },
     select: {
       id: true, title: true, slug: true, description: true, genre: true,
-      coverImageUrl: true, totalCompletions: true, publishedAt: true,
+      coverImageUrl: true, totalCompletions: true, publishedAt: true, shape: true,
       author: { select: { name: true } },
     },
   })
@@ -19,5 +19,6 @@ export async function getLibraryStories(): Promise<LibraryStory[]> {
     authorName: r.author?.name ?? null,
     totalCompletions: r.totalCompletions,
     publishedAt: r.publishedAt?.toISOString() ?? null,
+    coverVariant: (r.shape as { coverVariant?: number } | null)?.coverVariant ?? 0,
   }))
 }

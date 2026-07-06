@@ -7,6 +7,7 @@ interface BookCoverProps {
   genre: string | null | undefined
   coverImageUrl?: string | null
   className?: string
+  variant?: number
 }
 
 /** Simple line-wrap for SVG text: split title into <=14-char lines (max 4). */
@@ -54,8 +55,8 @@ function Ornament({ id, color, y }: { id: string; color: string; y: number }) {
   }
 }
 
-export function BookCover({ title, author, genre, coverImageUrl, className }: BookCoverProps) {
-  const design = coverDesign(title, genre)
+export function BookCover({ title, author, genre, coverImageUrl, className, variant = 0 }: BookCoverProps) {
+  const design = coverDesign(title, genre, variant)
   const hall = getHall(design.hall)
 
   if (coverImageUrl) {

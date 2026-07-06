@@ -18,6 +18,7 @@ interface OpeningProps {
   title: string
   author: string
   coverImageUrl?: string | null
+  coverVariant?: number
   onReady: () => void
 }
 
@@ -29,7 +30,7 @@ interface OpeningProps {
  * /engine/start call has already produced (and cached) real content —
  * this screen is purely cosmetic narration on top of that.
  */
-export function Opening({ sessionId, genre, title, author, coverImageUrl, onReady }: OpeningProps) {
+export function Opening({ sessionId, genre, title, author, coverImageUrl, coverVariant = 0, onReady }: OpeningProps) {
   const [progress, setProgress] = useState(0)
   const [message, setMessage] = useState(RITUAL_MESSAGES[0])
 
@@ -84,7 +85,7 @@ export function Opening({ sessionId, genre, title, author, coverImageUrl, onRead
   return (
     <div className="lib-book lib-book--opening">
       <div className="lib-cover">
-        <BookCover title={title} author={author} genre={genre} coverImageUrl={coverImageUrl} />
+        <BookCover title={title} author={author} genre={genre} coverImageUrl={coverImageUrl} variant={coverVariant} />
       </div>
       <div
         className="lib-endpaper"
