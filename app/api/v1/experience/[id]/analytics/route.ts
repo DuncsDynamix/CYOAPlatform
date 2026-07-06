@@ -13,7 +13,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   const experience = await db.experience.findUnique({ where: { id }, select: { authorId: true } })
   if (!experience) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  if (!(await canEditExperience(user.id, experience))) {
+  if (!(await canEditExperience(user, experience))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 

@@ -97,3 +97,20 @@ describe("hasTrainingTier", () => {
   it("returns false for studio tiers", () => expect(hasTrainingTier("studio_team")).toBe(false))
   it("returns false for null", () => expect(hasTrainingTier(null)).toBe(false))
 })
+
+describe("canAuthor — subscription status (P2-7)", () => {
+  it("allows active, trialing, and past_due (grace period)", () => {
+    expect(canAuthor("studio_team", "active")).toBe(true)
+    expect(canAuthor("studio_team", "trialing")).toBe(true)
+    expect(canAuthor("studio_team", "past_due")).toBe(true)
+  })
+
+  it("denies canceled and unknown statuses even on a paid tier", () => {
+    expect(canAuthor("studio_team", "canceled")).toBe(false)
+    expect(canAuthor("studio_team", "incomplete_expired")).toBe(false)
+  })
+
+  it("treats a missing status as allowed for backwards compatibility (no billing yet)", () => {
+    expect(canAuthor("studio_team")).toBe(true)
+  })
+})

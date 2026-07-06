@@ -54,9 +54,20 @@ export function canReadStories(tier: string | null | undefined): boolean {
   return tier === "stories_reader" || tier === "stories_gift"
 }
 
-/** True if the tier grants access to TraverseStudio authoring. */
-export function canAuthor(tier: string | null | undefined): boolean {
-  return (STUDIO_TIERS as readonly string[]).includes(tier ?? "") && tier !== "studio_free"
+/** Subscription statuses that retain access — past_due keeps a grace period. */
+const ACTIVE_STATUSES = ["active", "trialing", "past_due"] as const
+
+/** True if the tier (and, when known, subscription status) grants TraverseStudio authoring. */
+export function canAuthor(
+  tier: string | null | undefined,
+  subscriptionStatus?: string | null
+): boolean {
+  if (!(STUDIO_TIERS as readonly string[]).includes(tier ?? "") || tier === "studio_free") {
+    return false
+  }
+  // No status recorded (billing not live yet) → tier alone decides.
+  if (subscriptionStatus == null) return true
+  return (ACTIVE_STATUSES as readonly string[]).includes(subscriptionStatus)
 }
 
 /** True if the tier grants access to TraverseTraining as an org admin. */

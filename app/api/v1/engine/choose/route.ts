@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { arriveAtNode, findNode, getAllNodes } from "@/lib/engine/executor"
-import { getSession, incrementChoiceCount, appendChoiceHistory, appendNarrativeHistory, updateLastScaffoldChoice } from "@/lib/engine/session"
+import { getSession, commitSessionMutation, applyStateChangesToState, backfillLastScaffoldChoice, appendNarrativeHistory } from "@/lib/engine/session"
 import { resolveOpenChoiceRouting } from "@/lib/engine/router"
-import { applyStateChanges } from "@/lib/engine/session"
 import { getExperienceById } from "@/lib/db/queries/experience"
 import { requireAuth, getAnthropicKey, canAccessSession } from "@/lib/auth"
-import { checkEngineLimit } from "@/lib/security/ratelimit"
+import { checkEngineLimit, checkGenerationLimit } from "@/lib/security/ratelimit"
 import { trackEvent } from "@/lib/analytics"
 import { SubmitChoiceSchema } from "@/lib/validation"
 import { generateNode, generateScaffold } from "@/lib/engine/generator"
 import { writeToCache } from "@/lib/engine/cache"
+import { engineErrorResponse } from "@/lib/api/errors"
 import { db } from "@/lib/db/prisma"
 import type { ChoiceNode, GeneratedNode } from "@/types/experience"
 
@@ -48,6 +48,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
+  const genLimit = await checkGenerationLimit(user?.id ?? sessionId)
+  if (!genLimit.success) {
+    return NextResponse.json(
+      { error: "Generation limit reached — try again in a minute.", retryable: true },
+      { status: 429 }
+    )
+  }
+
   const experience = await getExperienceById(session.experienceId)
   if (!experience) {
     return NextResponse.json({ error: "Experience not found" }, { status: 404 })
@@ -66,6 +74,7 @@ export async function POST(req: NextRequest) {
   let nextNodeId: string
   let choiceLabel: string
   let requiresFresh = false
+  let stateChanges: Record<string, number | string | boolean> | undefined
 
   if (currentNode.responseType === "closed") {
     const option = currentNode.options?.find((o) => o.id === choiceId)
@@ -75,43 +84,26 @@ export async function POST(req: NextRequest) {
     nextNodeId = option.nextNodeId
     choiceLabel = option.label
     requiresFresh = option.requiresFreshGeneration ?? false
-
-    await applyStateChanges(sessionId, option.stateChanges)
+    stateChanges = option.stateChanges
   } else {
     // Open / free text — route via AI
     if (!freeTextResponse) {
       return NextResponse.json({ error: "freeTextResponse required for open choices" }, { status: 400 })
     }
     const apiKey = getAnthropicKey(user)
-    nextNodeId = await resolveOpenChoiceRouting(
-      currentNode,
-      freeTextResponse,
-      session,
-      experience,
-      apiKey
-    )
+    try {
+      nextNodeId = await resolveOpenChoiceRouting(
+        currentNode,
+        freeTextResponse,
+        session,
+        experience,
+        apiKey
+      )
+    } catch (err) {
+      return engineErrorResponse(err, { route: "engine/choose", sessionId, experienceId: experience.id })
+    }
     choiceLabel = freeTextResponse
   }
-
-  await incrementChoiceCount(sessionId)
-
-  await appendChoiceHistory(sessionId, {
-    nodeId: currentNode.id,
-    choiceId: choiceId ?? undefined,
-    choiceLabel,
-    nextNodeId,
-    timestamp: new Date().toISOString(),
-  })
-
-  trackEvent("choice_made", {
-    sessionId,
-    experienceId: experience.id,
-    fromNodeId: currentNode.id,
-    toNodeId: nextNodeId,
-    choiceLabel,
-    choicesMadeTotal: session.state.choicesMade + 1,
-    responseType: currentNode.responseType,
-  })
 
   // Back-fill scaffold.choiceMade on the most recent narrative history entry
   // so generation context for the next node includes what the reader chose.
@@ -124,21 +116,53 @@ export async function POST(req: NextRequest) {
       })()
     : `Reader responded: "${choiceLabel}".`
 
-  await updateLastScaffoldChoice(sessionId, { label: choiceLabel, consequence })
+  // One transactional write for the entire choice: state changes, counters,
+  // history, and scaffold back-fill can't be torn apart by a concurrent request.
+  let updatedSession
+  try {
+    updatedSession = await commitSessionMutation(sessionId, (draft) => {
+      draft.state = applyStateChangesToState(draft.state, stateChanges)
+      draft.state.choicesMade += 1
+      draft.choiceCount += 1
+      draft.choiceHistory.push({
+        nodeId: currentNode.id,
+        choiceId: choiceId ?? undefined,
+        choiceLabel,
+        nextNodeId,
+        timestamp: new Date().toISOString(),
+      })
+      backfillLastScaffoldChoice(draft.narrativeHistory, { label: choiceLabel, consequence })
+    })
+  } catch (err) {
+    return engineErrorResponse(err, { route: "engine/choose", sessionId, experienceId: experience.id })
+  }
+  if (!updatedSession) {
+    return NextResponse.json({ error: "Session not found" }, { status: 404 })
+  }
+
+  trackEvent("choice_made", {
+    sessionId,
+    experienceId: experience.id,
+    orgId: experience.orgId ?? undefined,
+    fromNodeId: currentNode.id,
+    toNodeId: nextNodeId,
+    choiceLabel,
+    choicesMadeTotal: updatedSession.state.choicesMade,
+    responseType: currentNode.responseType,
+  })
 
   const apiKey = getAnthropicKey(user)
 
-  // If the chosen branch requires fresh generation, generate it synchronously
-  // now (with the updated session state including this choice) before handing
-  // off to arriveAtNode, which will find it in cache and skip regeneration.
-  if (requiresFresh) {
-    const nextNode = findNode(allNodes, nextNodeId)
-    if (nextNode?.type === "GENERATED") {
-      const freshSession = await getSession(sessionId)
-      if (freshSession) {
+  try {
+    // If the chosen branch requires fresh generation, generate it synchronously
+    // now (with the updated session state including this choice) before handing
+    // off to arriveAtNode, which will find it in cache and skip regeneration.
+    if (requiresFresh) {
+      const nextNode = findNode(allNodes, nextNodeId)
+      if (nextNode?.type === "GENERATED") {
         const generatedNode = nextNode as GeneratedNode
-        const generated = await generateNode(generatedNode, freshSession, experience, apiKey)
-        const scaffoldPromise = generateScaffold(generated, generatedNode, freshSession, apiKey)
+        const generated = await generateNode(generatedNode, updatedSession, experience, apiKey)
+        const scaffoldPromise = generateScaffold(generated, generatedNode, updatedSession, apiKey)
 
         await Promise.all([
           writeToCache(sessionId, nextNodeId, generated),
@@ -148,7 +172,7 @@ export async function POST(req: NextRequest) {
               sessionId,
               nodeId: nextNodeId,
               content: generated,
-              stateSnapshot: freshSession.state as object,
+              stateSnapshot: updatedSession.state as object,
               generationMs: null,
               tokenCount: null,
             },
@@ -165,17 +189,19 @@ export async function POST(req: NextRequest) {
         ])
       }
     }
+
+    let arrival = await arriveAtNode(sessionId, nextNodeId, experience, apiKey)
+
+    // Transparent mandatory-node redirect: re-arrive at the target so nodesVisited is updated correctly
+    if (arrival.content.type === "redirect") {
+      arrival = await arriveAtNode(sessionId, arrival.content.targetNodeId, experience, apiKey)
+    }
+
+    return NextResponse.json({
+      node: arrival.node,
+      content: arrival.content,
+    })
+  } catch (err) {
+    return engineErrorResponse(err, { route: "engine/choose", sessionId, experienceId: experience.id })
   }
-
-  let arrival = await arriveAtNode(sessionId, nextNodeId, experience, apiKey)
-
-  // Transparent mandatory-node redirect: re-arrive at the target so nodesVisited is updated correctly
-  if (arrival.content.type === "redirect") {
-    arrival = await arriveAtNode(sessionId, arrival.content.targetNodeId, experience, apiKey)
-  }
-
-  return NextResponse.json({
-    node: arrival.node,
-    content: arrival.content,
-  })
 }

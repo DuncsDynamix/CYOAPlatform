@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { TrainingShell } from "./TrainingShell"
 import { ScenarioPanel } from "./ScenarioPanel"
 import { SituationText } from "./SituationText"
@@ -38,6 +38,16 @@ function buildCompetencyProfile(history: DecisionReview[]): CompetencyProfile[] 
   return Array.from(map.values())
 }
 
+/** Reads the engine's { error, retryable } envelope off a failed response. */
+async function readFailure(res: Response, fallback: string): Promise<{ message: string; retryable: boolean }> {
+  try {
+    const body = (await res.json()) as { error?: string; retryable?: boolean }
+    return { message: body.error ?? fallback, retryable: body.retryable ?? false }
+  } catch {
+    return { message: fallback, retryable: false }
+  }
+}
+
 export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
   const [playerStatus, setPlayerStatus] = useState<TrainingPlayerStatus>({ status: "loading_module" })
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -48,6 +58,22 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
   const [totalSteps, setTotalSteps] = useState(0)
   const [feedbackVisible, setFeedbackVisible] = useState(false)
   const [dialogueHistory, setDialogueHistory] = useState<DialogueTurn[]>([])
+
+  // Abort in-flight requests on unmount so late responses can't set state
+  const abortRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => abortRef.current?.abort()
+  }, [])
+
+  function nextSignal(): AbortSignal {
+    abortRef.current?.abort()
+    abortRef.current = new AbortController()
+    return abortRef.current.signal
+  }
+
+  function isAbort(err: unknown): boolean {
+    return err instanceof DOMException && err.name === "AbortError"
+  }
 
   const startSession = useCallback(async () => {
     setPlayerStatus({ status: "loading_module" })
@@ -61,10 +87,11 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ experienceSlug }),
+        signal: nextSignal(),
       })
       if (!res.ok) {
-        const err = await res.json()
-        setPlayerStatus({ status: "error", message: err.error ?? "Could not start module" })
+        const failure = await readFailure(res, "Could not start module")
+        setPlayerStatus({ status: "error", ...failure })
         return
       }
       const data = await res.json() as {
@@ -89,9 +116,11 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
       setTotalSteps(data.shape?.totalDepthMax ?? 0)
 
       arriveAtNode(data.sessionId, data.node, data.content)
-    } catch {
-      setPlayerStatus({ status: "error", message: "Network error — please try again" })
+    } catch (err) {
+      if (isAbort(err)) return
+      setPlayerStatus({ status: "error", message: "Network error — please try again", retryable: true })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [experienceSlug])
 
   useEffect(() => {
@@ -200,15 +229,17 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
   const advanceToNextNode = useCallback(async (sid: string) => {
     setPlayerStatus({ status: "advancing" })
     try {
-      const res = await fetch(`/api/v1/engine/node?sessionId=${sid}`)
+      const res = await fetch(`/api/v1/engine/node?sessionId=${sid}`, { signal: nextSignal() })
       if (!res.ok) {
-        setPlayerStatus({ status: "error", message: "Could not advance module" })
+        const failure = await readFailure(res, "Could not advance module")
+        setPlayerStatus({ status: "error", ...failure, retry: () => advanceToNextNode(sid) })
         return
       }
       const data = await res.json() as { node: Node; content: ResolvedContent }
       arriveAtNode(sid, data.node, data.content)
-    } catch {
-      setPlayerStatus({ status: "error", message: "Network error" })
+    } catch (err) {
+      if (isAbort(err)) return
+      setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: () => advanceToNextNode(sid) })
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -257,15 +288,22 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
       setDialogueHistory(updated)
       return { ...prev, dialogueHistory: updated }
     })
+    await submitDialogueTurn(participantText)
+  }
 
+  // Separated so a retry can re-send the same turn without re-appending it
+  // to the local transcript. The server persists nothing on failure.
+  async function submitDialogueTurn(participantText: string) {
     try {
       const res = await fetch("/api/v1/engine/dialogue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, participantText }),
+        signal: nextSignal(),
       })
       if (!res.ok) {
-        setPlayerStatus({ status: "error", message: "Could not submit dialogue turn" })
+        const failure = await readFailure(res, "Could not submit dialogue turn")
+        setPlayerStatus({ status: "error", ...failure, retry: () => submitDialogueTurn(participantText) })
         return
       }
       const data = await res.json() as {
@@ -283,7 +321,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
       if (data.dialogueComplete && data.nextNode && data.nextContent) {
         // Dialogue over — advance
         setDialogueHistory([])
-        arriveAtNode(sessionId, data.nextNode, data.nextContent)
+        arriveAtNode(sessionId!, data.nextNode, data.nextContent)
       } else {
         // Continue dialogue
         setDialogueHistory((prev) => [...prev, charTurn])
@@ -297,25 +335,15 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
           }
         })
       }
-    } catch {
-      setPlayerStatus({ status: "error", message: "Network error" })
+    } catch (err) {
+      if (isAbort(err)) return
+      setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: () => submitDialogueTurn(participantText) })
     }
   }
 
-  async function handleEvaluativeContinue(nextNodeId: string) {
+  async function handleEvaluativeContinue(_nextNodeId: string) {
     if (!sessionId) return
-    setPlayerStatus({ status: "advancing" })
-    try {
-      const res = await fetch("/api/v1/engine/node?sessionId=" + sessionId)
-      if (!res.ok) {
-        setPlayerStatus({ status: "error", message: "Could not advance" })
-        return
-      }
-      const data = await res.json() as { node: Node; content: ResolvedContent }
-      arriveAtNode(sessionId, data.node, data.content)
-    } catch {
-      setPlayerStatus({ status: "error", message: "Network error" })
-    }
+    advanceToNextNode(sessionId)
   }
 
   async function submitChoice(choiceId: string) {
@@ -326,15 +354,18 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, choiceId }),
+        signal: nextSignal(),
       })
       if (!res.ok) {
-        setPlayerStatus({ status: "error", message: "Could not submit response" })
+        const failure = await readFailure(res, "Could not submit response")
+        setPlayerStatus({ status: "error", ...failure, retry: () => submitChoice(choiceId) })
         return
       }
       const data = await res.json() as { node: Node; content: ResolvedContent }
       arriveAtNode(sessionId, data.node, data.content)
-    } catch {
-      setPlayerStatus({ status: "error", message: "Network error" })
+    } catch (err) {
+      if (isAbort(err)) return
+      setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: () => submitChoice(choiceId) })
     }
   }
 
@@ -345,12 +376,28 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
   }
 
   if (playerStatus.status === "error") {
+    const { retryable, retry, message } = playerStatus
     return (
       <div className="t-loading">
-        <p className="t-loading-text">{playerStatus.message}</p>
-        <button className="t-btn-primary" onClick={startSession} style={{ marginTop: "1rem" }}>
-          Try again
-        </button>
+        <p className="t-loading-text">{message}</p>
+        <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+          {retryable && retry && (
+            <button className="t-btn-primary" onClick={retry}>
+              Try again
+            </button>
+          )}
+          {retryable && !retry && (
+            <button className="t-btn-primary" onClick={startSession}>
+              Try again
+            </button>
+          )}
+          <button
+            className={retryable ? "t-btn-secondary" : "t-btn-primary"}
+            onClick={startSession}
+          >
+            Restart scenario
+          </button>
+        </div>
       </div>
     )
   }

@@ -6,7 +6,6 @@ export const PUBLIC_PATHS = [
   "/login",
   "/signup",
   "/reset-password",
-  "/api/v1/engine/stream",
   "/api/stripe/webhook",
   "/api/auth",
 ]
@@ -32,8 +31,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  // If Supabase is not configured, pass everything through
+  // Supabase not configured: open in dev, fail closed in production —
+  // a missing env var must never silently disable auth platform-wide.
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (process.env.NODE_ENV === "production") {
+      return new NextResponse("Service unavailable: authentication is not configured", { status: 503 })
+    }
     return NextResponse.next()
   }
 

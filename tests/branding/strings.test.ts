@@ -16,7 +16,7 @@ function assertNoBrandStrings(content: string, filePath: string) {
 
 describe("User-facing brand strings", () => {
   it("reader layout contains no old brand names", () => {
-    assertNoBrandStrings(readSource("app/(reader)/layout.tsx"), "app/(reader)/layout.tsx")
+    assertNoBrandStrings(readSource("app/(library)/layout.tsx"), "app/(library)/layout.tsx")
   })
 
   it("authoring layout contains no old brand names", () => {
@@ -35,10 +35,10 @@ describe("User-facing brand strings", () => {
     assertNoBrandStrings(readSource("app/(auth)/signup/page.tsx"), "app/(auth)/signup/page.tsx")
   })
 
-  it("OutcomeCard contains no old brand names", () => {
+  it("Colophon contains no old brand names", () => {
     assertNoBrandStrings(
-      readSource("components/reader/OutcomeCard.tsx"),
-      "components/reader/OutcomeCard.tsx"
+      readSource("components/reader/Colophon.tsx"),
+      "components/reader/Colophon.tsx"
     )
   })
 
@@ -50,6 +50,6 @@ describe("User-facing brand strings", () => {
   })
 
   it("reader home page contains no old brand names", () => {
-    assertNoBrandStrings(readSource("app/(reader)/page.tsx"), "app/(reader)/page.tsx")
+    assertNoBrandStrings(readSource("app/(library)/page.tsx"), "app/(library)/page.tsx")
   })
 })

@@ -50,11 +50,8 @@ describe("PUBLIC_PATHS constant", () => {
     expect(PUBLIC_PATHS).toContain("/login")
   })
 
-  it("includes /api/v1/engine/stream (versioned path)", () => {
-    expect(PUBLIC_PATHS).toContain("/api/v1/engine/stream")
-  })
-
-  it("does not include the old unversioned engine stream path", () => {
+  it("does not expose the engine stream route publicly — it triggers generation fan-out", () => {
+    expect(PUBLIC_PATHS).not.toContain("/api/v1/engine/stream")
     expect(PUBLIC_PATHS).not.toContain("/api/engine/stream")
   })
 })

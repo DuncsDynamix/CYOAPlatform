@@ -1,7 +1,35 @@
 "use client"
 
-import { useMemo, useRef, useState, useCallback } from "react"
-import type { Node, ChoiceNode, FixedNode, GeneratedNode, CheckpointNode, DialogueNode, EvaluativeNode, SubroutineCallNode } from "@/types/experience"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  ReactFlow,
+  ReactFlowProvider,
+  Background,
+  BackgroundVariant,
+  Controls,
+  MiniMap,
+  Handle,
+  Position,
+  MarkerType,
+  useNodesState,
+  useEdgesState,
+  useReactFlow,
+  type Node as RFNode,
+  type Edge as RFEdge,
+  type Connection,
+  type NodeProps,
+  type OnConnectEnd,
+} from "@xyflow/react"
+import "@xyflow/react/dist/style.css"
+import type { Node } from "@/types/experience"
+import {
+  getChildLinks,
+  getNodeHandles,
+  applyConnection,
+  removeConnection,
+  validateExperienceGraph,
+  makeNode,
+} from "@/lib/authoring/graph"
 
 // ─── COLOURS ─────────────────────────────────────────────────
 
@@ -17,19 +45,6 @@ const TYPE_COLOURS: Record<string, { bg: string; border: string; text: string }>
   SLIDE_DECK:        { bg: "#0A2E1A", border: "#22C55E", text: "#86EFAC" },
 }
 
-// Dark mode base colours for SVG elements
-const SVG_COLOURS = {
-  nodeFill: "#1E293B",
-  nodeStroke: "#334155",
-  nodeLabel: "#F1F5F9",
-  nodeId: "#64748B",
-  edgeStroke: "#475569",
-  backEdge: "#64748B",
-  edgeLabel: "#64748B",
-  gridDot: "#1E293B",
-  shadow: "rgba(0,0,0,0.4)",
-}
-
 const TYPE_ICONS: Record<string, string> = {
   FIXED: "F",
   GENERATED: "G",
@@ -42,90 +57,36 @@ const TYPE_ICONS: Record<string, string> = {
   SLIDE_DECK: "▶",
 }
 
-// ─── VERTICAL LAYOUT ─────────────────────────────────────────
-// Tree flows top-to-bottom. "row" = depth level, "col" = horizontal slot.
+// ─── AUTO-LAYOUT (BFS, top-to-bottom) ────────────────────────
+// Nodes without a persisted position get a computed slot; nodes the author
+// has dragged keep their stored position.
 
 const NODE_W = 200
 const NODE_H = 72
-const GAP_X = 40   // horizontal gap between siblings
-const GAP_Y = 60   // vertical gap between depth levels
-const PADDING = 60
+const GAP_X = 40
+const GAP_Y = 80
+const PADDING = 40
 
-interface LayoutNode {
-  id: string
-  node: Node
-  x: number
-  y: number
-  depth: number
-  slot: number
-}
-
-interface Edge {
-  from: string
-  to: string
-  label?: string
-}
-
-function getChildIds(node: Node): { id: string; label?: string }[] {
-  switch (node.type) {
-    case "FIXED":
-    case "GENERATED":
-    case "CHECKPOINT": {
-      const n = node as FixedNode | GeneratedNode | CheckpointNode
-      return n.nextNodeId ? [{ id: n.nextNodeId }] : []
-    }
-    case "CHOICE": {
-      const c = node as ChoiceNode
-      return (c.options ?? []).map((o) => ({ id: o.nextNodeId, label: o.label }))
-    }
-    case "ENDPOINT":
-      return []
-    case "DIALOGUE": {
-      const d = node as DialogueNode
-      const children = [{ id: d.nextNodeId, label: "breakthrough" }]
-      if (d.failureNodeId) children.push({ id: d.failureNodeId, label: "max turns" })
-      return children
-    }
-    case "EVALUATIVE":
-      return [{ id: (node as EvaluativeNode).nextNodeId }]
-    case "OBSERVED_DIALOGUE":
-      return [{ id: (node as { nextNodeId: string }).nextNodeId }]
-    case "SUBROUTINE_CALL": {
-      const sc = node as SubroutineCallNode
-      const children = sc.targetNodeId ? [{ id: sc.targetNodeId, label: "call" }] : []
-      if (sc.returnNodeId) children.push({ id: sc.returnNodeId, label: "return" })
-      return children
-    }
-    case "SUBROUTINE_RETURN":
-      return []
-    case "SLIDE_DECK":
-      return [{ id: (node as { nextNodeId: string }).nextNodeId }]
-  }
-}
-
-function buildLayout(nodes: Node[]): { layoutNodes: LayoutNode[]; edges: Edge[]; width: number; height: number } {
-  if (nodes.length === 0) return { layoutNodes: [], edges: [], width: 0, height: 0 }
+function buildAutoLayout(nodes: Node[]): Map<string, { x: number; y: number }> {
+  const positions = new Map<string, { x: number; y: number }>()
+  if (nodes.length === 0) return positions
 
   const nodeMap = new Map(nodes.map((n) => [n.id, n]))
-  const edges: Edge[] = []
-  const placed = new Map<string, LayoutNode>()
-  const depthSlots: number[] = [] // how many slots used at each depth
-
-  // Collect edges
+  const edges: { from: string; to: string }[] = []
   for (const node of nodes) {
-    for (const child of getChildIds(node)) {
-      if (child.id && nodeMap.has(child.id)) {
-        edges.push({ from: node.id, to: child.id, label: child.label })
+    for (const link of getChildLinks(node)) {
+      if (link.targetId && nodeMap.has(link.targetId)) {
+        edges.push({ from: node.id, to: link.targetId })
       }
     }
   }
 
-  // Find roots (not targeted by any edge)
   const targeted = new Set(edges.map((e) => e.to))
   const roots = nodes.filter((n) => !targeted.has(n.id))
   if (roots.length === 0) roots.push(nodes[0])
 
-  // BFS: depth = vertical level, slot = horizontal position
+  const depthSlots: number[] = []
+  const placed = new Map<string, { x: number; y: number; depth: number }>()
   const queue: { id: string; depth: number }[] = roots.map((r) => ({ id: r.id, depth: 0 }))
   const visited = new Set<string>()
 
@@ -133,257 +94,381 @@ function buildLayout(nodes: Node[]): { layoutNodes: LayoutNode[]; edges: Edge[];
     const { id, depth } = queue.shift()!
     if (visited.has(id)) continue
     visited.add(id)
-
     const node = nodeMap.get(id)
     if (!node) continue
 
     while (depthSlots.length <= depth) depthSlots.push(0)
     const slot = depthSlots[depth]
     depthSlots[depth]++
-
     placed.set(id, {
-      id,
-      node,
-      depth,
-      slot,
       x: PADDING + slot * (NODE_W + GAP_X),
       y: PADDING + depth * (NODE_H + GAP_Y),
+      depth,
     })
 
-    for (const child of getChildIds(node)) {
-      if (child.id && !visited.has(child.id)) {
-        queue.push({ id: child.id, depth: depth + 1 })
+    for (const link of getChildLinks(node)) {
+      if (link.targetId && !visited.has(link.targetId)) {
+        queue.push({ id: link.targetId, depth: depth + 1 })
       }
     }
   }
 
-  // Place disconnected nodes
+  // Disconnected nodes go on the top row
   for (const node of nodes) {
     if (!placed.has(node.id)) {
       while (depthSlots.length === 0) depthSlots.push(0)
       const slot = depthSlots[0]
       depthSlots[0]++
-      placed.set(node.id, {
-        id: node.id,
-        node,
-        depth: 0,
-        slot,
-        x: PADDING + slot * (NODE_W + GAP_X),
-        y: PADDING,
-      })
+      placed.set(node.id, { x: PADDING + slot * (NODE_W + GAP_X), y: PADDING, depth: 0 })
     }
   }
 
-  // Centre children under their parents
-  // Pass: for each depth, compute the centre x of each node's children
-  // and shift the parent towards the centre of its children.
-  // This is a simple aesthetic pass — not a full Reingold-Tilford.
-  const layoutNodes = Array.from(placed.values())
-  const byDepth = new Map<number, LayoutNode[]>()
-  for (const ln of layoutNodes) {
-    if (!byDepth.has(ln.depth)) byDepth.set(ln.depth, [])
-    byDepth.get(ln.depth)!.push(ln)
-  }
-
-  // Count parents per node — convergence nodes (>1 parent) are excluded from
-  // the centering pass to prevent siblings that share a child from collapsing
-  // onto each other's position.
+  // Centre parents over their children (single aesthetic pass, bottom-up).
+  // Convergence nodes (>1 parent) are skipped so shared children don't pull
+  // unrelated parents onto each other.
   const parentCount = new Map<string, number>()
-  for (const edge of edges) {
-    parentCount.set(edge.to, (parentCount.get(edge.to) ?? 0) + 1)
-  }
-
-  // Centre parent over children (bottom-up), skipping convergence nodes as targets
-  const maxDepth = Math.max(...layoutNodes.map((n) => n.depth))
+  for (const edge of edges) parentCount.set(edge.to, (parentCount.get(edge.to) ?? 0) + 1)
+  const maxDepth = Math.max(...Array.from(placed.values()).map((p) => p.depth))
   for (let d = maxDepth - 1; d >= 0; d--) {
-    const nodesAtDepth = byDepth.get(d) ?? []
-    for (const parent of nodesAtDepth) {
-      const childEdges = edges.filter((e) => e.from === parent.id)
-      const childLayouts = childEdges
+    for (const [id, pos] of placed) {
+      if (pos.depth !== d) continue
+      const childXs = edges
+        .filter((e) => e.from === id)
         .map((e) => placed.get(e.to))
-        .filter((c): c is LayoutNode =>
-          c !== undefined &&
-          c.depth > parent.depth &&
-          (parentCount.get(c.id) ?? 0) <= 1
+        .filter((c): c is { x: number; y: number; depth: number } =>
+          c !== undefined && c.depth > d && (parentCount.get(edges.find((e) => placed.get(e.to) === c)?.to ?? "") ?? 0) <= 1
         )
-      if (childLayouts.length > 0) {
-        const minX = Math.min(...childLayouts.map((c) => c.x))
-        const maxX = Math.max(...childLayouts.map((c) => c.x))
-        parent.x = (minX + maxX) / 2
+        .map((c) => c.x)
+      if (childXs.length > 0) {
+        pos.x = (Math.min(...childXs) + Math.max(...childXs)) / 2
       }
     }
   }
 
-  const totalW = Math.max(...layoutNodes.map((n) => n.x + NODE_W)) + PADDING
-  const totalH = Math.max(...layoutNodes.map((n) => n.y + NODE_H)) + PADDING
-
-  return { layoutNodes, edges, width: Math.max(totalW, 300), height: Math.max(totalH, 200) }
+  for (const [id, pos] of placed) positions.set(id, { x: pos.x, y: pos.y })
+  return positions
 }
 
-// ─── EDGE RENDERING (vertical) ──────────────────────────────
+// ─── CUSTOM NODE CARD ────────────────────────────────────────
 
-function EdgePath({ fromNode, toNode, label }: { fromNode: LayoutNode; toNode: LayoutNode; label?: string }) {
-  const x1 = fromNode.x + NODE_W / 2
-  const y1 = fromNode.y + NODE_H
-  const x2 = toNode.x + NODE_W / 2
-  const y2 = toNode.y
-
-  const isBackEdge = toNode.depth <= fromNode.depth
-
-  if (isBackEdge) {
-    // Route the back-edge out to the right of both nodes and loop back
-    const rightX = Math.max(fromNode.x, toNode.x) + NODE_W + 50
-    const d = `M ${fromNode.x + NODE_W} ${fromNode.y + NODE_H / 2} C ${rightX} ${fromNode.y + NODE_H / 2}, ${rightX} ${toNode.y + NODE_H / 2}, ${toNode.x + NODE_W} ${toNode.y + NODE_H / 2}`
-    return (
-      <g>
-        <path d={d} fill="none" stroke={SVG_COLOURS.backEdge} strokeWidth={1.5} strokeDasharray="6 3" />
-        <polygon
-          points={`${toNode.x + NODE_W},${toNode.y + NODE_H / 2} ${toNode.x + NODE_W + 7},${toNode.y + NODE_H / 2 - 4} ${toNode.x + NODE_W + 7},${toNode.y + NODE_H / 2 + 4}`}
-          fill={SVG_COLOURS.backEdge}
-        />
-      </g>
-    )
-  }
-
-  const cpOffset = Math.abs(y2 - y1) * 0.4
-  const d = `M ${x1} ${y1} C ${x1} ${y1 + cpOffset}, ${x2} ${y2 - cpOffset}, ${x2} ${y2}`
-
-  return (
-    <g>
-      <path d={d} fill="none" stroke={SVG_COLOURS.edgeStroke} strokeWidth={1.5} />
-      <polygon
-        points={`${x2},${y2} ${x2 - 4},${y2 - 7} ${x2 + 4},${y2 - 7}`}
-        fill={SVG_COLOURS.edgeStroke}
-      />
-      {label && (
-        <text
-          x={(x1 + x2) / 2 + (x1 === x2 ? 0 : 8)}
-          y={(y1 + y2) / 2}
-          textAnchor={x1 === x2 ? "start" : "middle"}
-          fill={SVG_COLOURS.edgeLabel} fontSize={10} fontFamily="system-ui, sans-serif"
-          dx={x1 === x2 ? 8 : 0}
-        >
-          {label.length > 28 ? label.slice(0, 26) + "…" : label}
-        </text>
-      )}
-    </g>
-  )
-}
-
-// ─── NODE CARD ───────────────────────────────────────────────
-
-function NodeCard({
-  layoutNode,
-  isSelected,
-  onClick,
-}: {
-  layoutNode: LayoutNode
+interface CardData extends Record<string, unknown> {
+  node: Node
   isSelected: boolean
-  onClick: () => void
-}) {
-  const { node, x, y } = layoutNode
+  isBroken: boolean
+  isDeadEnd: boolean
+  isUnreachable: boolean
+}
+
+type CanvasNode = RFNode<CardData, "traverse">
+
+function TraverseCard({ data }: NodeProps<CanvasNode>) {
+  const { node, isSelected, isBroken, isDeadEnd, isUnreachable } = data
   const colours = TYPE_COLOURS[node.type] ?? TYPE_COLOURS.FIXED
+  const handles = getNodeHandles(node)
+  const label = node.label || "(unnamed)"
 
   return (
-    <g onClick={onClick} style={{ cursor: "pointer" }}>
-      {/* Shadow */}
-      <rect x={x + 2} y={y + 2} width={NODE_W} height={NODE_H} rx={8} fill={SVG_COLOURS.shadow} />
-      {/* Card */}
-      <rect
-        x={x} y={y} width={NODE_W} height={NODE_H} rx={8}
-        fill={isSelected ? colours.bg : SVG_COLOURS.nodeFill}
-        stroke={isSelected ? colours.border : SVG_COLOURS.nodeStroke}
-        strokeWidth={isSelected ? 2.5 : 1.5}
-      />
-      {/* Type icon */}
-      <circle cx={x + 20} cy={y + 22} r={12} fill={colours.border} />
-      <text
-        x={x + 20} y={y + 22}
-        textAnchor="middle" dominantBaseline="central"
-        fill="#FFF" fontSize={11} fontWeight="700" fontFamily="system-ui, sans-serif"
-      >
-        {TYPE_ICONS[node.type]}
-      </text>
-      {/* Type label */}
-      <text
-        x={x + 38} y={y + 18}
-        fill={colours.text} fontSize={9} fontWeight="700"
-        fontFamily="system-ui, sans-serif" letterSpacing="0.05em"
-        style={{ textTransform: "uppercase" }}
-      >
-        {node.type}
-      </text>
-      {/* Node label */}
-      <text x={x + 38} y={y + 32} fill={SVG_COLOURS.nodeLabel} fontSize={12} fontWeight="500" fontFamily="system-ui, sans-serif">
-        {(node.label || "(unnamed)").length > 22
-          ? (node.label || "(unnamed)").slice(0, 20) + "…"
-          : (node.label || "(unnamed)")}
-      </text>
-      {/* Node ID */}
-      <text x={x + 12} y={y + 56} fill={SVG_COLOURS.nodeId} fontSize={9} fontFamily="system-ui, sans-serif">
-        {node.id.length > 20 ? node.id.slice(0, 18) + "…" : node.id}
-      </text>
-      {/* Choice option count */}
-      {node.type === "CHOICE" && (
-        <g>
-          <rect x={x + NODE_W - 32} y={y + 46} width={22} height={18} rx={9} fill={colours.border} />
-          <text
-            x={x + NODE_W - 21} y={y + 55}
-            textAnchor="middle" dominantBaseline="central"
-            fill="#FFF" fontSize={9} fontWeight="700" fontFamily="system-ui, sans-serif"
-          >
-            {((node as ChoiceNode).options ?? []).length}
-          </text>
-        </g>
-      )}
-    </g>
+    <div
+      className={`ngx-card${isSelected ? " ngx-card--selected" : ""}${isUnreachable ? " ngx-card--unreachable" : ""}`}
+      style={{
+        borderColor: isSelected ? colours.border : undefined,
+        background: isSelected ? colours.bg : undefined,
+      }}
+    >
+      {/* Whole card is a drop target — drag a link onto it from anywhere */}
+      <Handle type="target" position={Position.Top} id="in" className="ngx-target" />
+
+      <div className="ngx-card-row">
+        <span className="ngx-icon" style={{ background: colours.border }}>{TYPE_ICONS[node.type]}</span>
+        <div className="ngx-card-text">
+          <span className="ngx-type" style={{ color: colours.text }}>{node.type}</span>
+          <span className="ngx-label">{label.length > 24 ? label.slice(0, 22) + "…" : label}</span>
+        </div>
+        {(isBroken || isDeadEnd) && (
+          <span className="ngx-badge ngx-badge--error" title={isDeadEnd ? "Dead end — no outgoing link" : "Broken link"}>⚠</span>
+        )}
+        {isUnreachable && !isBroken && !isDeadEnd && (
+          <span className="ngx-badge ngx-badge--warn" title="Unreachable from the start node">orphan</span>
+        )}
+      </div>
+      <div className="ngx-id">{node.id.length > 24 ? node.id.slice(0, 22) + "…" : node.id}</div>
+
+      {handles.map((h, i) => (
+        <Handle
+          key={h.id}
+          type="source"
+          position={Position.Bottom}
+          id={h.id}
+          title={h.label ? `Drag to link: ${h.label}` : "Drag to link to the next node"}
+          className="ngx-source"
+          style={{
+            left: `${((i + 1) / (handles.length + 1)) * 100}%`,
+            background: colours.border,
+          }}
+        />
+      ))}
+    </div>
   )
 }
+
+const nodeTypes = { traverse: TraverseCard }
 
 // ─── GRAPH COMPONENT ─────────────────────────────────────────
+
+const NODE_TYPES: Node["type"][] = ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT", "DIALOGUE", "OBSERVED_DIALOGUE", "EVALUATIVE", "SLIDE_DECK"]
 
 interface NodeGraphProps {
   nodes: Node[]
   selectedId: string | null
-  onSelect: (id: string) => void
+  onSelect: (id: string | null) => void
   onAdd: (type: Node["type"]) => void
+  /** Canvas-driven structural changes: linking, positions, drag-to-create, deletion. */
+  onNodesChange?: (next: Node[]) => void
 }
 
-const NODE_TYPES: Node["type"][] = ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT", "DIALOGUE", "OBSERVED_DIALOGUE", "EVALUATIVE", "SLIDE_DECK"]
+interface ConnectMenuState {
+  screenX: number
+  screenY: number
+  flowX: number
+  flowY: number
+  fromNodeId: string
+  handle: string
+}
 
-export function NodeGraph({ nodes, selectedId, onSelect, onAdd }: NodeGraphProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [zoom, setZoom] = useState(1)
-  const [isPanning, setIsPanning] = useState(false)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
-  const panStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 })
+function NodeGraphInner({ nodes, selectedId, onSelect, onAdd, onNodesChange }: NodeGraphProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const { screenToFlowPosition, setCenter, getNode } = useReactFlow()
+  const [connectMenu, setConnectMenu] = useState<ConnectMenuState | null>(null)
+  const [search, setSearch] = useState("")
 
-  const { layoutNodes, edges, width, height } = useMemo(() => buildLayout(nodes), [nodes])
-  const nodeMap = useMemo(() => new Map(layoutNodes.map((ln) => [ln.id, ln])), [layoutNodes])
+  const canEdit = !!onNodesChange
 
-  // Pan via alt+drag (moves the scroll position)
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
-      e.preventDefault()
-      setIsPanning(true)
-      const el = containerRef.current!
-      panStart.current = { x: e.clientX, y: e.clientY, scrollLeft: el.scrollLeft, scrollTop: el.scrollTop }
+  const validation = useMemo(() => validateExperienceGraph(nodes), [nodes])
+  const brokenNodeIds = useMemo(() => new Set(validation.brokenLinks.map((b) => b.nodeId)), [validation])
+  const deadEndIds = useMemo(() => new Set(validation.deadEnds), [validation])
+  const unreachableIds = useMemo(() => new Set(validation.unreachable), [validation])
+  const issueCount = validation.brokenLinks.length + validation.deadEnds.length
+
+  const [rfNodes, setRfNodes, onRfNodesChange] = useNodesState<CanvasNode>([])
+  const [rfEdges, setRfEdges, onRfEdgesChange] = useEdgesState<RFEdge>([])
+
+  // Derive canvas state from the node JSON — the JSON is the source of truth.
+  useEffect(() => {
+    const autoLayout = buildAutoLayout(nodes)
+    const nodeIds = new Set(nodes.map((n) => n.id))
+
+    setRfNodes(
+      nodes.map((n) => ({
+        id: n.id,
+        type: "traverse" as const,
+        position: n.position ?? autoLayout.get(n.id) ?? { x: PADDING, y: PADDING },
+        data: {
+          node: n,
+          isSelected: n.id === selectedId,
+          isBroken: brokenNodeIds.has(n.id),
+          isDeadEnd: deadEndIds.has(n.id),
+          isUnreachable: unreachableIds.has(n.id),
+        },
+        deletable: canEdit,
+      }))
+    )
+
+    const edges: RFEdge[] = []
+    for (const n of nodes) {
+      for (const link of getChildLinks(n)) {
+        if (!link.targetId || !nodeIds.has(link.targetId)) continue
+        edges.push({
+          id: `e:${n.id}:${link.handle}`,
+          source: n.id,
+          sourceHandle: link.handle,
+          target: link.targetId,
+          targetHandle: "in",
+          label: link.label && link.label.length > 24 ? link.label.slice(0, 22) + "…" : link.label,
+          deletable: canEdit,
+          reconnectable: canEdit,
+        })
+      }
     }
-  }, [])
+    setRfEdges(edges)
+  }, [nodes, selectedId, brokenNodeIds, deadEndIds, unreachableIds, canEdit, setRfNodes, setRfEdges])
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isPanning || !containerRef.current) return
-    const dx = e.clientX - panStart.current.x
-    const dy = e.clientY - panStart.current.y
-    containerRef.current.scrollLeft = panStart.current.scrollLeft - dx
-    containerRef.current.scrollTop = panStart.current.scrollTop - dy
-  }, [isPanning])
+  // ── Linking ────────────────────────────────────────────────
 
-  const handleMouseUp = useCallback(() => setIsPanning(false), [])
+  const replaceNodes = useCallback(
+    (next: Node[]) => {
+      onNodesChange?.(next)
+    },
+    [onNodesChange]
+  )
 
-  // Zoom buttons adjust transform scale but keep native scroll
-  const svgW = width * zoom
-  const svgH = height * zoom
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      if (!canEdit) return
+      if (!connection.source || !connection.target || !connection.sourceHandle) return
+      if (connection.source === connection.target) return
+      replaceNodes(
+        nodes.map((n) =>
+          n.id === connection.source ? applyConnection(n, connection.sourceHandle!, connection.target!) : n
+        )
+      )
+    },
+    [canEdit, nodes, replaceNodes]
+  )
+
+  const handleReconnect = useCallback(
+    (oldEdge: RFEdge, newConnection: Connection) => {
+      if (!canEdit || !newConnection.source || !newConnection.target || !newConnection.sourceHandle) return
+      if (newConnection.source === newConnection.target) return
+      replaceNodes(
+        nodes.map((n) => {
+          let next = n
+          if (n.id === oldEdge.source && oldEdge.sourceHandle) {
+            next = removeConnection(next, oldEdge.sourceHandle)
+          }
+          if (next.id === newConnection.source) {
+            next = applyConnection(next, newConnection.sourceHandle!, newConnection.target!)
+          }
+          return next
+        })
+      )
+    },
+    [canEdit, nodes, replaceNodes]
+  )
+
+  const handleEdgesDelete = useCallback(
+    (deleted: RFEdge[]) => {
+      if (!canEdit || deleted.length === 0) return
+      replaceNodes(
+        nodes.map((n) => {
+          let next = n
+          for (const edge of deleted) {
+            if (edge.source === n.id && edge.sourceHandle) {
+              next = removeConnection(next, edge.sourceHandle)
+            }
+          }
+          return next
+        })
+      )
+    },
+    [canEdit, nodes, replaceNodes]
+  )
+
+  // Canvas Delete on a node: confirm, remove it, and clear every inbound link
+  // so other nodes aren't left pointing at a ghost.
+  const handleNodesDelete = useCallback(
+    (deleted: RFNode[]) => {
+      if (!canEdit || deleted.length === 0) return
+      const ids = new Set(deleted.map((d) => d.id))
+      const label = deleted.length === 1 ? "this node" : `${deleted.length} nodes`
+      if (!window.confirm(`Delete ${label}? Links pointing here will be cleared.`)) return
+
+      const next = nodes
+        .filter((n) => !ids.has(n.id))
+        .map((n) => {
+          let updated = n
+          for (const link of getChildLinks(n)) {
+            if (link.targetId && ids.has(link.targetId)) {
+              updated = removeConnection(updated, link.handle)
+            }
+          }
+          return updated
+        })
+      replaceNodes(next)
+      if (selectedId && ids.has(selectedId)) onSelect(null)
+    },
+    [canEdit, nodes, replaceNodes, selectedId, onSelect]
+  )
+
+  // ── Drag-to-create ─────────────────────────────────────────
+
+  const handleConnectEnd: OnConnectEnd = useCallback(
+    (event, connectionState) => {
+      if (!canEdit) return
+      if (connectionState.isValid || !connectionState.fromNode || !connectionState.fromHandle?.id) return
+      // Only source-handle drags spawn the create menu
+      if (connectionState.fromHandle.type !== "source") return
+
+      const { clientX, clientY } =
+        "changedTouches" in event ? event.changedTouches[0] : (event as MouseEvent)
+      const bounds = wrapperRef.current?.getBoundingClientRect()
+      const flowPos = screenToFlowPosition({ x: clientX, y: clientY })
+
+      setConnectMenu({
+        screenX: clientX - (bounds?.left ?? 0),
+        screenY: clientY - (bounds?.top ?? 0),
+        flowX: flowPos.x,
+        flowY: flowPos.y,
+        fromNodeId: connectionState.fromNode.id,
+        handle: connectionState.fromHandle.id,
+      })
+    },
+    [canEdit, screenToFlowPosition]
+  )
+
+  const createLinkedNode = useCallback(
+    (type: Node["type"]) => {
+      if (!connectMenu) return
+      const newNode: Node = {
+        ...makeNode(type),
+        position: { x: connectMenu.flowX - NODE_W / 2, y: connectMenu.flowY },
+      }
+      replaceNodes([
+        ...nodes.map((n) =>
+          n.id === connectMenu.fromNodeId ? applyConnection(n, connectMenu.handle, newNode.id) : n
+        ),
+        newNode,
+      ])
+      setConnectMenu(null)
+      onSelect(newNode.id)
+    },
+    [connectMenu, nodes, replaceNodes, onSelect]
+  )
+
+  // ── Layout persistence & tidy ──────────────────────────────
+
+  const handleNodeDragStop = useCallback(
+    (_event: unknown, _node: RFNode, draggedNodes: RFNode[]) => {
+      if (!canEdit) return
+      const moved = new Map(draggedNodes.map((d) => [d.id, d.position]))
+      replaceNodes(
+        nodes.map((n) => (moved.has(n.id) ? { ...n, position: moved.get(n.id)! } : n))
+      )
+    },
+    [canEdit, nodes, replaceNodes]
+  )
+
+  const tidyLayout = useCallback(() => {
+    if (!canEdit) return
+    replaceNodes(nodes.map((n) => ({ ...n, position: undefined })))
+  }, [canEdit, nodes, replaceNodes])
+
+  // ── Search / jump ──────────────────────────────────────────
+
+  const jumpToMatch = useCallback(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return
+    const match = nodes.find(
+      (n) => (n.label ?? "").toLowerCase().includes(q) || n.id.toLowerCase().includes(q)
+    )
+    if (!match) return
+    onSelect(match.id)
+    const rfNode = getNode(match.id)
+    if (rfNode) {
+      setCenter(rfNode.position.x + NODE_W / 2, rfNode.position.y + NODE_H / 2, { zoom: 1, duration: 300 })
+    }
+  }, [search, nodes, onSelect, getNode, setCenter])
+
+  // Escape clears selection and the create menu
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setConnectMenu(null)
+        onSelect(null)
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [onSelect])
 
   return (
     <div className="ng-container">
@@ -391,12 +476,34 @@ export function NodeGraph({ nodes, selectedId, onSelect, onAdd }: NodeGraphProps
       <div className="ng-toolbar">
         <div className="ng-toolbar-left">
           <span className="ng-toolbar-label">{nodes.length} nodes</span>
-          <div className="ng-zoom-controls">
-            <button className="ng-zoom-btn" onClick={() => setZoom((z) => Math.min(2, z + 0.15))}>+</button>
-            <span className="ng-zoom-value">{Math.round(zoom * 100)}%</span>
-            <button className="ng-zoom-btn" onClick={() => setZoom((z) => Math.max(0.3, z - 0.15))}>−</button>
-            <button className="ng-zoom-btn" onClick={() => setZoom(1)}>⊡</button>
-          </div>
+          {issueCount > 0 && (
+            <span
+              className="ngx-health ngx-health--bad"
+              title={[
+                ...validation.brokenLinks.map((b) => `${b.nodeId}: broken link (${b.handle})`),
+                ...validation.deadEnds.map((d) => `${d}: dead end`),
+              ].join("\n")}
+            >
+              ⚠ {issueCount} issue{issueCount === 1 ? "" : "s"}
+            </span>
+          )}
+          {issueCount === 0 && nodes.length > 0 && (
+            <span className="ngx-health ngx-health--ok" title="No broken links or dead ends">✓ healthy</span>
+          )}
+          <input
+            className="ngx-search"
+            placeholder="Find node…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") jumpToMatch()
+            }}
+          />
+          {canEdit && (
+            <button className="ng-zoom-btn" onClick={tidyLayout} title="Re-run automatic layout (clears manual positions)">
+              Tidy
+            </button>
+          )}
         </div>
         <div className="ng-toolbar-right">
           {NODE_TYPES.map((t) => (
@@ -413,53 +520,82 @@ export function NodeGraph({ nodes, selectedId, onSelect, onAdd }: NodeGraphProps
         </div>
       </div>
 
-      {/* Scrollable canvas */}
-      <div
-        ref={containerRef}
-        className="ng-canvas"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        style={{ cursor: isPanning ? "grabbing" : "default" }}
-      >
+      {/* Canvas */}
+      <div ref={wrapperRef} className="ng-canvas ng-canvas--flow">
         {nodes.length === 0 ? (
           <div className="ng-empty">
             <p className="ng-empty-title">No nodes yet</p>
             <p className="ng-empty-sub">Add a node using the toolbar above to start building your experience graph.</p>
           </div>
         ) : (
-          <svg width={svgW} height={svgH}>
-            <g transform={`scale(${zoom})`}>
-              {/* Grid dots */}
-              <defs>
-                <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
-                  <circle cx="15" cy="15" r="0.8" fill={SVG_COLOURS.gridDot} />
-                </pattern>
-              </defs>
-              <rect x={0} y={0} width={width} height={height} fill="url(#grid)" />
+          <ReactFlow
+            colorMode="dark"
+            nodes={rfNodes}
+            edges={rfEdges}
+            nodeTypes={nodeTypes}
+            onNodesChange={onRfNodesChange}
+            onEdgesChange={onRfEdgesChange}
+            onConnect={handleConnect}
+            onConnectEnd={handleConnectEnd}
+            onReconnect={handleReconnect}
+            onEdgesDelete={handleEdgesDelete}
+            onNodesDelete={handleNodesDelete}
+            onNodeDragStop={handleNodeDragStop}
+            onNodeClick={(_, n) => onSelect(n.id)}
+            onEdgeClick={(_, edge) => onSelect(edge.source)}
+            onPaneClick={() => {
+              setConnectMenu(null)
+              onSelect(null)
+            }}
+            deleteKeyCode={["Backspace", "Delete"]}
+            defaultEdgeOptions={{
+              markerEnd: { type: MarkerType.ArrowClosed },
+            }}
+            fitView
+            fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
+            minZoom={0.2}
+            maxZoom={2}
+            proOptions={{ hideAttribution: false }}
+          >
+            <Background variant={BackgroundVariant.Dots} gap={24} size={1} />
+            <Controls showInteractive={false} />
+            <MiniMap
+              pannable
+              zoomable
+              nodeColor={(n) => TYPE_COLOURS[(n.data as CardData | undefined)?.node.type ?? "FIXED"]?.border ?? "#64748B"}
+            />
+          </ReactFlow>
+        )}
 
-              {/* Edges behind nodes */}
-              {edges.map((edge, i) => {
-                const from = nodeMap.get(edge.from)
-                const to = nodeMap.get(edge.to)
-                if (!from || !to) return null
-                return <EdgePath key={i} fromNode={from} toNode={to} label={edge.label} />
-              })}
-
-              {/* Nodes */}
-              {layoutNodes.map((ln) => (
-                <NodeCard
-                  key={ln.id}
-                  layoutNode={ln}
-                  isSelected={selectedId === ln.id}
-                  onClick={() => onSelect(ln.id)}
-                />
-              ))}
-            </g>
-          </svg>
+        {/* Drag-to-create menu */}
+        {connectMenu && (
+          <div
+            className="ngx-create-menu"
+            style={{ left: connectMenu.screenX, top: connectMenu.screenY }}
+          >
+            <div className="ngx-create-title">Create &amp; link…</div>
+            {NODE_TYPES.map((t) => (
+              <button
+                key={t}
+                className="ngx-create-item"
+                onClick={() => createLinkedNode(t)}
+              >
+                <span className="ng-add-icon" style={{ background: TYPE_COLOURS[t].border }}>{TYPE_ICONS[t]}</span>
+                {t}
+              </button>
+            ))}
+            <button className="ngx-create-cancel" onClick={() => setConnectMenu(null)}>Cancel</button>
+          </div>
         )}
       </div>
     </div>
+  )
+}
+
+export function NodeGraph(props: NodeGraphProps) {
+  return (
+    <ReactFlowProvider>
+      <NodeGraphInner {...props} />
+    </ReactFlowProvider>
   )
 }

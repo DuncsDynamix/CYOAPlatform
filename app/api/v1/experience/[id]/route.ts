@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db/prisma"
-import { requireAuth, canEditExperience } from "@/lib/auth"
+import { requireAuth, canEditExperience, canDeleteExperience } from "@/lib/auth"
 import { UpdateExperienceSchema } from "@/lib/validation"
 
 type Params = { params: Promise<{ id: string }> }
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   const experience = await db.experience.findUnique({ where: { id } })
   if (!experience) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  if (!(await canEditExperience(user.id, experience))) {
+  if (!(await canEditExperience(user, experience))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
@@ -30,7 +30,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const experience = await db.experience.findUnique({ where: { id } })
   if (!experience) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  if (!(await canEditExperience(user.id, experience))) {
+  if (!(await canEditExperience(user, experience))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
@@ -69,7 +69,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const experience = await db.experience.findUnique({ where: { id } })
   if (!experience) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  if (!(await canEditExperience(user.id, experience))) {
+  if (!(await canDeleteExperience(user, experience))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 

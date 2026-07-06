@@ -1,16 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { applyStateChanges } from "@/lib/engine/session"
-
-// Mock prisma so tests don't need a real DB
-vi.mock("@/lib/db/prisma", () => ({
-  db: {
-    experienceSession: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-  },
-}))
-
+// Prisma is mocked globally in tests/setup.ts (including $transaction)
 import { db } from "@/lib/db/prisma"
 import { createTestSession } from "@/tests/helpers/factories"
 

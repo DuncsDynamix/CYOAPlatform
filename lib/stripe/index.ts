@@ -1,10 +1,21 @@
 import Stripe from "stripe"
 import { db } from "@/lib/db/prisma"
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-02-24.acacia",
-  typescript: true,
-})
+// Lazy: constructing the client at module load crashes the whole build/boot
+// when STRIPE_SECRET_KEY is absent (it's optional until billing goes live).
+let _stripe: Stripe | null = null
+
+export function getStripe(): Stripe {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY
+    if (!key) throw new Error("STRIPE_SECRET_KEY is not configured")
+    _stripe = new Stripe(key, {
+      apiVersion: "2025-02-24.acacia",
+      typescript: true,
+    })
+  }
+  return _stripe
+}
 
 export async function createCheckoutSession(
   userId: string,
@@ -17,7 +28,7 @@ export async function createCheckoutSession(
   })
   if (!user) throw new Error("User not found")
 
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     customer: user.stripeCustomerId ?? undefined,
     customer_email: user.stripeCustomerId ? undefined : user.email,
     mode: "subscription",
@@ -40,7 +51,7 @@ export async function createPortalSession(
   })
   if (!user?.stripeCustomerId) throw new Error("No Stripe customer for this user")
 
-  const session = await stripe.billingPortal.sessions.create({
+  const session = await getStripe().billingPortal.sessions.create({
     customer: user.stripeCustomerId,
     return_url: returnUrl,
   })

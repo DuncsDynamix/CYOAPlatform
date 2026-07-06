@@ -1,6 +1,6 @@
 import { db } from "@/lib/db/prisma"
 import { generateNode, generateEndpointSummary, generateScaffold, generateDialogueOpener, generateEvaluativeAssessment, generateObservedDialogue } from "./generator"
-import { getFromCache, writeToCache } from "./cache"
+import { getFromCache, writeToCache, getScaffoldFromCache, writeScaffoldToCache } from "./cache"
 import { updateSessionState, getSession, markSessionComplete, appendNarrativeHistory, initDialogueState, appendCompetencyResult } from "./session"
 import { buildArcAwareness } from "./arc"
 import { applyDisplayConditions } from "./conditions"
@@ -23,7 +23,7 @@ import type {
   ExperienceContextPack,
   OutcomeVariant,
 } from "@/types/experience"
-import type { ExperienceSession, NarrativeHistoryEntry } from "@/types/session"
+import type { ExperienceSession, NarrativeHistoryEntry, NarrativeScaffold } from "@/types/session"
 import type { ArrivalResult, ResolvedContent, OutcomeCardData } from "@/types/engine"
 
 // ─── PURE HELPER FUNCTIONS ────────────────────────────────────
@@ -107,6 +107,7 @@ export async function arriveAtNode(
   trackEvent("node_reached", {
     sessionId,
     nodeId,
+    orgId: experience.orgId ?? undefined,
     nodeType: node.type,
     experienceId: experience.id,
     choicesMade: session.state.choicesMade,
@@ -114,8 +115,11 @@ export async function arriveAtNode(
     isMandatory: (experience.shape.mandatoryNodeIds ?? []).includes(nodeId),
   })
 
-  // Fire-and-forget: pre-generate all GENERATED children
-  generateChildrenInParallel(node, nodes, session, experience, apiKey).catch(console.error)
+  // Fire-and-forget: pre-generate all GENERATED children.
+  // Per-child failures are tracked inside; this catch covers anything outside the loop.
+  generateChildrenInParallel(node, nodes, session, experience, apiKey).catch((err) => {
+    console.warn(`[pre-generation] batch failed for session ${sessionId}:`, err instanceof Error ? err.message : err)
+  })
 
   return { node, content, session }
 }
@@ -171,6 +175,78 @@ export function getReachableGeneratedChildren(
   return results
 }
 
+// ─── IN-FLIGHT GENERATION REGISTRY ────────────────────────────
+// Pre-generation fires in the background right after arrival; if the reader
+// chooses before it finishes, resolveNodeContent for the chosen node must
+// join that same in-flight generation instead of starting a duplicate one
+// (which would make the reader wait the FULL generation time from their
+// click instead of just the remainder).
+//
+// This registry is process-local — it matches the in-memory cache fallback
+// in cache.ts. Fine for dev/single-instance; a Redis-backed multi-instance
+// deployment would need a distributed lock to dedupe across processes,
+// which is out of scope here.
+//
+// Stashed on globalThis (same trick as lib/db/prisma.ts and the memCache in
+// cache.ts) — Next.js dev (Turbopack) compiles each API route file as its
+// own module graph, so a plain module-level `const` here gets a fresh Map
+// per route. That silently defeats the whole point of this registry: the
+// pre-generation fired from POST /start's arrival lives in that route's
+// copy of the Map, so the GET /node (or POST /choose) request that actually
+// needs the result never sees it in-flight and regenerates from scratch.
+
+interface GenerationResult {
+  content: string
+  scaffold: NarrativeScaffold
+}
+
+const globalForExecutor = globalThis as unknown as {
+  __traverseInFlightGenerations: Map<string, Promise<GenerationResult>> | undefined
+}
+const inFlightGenerations =
+  globalForExecutor.__traverseInFlightGenerations ?? new Map<string, Promise<GenerationResult>>()
+if (process.env.NODE_ENV !== "production") globalForExecutor.__traverseInFlightGenerations = inFlightGenerations
+
+/**
+ * Generates prose + scaffold for a GENERATED node, joining an existing
+ * in-flight generation for the same session+node if one is already running.
+ * Writes prose cache, scaffold cache, and the DB row before resolving.
+ */
+async function generateAndCacheNode(
+  node: GeneratedNode,
+  session: ExperienceSession,
+  experience: Experience,
+  apiKey?: string
+): Promise<GenerationResult> {
+  const key = `${session.id}:${node.id}`
+
+  const inFlight = inFlightGenerations.get(key)
+  if (inFlight) return inFlight
+
+  const promise = (async (): Promise<GenerationResult> => {
+    const content = await generateNode(node, session, experience, apiKey)
+    // Scaffold is generated at pre-generation time too — it's a cheap Haiku
+    // call and the reading window pays for it, so it's ready by the time
+    // any consumer needs it for narrativeHistory.
+    const scaffold = await generateScaffold(content, node, session, apiKey)
+
+    await Promise.all([
+      writeToCache(session.id, node.id, content),
+      writeScaffoldToCache(session.id, node.id, scaffold),
+      saveGeneratedNode(session.id, node.id, content, session),
+    ])
+
+    return { content, scaffold }
+  })()
+
+  inFlightGenerations.set(key, promise)
+  try {
+    return await promise
+  } finally {
+    inFlightGenerations.delete(key)
+  }
+}
+
 // ─── PRIVATE HELPERS ──────────────────────────────────────────
 
 async function resolveNodeContent(
@@ -186,28 +262,44 @@ async function resolveNodeContent(
     case "GENERATED": {
       const generatedNode = node as GeneratedNode
       const cached = await getFromCache(session.id, node.id)
-      if (cached) return { type: "prose", content: cached, fromCache: true }
 
-      const generated = await generateNode(generatedNode, session, experience, apiKey)
+      if (cached) {
+        let scaffold = await getScaffoldFromCache(session.id, node.id)
+        if (!scaffold) {
+          // Legacy cache entry written before scaffolds were cached alongside
+          // prose (e.g. by the choose route's requiresFresh path). Generate
+          // it now rather than leaving this node permanently absent from
+          // narrativeHistory.
+          scaffold = await generateScaffold(cached, generatedNode, session, apiKey)
+          await writeScaffoldToCache(session.id, node.id, scaffold)
+        }
 
-      // Run cache write, DB save, and scaffold generation concurrently.
-      // Do not block returning prose to the reader on scaffold completion.
-      const scaffoldPromise = generateScaffold(generated, generatedNode, session, apiKey)
+        // Await before returning so the entry is persisted before the route
+        // responds — the NEXT arrival's getSession() must see this node's
+        // history. (The children pre-generation fired by this same arrival
+        // reads the session object captured earlier, so it does not benefit.)
+        await appendNarrativeHistory(session.id, {
+          nodeId: node.id,
+          content: cached,
+          scaffold,
+          generatedAt: new Date().toISOString(),
+        })
 
-      await Promise.all([
-        writeToCache(session.id, node.id, generated),
-        saveGeneratedNode(session.id, node.id, generated, session),
-        scaffoldPromise.then((scaffold) =>
-          appendNarrativeHistory(session.id, {
-            nodeId: node.id,
-            content: generated,
-            scaffold,
-            generatedAt: new Date().toISOString(),
-          })
-        ),
-      ])
+        return { type: "prose", content: cached, fromCache: true }
+      }
 
-      return { type: "prose", content: generated }
+      // Cache miss: either generate fresh, or join a pre-generation already
+      // in flight for this exact session+node.
+      const { content, scaffold } = await generateAndCacheNode(generatedNode, session, experience, apiKey)
+
+      await appendNarrativeHistory(session.id, {
+        nodeId: node.id,
+        content,
+        scaffold,
+        generatedAt: new Date().toISOString(),
+      })
+
+      return { type: "prose", content }
     }
 
     case "CHOICE": {
@@ -226,6 +318,7 @@ async function resolveNodeContent(
         const state = updatedSession?.state ?? session.state
         trackEvent("checkpoint_reached", {
           sessionId: session.id,
+          orgId: experience.orgId ?? undefined,
           experienceId: experience.id,
           userId: session.userId ?? null,
           checkpointLabel: checkpointNode.marksCompletionOf,
@@ -281,6 +374,7 @@ async function resolveNodeContent(
 
       trackEvent("session_completed", {
         sessionId: session.id,
+        orgId: experience.orgId ?? undefined,
         experienceId: experience.id,
         userId: session.userId,
         endpointId: endpointNode.endpointId,
@@ -419,14 +513,29 @@ async function generateChildrenInParallel(
 ): Promise<void> {
   const children = getReachableGeneratedChildren(node, nodes)
 
+  // Per-child failure tracking: allSettled would otherwise swallow rejections
+  // and pre-generation problems (rate limits, outages) stay invisible.
   await Promise.allSettled(
     children.map(async (childNode) => {
-      const existing = await getFromCache(session.id, childNode.id)
-      if (existing) return
+      try {
+        const existing = await getFromCache(session.id, childNode.id)
+        if (existing) return
 
-      const generated = await generateNode(childNode, session, experience, apiKey)
-      await writeToCache(session.id, childNode.id, generated)
-      await saveGeneratedNode(session.id, childNode.id, generated, session)
+        // Note: no narrativeHistory append here — this branch is unvisited.
+        // Only resolveNodeContent (on arrival) records history, so unchosen
+        // branches never pollute the narrative memory used by later prompts.
+        await generateAndCacheNode(childNode, session, experience, apiKey)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        console.warn(`[pre-generation] node ${childNode.id} failed for session ${session.id}: ${message}`)
+        trackEvent("pre_generation_failed", {
+          sessionId: session.id,
+          nodeId: childNode.id,
+          experienceId: experience.id,
+          orgId: experience.orgId ?? undefined,
+          error: message,
+        })
+      }
     })
   )
 }

@@ -24,219 +24,6 @@
 
 * { box-sizing: border-box; }
 
-/* ─── TYPOGRAPHY ───────────────────────────────────────────── */
-
-.book-title  { font-family: 'Playfair Display', Georgia, serif; }
-.book-body   { font-family: 'Lora', Georgia, serif; font-size: 1.1rem; line-height: 1.8; color: var(--colour-text-primary); }
-.book-meta   { font-family: 'Playfair Display', Georgia, serif; font-style: italic; color: var(--colour-text-secondary); }
-
-/* ─── BOOK PAGE ────────────────────────────────────────────── */
-
-.book-wrapper { width: 100%; max-width: 680px; margin: 0 auto; padding: 1rem; }
-
-.book-page {
-  background-color: var(--colour-page);
-  border: 1px solid var(--colour-border);
-  box-shadow: 2px 2px 0 var(--colour-border), 4px 4px 8px var(--colour-shadow);
-  padding: 2.5rem 3rem;
-  position: relative;
-  min-height: 60vh;
-}
-
-.book-page::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(180,150,100,0.04) 28px, rgba(180,150,100,0.04) 29px);
-  pointer-events: none;
-}
-
-.book-rule { height: 3px; background: var(--colour-accent); margin-bottom: 0.75rem; }
-
-.book-chapter-label {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 0.65rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--colour-text-muted);
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.book-content { position: relative; z-index: 1; }
-.book-content p { margin-bottom: 1.2rem; }
-.book-content p:last-child { margin-bottom: 0; }
-
-.book-page-number {
-  text-align: center;
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 0.75rem;
-  color: var(--colour-text-muted);
-  margin-top: 1.5rem;
-  letter-spacing: 0.15em;
-}
-
-/* ─── CHOICE PANEL ─────────────────────────────────────────── */
-
-.choice-panel { width: 100%; max-width: 680px; margin: 1.5rem auto 0; padding: 0 1rem; }
-
-.choice-panel-header {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-style: italic;
-  font-size: 1rem;
-  color: var(--colour-text-secondary);
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-.choice-options { display: flex; flex-direction: column; gap: 0.75rem; }
-
-.choice-option {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  width: 100%;
-  padding: 1rem 1.25rem;
-  background: var(--colour-choice-bg);
-  color: var(--colour-choice-text);
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.15s ease;
-  font-family: inherit;
-}
-
-.choice-option:hover { background: var(--colour-choice-hover); }
-.choice-option--selected { background: var(--colour-choice-hover); outline: 2px solid var(--colour-accent); }
-
-.choice-number {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--colour-accent-light);
-  margin-bottom: 0.25rem;
-}
-
-.choice-label { font-family: 'Lora', Georgia, serif; font-size: 1rem; line-height: 1.4; }
-
-.choice-panel--open .choice-prompt { font-family: 'Playfair Display', Georgia, serif; font-style: italic; color: var(--colour-text-secondary); margin-bottom: 0.75rem; }
-
-.choice-open-input {
-  width: 100%;
-  min-height: 100px;
-  padding: 0.75rem;
-  border: 1px solid var(--colour-border);
-  background: var(--colour-page);
-  font-family: 'Lora', Georgia, serif;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--colour-text-primary);
-  resize: vertical;
-  margin-bottom: 0.75rem;
-}
-
-.choice-open-input:focus { outline: 2px solid var(--colour-accent); }
-
-.choice-submit {
-  padding: 0.75rem 2rem;
-  background: var(--colour-choice-bg);
-  color: var(--colour-choice-text);
-  border: none;
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.choice-submit:hover:not(:disabled) { background: var(--colour-choice-hover); }
-.choice-submit:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* ─── GENERATING SCREEN ────────────────────────────────────── */
-
-.generating-screen {
-  min-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 1rem;
-  background: var(--colour-page);
-}
-
-.generating-illustration { width: 120px; height: 160px; margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; }
-.generating-message { font-size: 1.1rem; margin-bottom: 2rem; text-align: center; }
-.generating-progress { width: 240px; height: 4px; background: var(--colour-border); position: relative; overflow: hidden; }
-.generating-progress-bar { height: 100%; background: var(--colour-accent); transition: width 0.5s ease; }
-
-/* ─── OUTCOME CARD ─────────────────────────────────────────── */
-
-.outcome-wrapper { width: 100%; max-width: 680px; margin: 0 auto; padding: 1rem; }
-
-.outcome-card {
-  background: var(--colour-choice-bg);
-  color: var(--colour-choice-text);
-  padding: 2.5rem;
-  position: relative;
-}
-
-.outcome-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--colour-accent); }
-
-.outcome-card-header { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 2rem; }
-.outcome-card-brand { font-family: 'Playfair Display', Georgia, serif; font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--colour-accent-light); }
-.outcome-card-title { font-family: 'Playfair Display', Georgia, serif; font-size: 0.9rem; color: rgba(245,240,232,0.7); }
-.outcome-ending-label { font-family: 'Playfair Display', Georgia, serif; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--colour-accent-light); margin-bottom: 0.25rem; }
-.outcome-label { font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; font-weight: 700; color: var(--colour-choice-text); margin-bottom: 1.5rem; }
-
-.outcome-closing-line {
-  font-family: 'Lora', Georgia, serif;
-  font-size: 1.1rem;
-  font-style: italic;
-  line-height: 1.7;
-  color: var(--colour-choice-text);
-  border-left: 2px solid var(--colour-accent);
-  padding-left: 1rem;
-  margin: 0 0 1.5rem;
-}
-
-.outcome-summary { font-family: 'Lora', Georgia, serif; font-size: 0.9rem; line-height: 1.7; color: rgba(245,240,232,0.8); margin-bottom: 1.5rem; }
-.outcome-stat { font-family: 'Playfair Display', Georgia, serif; font-size: 0.75rem; color: rgba(245,240,232,0.5); letter-spacing: 0.05em; margin-bottom: 0.25rem; }
-
-.outcome-controls { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
-
-.outcome-share-btn { flex: 1; padding: 0.75rem; background: var(--colour-accent); color: white; border: none; font-family: 'Playfair Display', Georgia, serif; font-size: 0.9rem; cursor: pointer; transition: background 0.15s ease; }
-.outcome-share-btn:hover { background: var(--colour-accent-dark); }
-
-.outcome-replay-btn { flex: 1; padding: 0.75rem; background: transparent; color: var(--colour-choice-text); border: 1px solid rgba(245,240,232,0.3); font-family: 'Playfair Display', Georgia, serif; font-size: 0.9rem; cursor: pointer; transition: border-color 0.15s ease; }
-.outcome-replay-btn:hover { border-color: rgba(245,240,232,0.6); }
-
-/* ─── PROGRESS BAR ─────────────────────────────────────────── */
-
-.progress-bar-wrapper { width: 100%; max-width: 680px; margin: 0 auto; padding: 0.5rem 1rem 0; display: flex; align-items: center; gap: 0.75rem; }
-.progress-bar-label { font-family: 'Playfair Display', Georgia, serif; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--colour-text-muted); white-space: nowrap; }
-.progress-bar-track { flex: 1; height: 3px; background: var(--colour-border); }
-.progress-bar-fill { height: 100%; background: var(--colour-accent); transition: width 0.4s ease; }
-
-/* ─── TYPING INDICATOR ─────────────────────────────────────── */
-
-.typing-indicator { display: flex; gap: 6px; padding: 1rem 0; }
-.typing-dot { width: 8px; height: 8px; background: var(--colour-text-muted); border-radius: 50%; animation: typing-bounce 1.2s ease-in-out infinite; }
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes typing-bounce {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-  40% { transform: translateY(-6px); opacity: 1; }
-}
-
-/* ─── STORY LIBRARY ────────────────────────────────────────── */
-
-.story-card { background: var(--colour-page); border: 1px solid var(--colour-border); padding: 1.5rem; cursor: pointer; transition: box-shadow 0.15s ease; text-decoration: none; display: block; color: inherit; }
-.story-card:hover { box-shadow: 4px 4px 0 var(--colour-border); }
-.story-card-genre { font-family: 'Playfair Display', Georgia, serif; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--colour-accent); margin-bottom: 0.5rem; }
-.story-card-title { font-family: 'Playfair Display', Georgia, serif; font-size: 1.4rem; color: var(--colour-text-primary); margin-bottom: 0.5rem; }
-.story-card-description { font-family: 'Lora', Georgia, serif; font-size: 0.9rem; line-height: 1.5; color: var(--colour-text-secondary); }
-
 /* ─── AUTHORING TOOL (dark mode) ──────────────────────────── */
 
 .auth-shell {
@@ -789,3 +576,81 @@
   flex-direction: column;
   gap: 0.75rem;
 }
+
+/* ─── REACT FLOW NODE CANVAS (ngx-) ──────────────────────────── */
+
+.ng-canvas--flow { overflow: hidden; }
+.ng-canvas--flow .react-flow { background: var(--ab); }
+
+/* Node card */
+.ngx-card {
+  width: 200px; min-height: 72px; box-sizing: border-box;
+  background: var(--as); border: 1.5px solid var(--abr); border-radius: 8px;
+  padding: 0.5rem 0.6rem 0.85rem; cursor: pointer; position: relative;
+  font-family: system-ui, sans-serif;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.ngx-card--selected { border-width: 2.5px; }
+.ngx-card--unreachable { opacity: 0.55; }
+
+.ngx-card-row { display: flex; align-items: flex-start; gap: 0.45rem; }
+.ngx-icon {
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 800; color: #fff;
+}
+.ngx-card-text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; flex: 1; }
+.ngx-type { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.ngx-label { font-size: 0.78rem; font-weight: 500; color: var(--at1); }
+.ngx-id { font-size: 0.58rem; color: var(--at3); margin-top: 0.35rem; }
+
+.ngx-badge { font-size: 0.6rem; font-weight: 700; border-radius: 4px; padding: 0.1rem 0.3rem; flex-shrink: 0; }
+.ngx-badge--error { background: #7F1D1D; color: #FCA5A5; }
+.ngx-badge--warn { background: #422006; color: #FCD34D; }
+
+/* Handles: whole card accepts drops; coloured dots underneath are drag sources */
+.react-flow__handle.ngx-target {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  transform: none; border: none; border-radius: 8px; opacity: 0; pointer-events: all;
+}
+.react-flow__handle.ngx-source {
+  width: 11px; height: 11px; border: 2px solid var(--ab); border-radius: 50%;
+  bottom: -6px; z-index: 2; cursor: crosshair;
+}
+.react-flow__handle.ngx-source:hover { width: 14px; height: 14px; bottom: -7px; }
+
+/* Edge labels */
+.ng-canvas--flow .react-flow__edge-text { font-size: 10px; fill: var(--at2); }
+.ng-canvas--flow .react-flow__edge-textbg { fill: var(--ab); }
+
+/* Toolbar health chip + search */
+.ngx-health { font-family: system-ui, sans-serif; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 99px; cursor: help; }
+.ngx-health--bad { background: #7F1D1D; color: #FCA5A5; }
+.ngx-health--ok { background: #064E3B; color: #6EE7B7; }
+.ngx-search {
+  font-family: system-ui, sans-serif; font-size: 0.75rem; color: var(--at1);
+  background: var(--ae); border: 1px solid var(--abr); border-radius: 5px;
+  padding: 0.25rem 0.5rem; width: 140px; outline: none;
+}
+.ngx-search:focus { border-color: var(--aa); }
+
+/* Drag-to-create menu */
+.ngx-create-menu {
+  position: absolute; z-index: 10; min-width: 180px;
+  background: var(--as); border: 1px solid var(--abr); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5); padding: 0.35rem;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.ngx-create-title { font-family: system-ui, sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--at3); padding: 0.3rem 0.5rem; }
+.ngx-create-item {
+  font-family: system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; color: var(--at1);
+  background: none; border: none; border-radius: 5px; padding: 0.35rem 0.5rem;
+  display: flex; align-items: center; gap: 0.45rem; cursor: pointer; text-align: left;
+}
+.ngx-create-item:hover { background: var(--ae); }
+.ngx-create-cancel {
+  font-family: system-ui, sans-serif; font-size: 0.7rem; color: var(--at3);
+  background: none; border: none; border-top: 1px solid var(--abr);
+  padding: 0.35rem 0.5rem; margin-top: 2px; cursor: pointer; text-align: left;
+}
+.ngx-create-cancel:hover { color: var(--at1); }

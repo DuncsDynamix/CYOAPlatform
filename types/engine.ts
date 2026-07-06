@@ -140,7 +140,7 @@ export type TrainingPlayerStatus =
   | { status: "reviewing_decision"; feedback: string; feedbackTone: "positive" | "developmental" | "neutral"; competencySignal?: string; choiceLabel: string; onContinue: () => void }
   | { status: "advancing" }
   | { status: "debrief"; outcomeLabel: string; closingLine: string; aiSummary: string; decisionHistory: DecisionReview[]; score?: OutcomeCardData["score"] }
-  | { status: "error"; message: string }
+  | { status: "error"; message: string; retryable?: boolean; retry?: () => void }
   | {
       status: "in_dialogue"
       actorName: string

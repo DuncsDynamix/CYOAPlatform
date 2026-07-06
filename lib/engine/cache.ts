@@ -1,4 +1,5 @@
 import { Redis } from "@upstash/redis"
+import type { NarrativeScaffold } from "@/types/session"
 
 const CACHE_TTL = 60 * 60 * 4 // 4 hours — covers any single session
 
@@ -8,9 +9,21 @@ const CACHE_TTL = 60 * 60 * 4 // 4 hours — covers any single session
 // This Map acts as a process-local LRU-ish cache so the fire-and-forget
 // pre-generation loop actually has somewhere to write, and the subsequent
 // resolveNodeContent call can retrieve it.
+//
+// Stashed on globalThis (same trick as lib/db/prisma.ts) because Next.js
+// dev (Turbopack) compiles each API route file as its own module graph —
+// a plain module-level `const` gets a fresh, empty Map per route, so
+// pre-generation done under POST /start would be invisible to a later
+// GET /node or POST /choose request even within the same process. Without
+// this, every pre-generated node is silently regenerated the first time a
+// *different* route reads it back.
 
 const MAX_MEM_ENTRIES = 500
-const memCache = new Map<string, { content: string; expiresAt: number }>()
+const globalForCache = globalThis as unknown as {
+  __traverseMemCache: Map<string, { content: string; expiresAt: number }> | undefined
+}
+const memCache = globalForCache.__traverseMemCache ?? new Map<string, { content: string; expiresAt: number }>()
+if (process.env.NODE_ENV !== "production") globalForCache.__traverseMemCache = memCache
 
 function memGet(key: string): string | null {
   const entry = memCache.get(key)
@@ -57,6 +70,10 @@ function cacheKey(sessionId: string, nodeId: string): string {
   return `node:${sessionId}:${nodeId}`
 }
 
+function scaffoldCacheKey(sessionId: string, nodeId: string): string {
+  return `scaffold:${sessionId}:${nodeId}`
+}
+
 // ─── PUBLIC API ──────────────────────────────────────────────
 
 export async function getFromCache(
@@ -99,13 +116,68 @@ export async function writeToCache(
   }
 }
 
-export async function clearSessionCache(sessionId: string): Promise<void> {
-  memDeletePrefix(`node:${sessionId}:`)
+/**
+ * Scaffold cache — mirrors getFromCache/writeToCache but stores the
+ * NarrativeScaffold JSON alongside the prose so pre-generated nodes can
+ * enter narrativeHistory without a redundant scaffold-extraction call.
+ * Uses a distinct key prefix; never touches the existing prose key format.
+ */
+export async function getScaffoldFromCache(
+  sessionId: string,
+  nodeId: string
+): Promise<NarrativeScaffold | null> {
+  const key = scaffoldCacheKey(sessionId, nodeId)
+
+  const redis = getRedis()
+  if (redis) {
+    try {
+      const val = await redis.get<string>(key)
+      if (val) return JSON.parse(val) as NarrativeScaffold
+    } catch {
+      // fall through to memory
+    }
+  }
+
+  const raw = memGet(key)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as NarrativeScaffold
+  } catch {
+    return null
+  }
+}
+
+export async function writeScaffoldToCache(
+  sessionId: string,
+  nodeId: string,
+  scaffold: NarrativeScaffold
+): Promise<void> {
+  const key = scaffoldCacheKey(sessionId, nodeId)
+  const serialized = JSON.stringify(scaffold)
+
+  memSet(key, serialized)
 
   const redis = getRedis()
   if (!redis) return
   try {
-    const keys = await redis.keys(`node:${sessionId}:*`)
+    await redis.setex(key, CACHE_TTL, serialized)
+  } catch {
+    // Non-fatal — in-memory cache still has it
+  }
+}
+
+export async function clearSessionCache(sessionId: string): Promise<void> {
+  memDeletePrefix(`node:${sessionId}:`)
+  memDeletePrefix(`scaffold:${sessionId}:`)
+
+  const redis = getRedis()
+  if (!redis) return
+  try {
+    const [nodeKeys, scaffoldKeys] = await Promise.all([
+      redis.keys(`node:${sessionId}:*`),
+      redis.keys(`scaffold:${sessionId}:*`),
+    ])
+    const keys = [...nodeKeys, ...scaffoldKeys]
     if (keys.length > 0) {
       await redis.del(...keys)
     }

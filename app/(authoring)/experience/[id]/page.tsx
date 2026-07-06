@@ -8,36 +8,9 @@ import { ContextPackEditor } from "@/components/authoring/ContextPackEditor"
 import { NodeGraph } from "@/components/authoring/NodeGraph"
 import { NodeEditor } from "@/components/authoring/NodeEditor"
 import { HelpPanel } from "@/components/authoring/HelpPanel"
+import { makeNode } from "@/lib/authoring/graph"
 
 type Tab = "details" | "context" | "nodes"
-
-function makeNode(type: Node["type"]): Node {
-  const id = crypto.randomUUID()
-  switch (type) {
-    case "FIXED":
-      return { id, type, label: "", content: "", mandatory: false, nextNodeId: "" }
-    case "GENERATED":
-      return { id, type, label: "", beatInstruction: "", constraints: { lengthMin: 100, lengthMax: 300, mustEndAt: "", mustNotDo: [] }, nextNodeId: "" }
-    case "CHOICE":
-      return { id, type, label: "", responseType: "closed", options: [] }
-    case "CHECKPOINT":
-      return { id, type, label: "", visible: false, marksCompletionOf: "", unlocks: [], nextNodeId: "" }
-    case "ENDPOINT":
-      return { id, type, label: "", endpointId: "", outcomeLabel: "", closingLine: "", summaryInstruction: "", outcomeCard: { shareable: true, showChoiceStats: true, showDepthStats: true, showReadingTime: true } }
-    case "DIALOGUE":
-      return { id, type, label: "", actorId: "", breakthroughCriteria: "", maxTurns: 5, nextNodeId: "" }
-    case "OBSERVED_DIALOGUE":
-      return { id, type, label: "", actorAId: "", actorBId: "", purpose: "", turns: 4, nextNodeId: "" }
-    case "EVALUATIVE":
-      return { id, type, label: "", rubric: [], assessesNodeIds: [], nextNodeId: "" }
-    case "SUBROUTINE_CALL":
-      return { id, type, label: "", targetNodeId: "", returnNodeId: "" }
-    case "SUBROUTINE_RETURN":
-      return { id, type, label: "" }
-    case "SLIDE_DECK":
-      return { id, type, label: "", slides: [], nextNodeId: "" }
-  }
-}
 
 function makeSegment(order: number): Segment {
   return { id: crypto.randomUUID(), label: `Segment ${order + 1}`, order, nodes: [] }
@@ -204,6 +177,16 @@ export default function ExperienceEditorPage() {
     }
   }
 
+  /** Canvas-driven structural changes: linking, drag-to-create, positions, deletion. */
+  function replaceNodes(next: Node[]) {
+    if (!experience) return
+    if (activeSegment) {
+      updateSegmentNodes(next)
+    } else {
+      updateExperience({ nodes: next })
+    }
+  }
+
   // ─── Publish/Delete ────────────────────────────────────────
 
   async function handlePublish() {
@@ -216,9 +199,18 @@ export default function ExperienceEditorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       })
-      if (!res.ok) throw new Error("Publish failed")
       const data = await res.json()
-      setExperience((prev) => prev ? { ...prev, status: data.experience.status } : prev)
+      if (!res.ok) {
+        // Graph validation failure: list the problems so the author can fix them
+        const issues = [
+          ...(data.brokenLinks ?? []).map(
+            (b: { nodeId: string; handle: string }) => `• Broken link on node ${b.nodeId} (${b.handle})`
+          ),
+          ...(data.deadEnds ?? []).map((d: string) => `• Dead end: node ${d} has no way forward`),
+        ]
+        throw new Error(issues.length > 0 ? `${data.error}\n\n${issues.join("\n")}` : data.error ?? "Publish failed")
+      }
+      setExperience((prev) => prev ? { ...prev, status: data.status } : prev)
     } catch (err) {
       alert(err instanceof Error ? err.message : "Publish failed")
     } finally {
@@ -351,6 +343,7 @@ export default function ExperienceEditorPage() {
                 selectedId={selectedNodeId}
                 onSelect={setSelectedNodeId}
                 onAdd={addNode}
+                onNodesChange={replaceNodes}
               />
             </div>
             <div className={`ng-panel ${selectedNode ? "ng-panel--open" : ""}`}>

@@ -41,18 +41,18 @@ Three Next.js route groups, each with its own layout and CSS:
 
 | Group | Path | Purpose |
 |-------|------|---------|
-| `(reader)` | `/story/[id]` | Book-style CYOA reader — TraverseStories |
+| `(library)` | `/` (Atrium), `/hall/[genre]`, `/story/[id]` | The Grand Library + book-style CYOA reader — TraverseStories |
 | `(traverse-training)` | `/scenario/[id]` | L&D training scenario player — TraverseTraining |
 | `(authoring)` | `/experience/[id]` | Experience editor — TraverseStudio |
 
-The story page (`app/(reader)/story/[id]/page.tsx`) checks `experience.renderingTheme` and redirects to `/scenario/[id]` if the theme is `"training"`.
+The story page (`app/(library)/story/[id]/page.tsx`) checks `experience.renderingTheme` and redirects to `/scenario/[id]` if the theme is `"training"`. Library listings (Atrium, halls, `/api/v1/stories`) come from the single-source query in `lib/library/stories.ts`, which excludes training experiences (`status: "published"`, `type: "cyoa_story"`, `NOT renderingTheme: "training"`).
 
 ### The Engine
 
 The engine lives in `lib/engine/` and is the core of the platform:
 
 - **`executor.ts`** — Entry point. `arriveAtNode()` resolves a node to `ResolvedContent`, updates session state, and fires parallel pre-generation for reachable GENERATED children. The `resolveNodeContent` switch handles all 8 node types.
-- **`generator.ts`** — All Anthropic API calls. Uses `claude-sonnet-4-20250514` for generation, `claude-haiku-4-5-20251001` for scaffolding/assessment (cheap extraction calls). All calls go through `generationQueue` (p-queue, default concurrency 5).
+- **`generator.ts`** — All Anthropic API calls. Uses `claude-sonnet-5` for generation (migrated July 2026 — `claude-sonnet-4-20250514` was retired by Anthropic; thinking is explicitly disabled because Sonnet 5 defaults to adaptive thinking, which would eat the small max_tokens budgets), `claude-haiku-4-5-20251001` for scaffolding/assessment (cheap extraction calls). All calls go through `generationQueue` (p-queue, default concurrency 5).
 - **`session.ts`** — All DB reads/writes for `ExperienceSession`. The session state JSON includes `flags`, `dialogue`, and `competencyProfile`.
 - **`cache.ts`** — Redis (Upstash) + in-memory fallback for generated node prose. Key: `node:{sessionId}:{nodeId}`.
 - **`arc.ts`** — Calculates arc phase (opening → resolution) from `choicesMade / totalDepthMid` to inject pacing instructions into generation prompts.

@@ -392,6 +392,7 @@ export interface Segment {
 export interface Experience {
   id: string
   authorId: string
+  orgId?: string | null
   title: string
   slug: string
   description?: string | null

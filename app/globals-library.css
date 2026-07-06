@@ -1,0 +1,293 @@
+/* ─── THE GRAND LIBRARY — Book reading experience (Milestone 1) ─────────
+   Scoped under .library-theme. Base identity = the library's own voice;
+   hall identity arrives via [data-hall] custom properties (Milestone 2
+   extends; Milestone 1 uses them for endpapers/covers only). */
+
+.library-theme {
+  --lib-paper: #F5F0E8;
+  --lib-paper-dark: #EDE7D4;
+  --lib-ink: #1A1209;
+  --lib-ink-2: #5C4A32;
+  --lib-muted: #8B7355;
+  --lib-accent: #C41E3A;
+  --lib-accent-dark: #8B1428;
+  --lib-board: #1A1A2E;          /* book board / choice ink */
+  --lib-board-2: #2D2D4E;
+  --lib-gilt: #C4A882;
+  --lib-shadow: rgba(26, 18, 9, 0.18);
+
+  /* hall-tintable (defaults = Common Room; JS sets these from getHall()) */
+  --hall-paper: var(--lib-paper);
+  --hall-ink: var(--lib-ink);
+  --hall-glow: var(--lib-gilt);
+
+  min-height: 100vh;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(196, 168, 130, 0.14), transparent 60%),
+    var(--lib-paper);
+  color: var(--lib-ink);
+  font-family: 'Lora', serif;
+}
+
+/* ── Stage: centers the book, gives it a desk to sit on ── */
+.lib-stage {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3rem 1rem 4rem;
+  perspective: 2200px;
+}
+
+/* ── The book object ── */
+.lib-book { position: relative; width: min(96vw, 1040px); transform-style: preserve-3d; }
+.lib-book--cover, .lib-book--opening { width: min(92vw, 420px); }
+
+/* Cover state: the closed book facing the reader */
+.lib-cover {
+  aspect-ratio: 5 / 7.6;
+  border-radius: 6px 12px 12px 6px;
+  box-shadow:
+    -6px 0 0 -2px rgba(0,0,0,0.25) inset,
+    2px 2px 0 var(--lib-gilt),
+    10px 14px 32px var(--lib-shadow);
+  overflow: hidden;
+  transform-origin: left center;
+  transition: transform 900ms cubic-bezier(0.7, 0, 0.25, 1);
+}
+.lib-book--opening .lib-cover { transform: rotateY(-112deg); }
+
+/* Endpapers: shown behind the opening cover; loading ritual lives here */
+.lib-endpaper {
+  position: absolute; inset: 0;
+  border-radius: 6px;
+  background:
+    repeating-radial-gradient(circle at 20% 30%, transparent 0 14px, color-mix(in srgb, var(--hall-glow) 12%, transparent) 15px 16px),
+    color-mix(in srgb, var(--hall-paper) 88%, var(--hall-glow));
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1.25rem; padding: 2rem; text-align: center;
+}
+.lib-endpaper-msg { font-style: italic; color: var(--lib-ink-2); font-size: 1.05rem; min-height: 1.6em; }
+.lib-endpaper-rule { width: 60%; height: 3px; background: color-mix(in srgb, var(--hall-glow) 55%, var(--lib-gilt)); transform-origin: left; transition: transform 400ms ease; }
+
+/* ── Open book: the spread ── */
+.lib-spread {
+  display: grid; grid-template-columns: 1fr 1.35fr; gap: 0;
+  background: var(--lib-paper);
+  border: 1px solid var(--lib-gilt);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 var(--lib-gilt), 10px 14px 36px var(--lib-shadow);
+  min-height: 72vh;
+  position: relative;
+}
+/* spine shadow down the gutter */
+.lib-spread::before {
+  content: ""; position: absolute; inset: 0 auto 0 calc(42.55% - 14px); width: 28px;
+  background: linear-gradient(90deg, transparent, rgba(26,18,9,0.10) 45%, rgba(26,18,9,0.16) 50%, rgba(26,18,9,0.10) 55%, transparent);
+  pointer-events: none;
+}
+.lib-page { padding: 2.6rem 2.8rem 2.2rem; display: flex; flex-direction: column; }
+.lib-page--verso { border-right: 1px solid color-mix(in srgb, var(--lib-gilt) 45%, transparent); background: var(--lib-paper-dark); border-radius: 8px 0 0 8px; }
+.lib-page--recto { border-radius: 0 8px 8px 0; }
+
+/* verso furniture */
+.lib-margin-note { font-size: 0.85rem; font-style: italic; color: var(--lib-ink-2); border-left: 2px solid var(--lib-accent); padding-left: 0.75rem; margin-top: 1rem; }
+.lib-ribbon { width: 14px; margin: -2.6rem auto 0; background: var(--lib-accent); box-shadow: 0 2px 4px var(--lib-shadow); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), 50% 100%, 0 calc(100% - 7px)); transition: height 600ms ease; }
+
+/* prose */
+.lib-prose { font-size: 1.1rem; line-height: 1.85; color: var(--lib-ink); flex: 1; }
+.lib-prose p { margin: 0 0 1.1em; }
+.lib-prose p:first-of-type::first-letter { font-family: 'Playfair Display', serif; font-size: 3.1em; float: left; line-height: 0.85; padding: 0.04em 0.08em 0 0; color: var(--lib-accent-dark); }
+.lib-page-number { text-align: center; color: var(--lib-muted); font-size: 0.85rem; letter-spacing: 0.35em; margin-top: 1.6rem; }
+
+/* page turn */
+@keyframes lib-page-in { from { transform: rotateY(-24deg); opacity: 0; } to { transform: rotateY(0); opacity: 1; } }
+.lib-page-turn-enter { transform-origin: left center; animation: lib-page-in 480ms cubic-bezier(0.3, 0.6, 0.2, 1); backface-visibility: hidden; }
+
+/* ── Choices set into the page foot ── */
+/* When a prefetched choice merges onto the page the reader is already on
+   (no page-turn), this quiet rise-and-fade gives the foot a deliberate
+   arrival instead of just popping into place. */
+@keyframes lib-choice-foot-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.lib-choice-foot { margin-top: 1.8rem; border-top: 3px double color-mix(in srgb, var(--lib-gilt) 70%, transparent); padding-top: 1.4rem; display: flex; flex-direction: column; gap: 0.7rem; animation: lib-choice-foot-in 300ms ease; }
+.lib-choice-prompt { font-family: 'Playfair Display', serif; font-style: italic; color: var(--lib-ink-2); margin: 0 0 0.4rem; }
+.lib-choice {
+  display: block; width: 100%; text-align: left; cursor: pointer;
+  background: var(--lib-board); color: var(--lib-paper);
+  border: 1px solid transparent; border-radius: 4px;
+  padding: 0.85rem 1.1rem; font-family: 'Lora', serif; font-size: 1rem; line-height: 1.5;
+  transition: background 150ms ease, transform 150ms ease;
+}
+.lib-choice:hover:not(:disabled), .lib-choice:focus-visible { background: var(--lib-board-2); transform: translateX(4px); outline: 2px solid var(--lib-accent); outline-offset: 2px; }
+.lib-choice-eyebrow { display: block; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lib-accent); margin-bottom: 0.25rem; font-family: 'Playfair Display', serif; }
+.lib-choice--disabled, .lib-choice:disabled {
+  background: transparent; color: var(--lib-muted); cursor: default;
+  border: 1px dashed color-mix(in srgb, var(--lib-muted) 55%, transparent);
+}
+.lib-choice--disabled .lib-choice-eyebrow { color: var(--lib-muted); }
+
+/* free text = writing in the margin */
+.lib-margin-input { width: 100%; min-height: 96px; background: transparent; border: none; border-bottom: 1px solid var(--lib-gilt); font-family: 'Lora', serif; font-style: italic; font-size: 1.05rem; color: var(--lib-ink); line-height: 1.8; background-image: repeating-linear-gradient(transparent, transparent 1.75em, color-mix(in srgb, var(--lib-gilt) 40%, transparent) 1.78em); resize: vertical; padding: 0.2rem 0; }
+.lib-margin-input:focus { outline: none; border-bottom-color: var(--lib-accent); }
+
+/* ── Overheard scene (observed dialogue) ── */
+.lib-overheard { background: var(--lib-paper-dark); border: 1px solid var(--lib-gilt); border-radius: 6px; padding: 1.4rem 1.6rem; margin: 1.4rem 0; }
+.lib-overheard-label { text-align: center; font-style: italic; color: var(--lib-muted); font-size: 0.85rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 1rem; }
+.lib-overheard-line { margin: 0.7rem 0; }
+.lib-overheard-speaker { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 0.85rem; color: var(--lib-accent-dark); letter-spacing: 0.04em; }
+
+/* ── Colophon (ending leaf) ── */
+.lib-colophon { background: var(--lib-board); color: var(--lib-paper); border-radius: 8px; padding: 3rem 2.6rem; text-align: center; box-shadow: 2px 2px 0 var(--lib-gilt), 10px 14px 36px var(--lib-shadow); }
+.lib-colophon-rule { width: 72px; height: 4px; background: var(--lib-accent); margin: 0 auto 1.6rem; }
+.lib-colophon-eyebrow { font-family: 'Playfair Display', serif; font-size: 0.75rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--lib-gilt); }
+.lib-colophon-title { font-family: 'Playfair Display', serif; font-size: 2rem; margin: 0.6rem 0 1.2rem; }
+.lib-colophon-closing { font-style: italic; border-left: 3px solid var(--lib-accent); padding-left: 1rem; text-align: left; margin: 0 auto 1.4rem; max-width: 46ch; color: #E9E4D8; }
+.lib-colophon-summary { color: #CFC9BC; max-width: 52ch; margin: 0 auto 1.6rem; line-height: 1.75; }
+.lib-colophon-stats { color: var(--lib-muted); font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 2rem; }
+.lib-colophon-actions { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; }
+
+/* ── Error page (in-fiction) ── */
+.lib-error-page { text-align: center; padding: 3rem 1rem; }
+.lib-error-page p { font-style: italic; color: var(--lib-ink-2); margin-bottom: 1.4rem; }
+
+/* buttons */
+.lib-btn { font-family: 'Playfair Display', serif; letter-spacing: 0.06em; background: var(--lib-accent); color: #fff; border: none; border-radius: 4px; padding: 0.7rem 1.4rem; cursor: pointer; font-size: 0.95rem; }
+.lib-btn:hover { background: var(--lib-accent-dark); }
+.lib-btn--quiet { background: transparent; color: var(--lib-ink-2); border: 1px solid var(--lib-gilt); }
+.lib-btn--quiet:hover { background: var(--lib-paper-dark); color: var(--lib-ink); }
+.lib-colophon .lib-btn--quiet { color: var(--lib-gilt); border-color: var(--lib-board-2); }
+
+/* ── Responsive: single page on narrow screens ── */
+@media (max-width: 860px) {
+  .lib-spread { grid-template-columns: 1fr; min-height: unset; }
+  .lib-page--verso { display: none; }
+  .lib-page { padding: 1.8rem 1.4rem 1.6rem; }
+  .lib-spread::before { display: none; }
+}
+
+/* ── M1 composition fixes (screenshot review) ─────────────────── */
+
+/* cover metadata below the closed book */
+.lib-cover-meta { text-align: center; margin-top: 1.6rem; display: flex; flex-direction: column; align-items: center; gap: 0.45rem; }
+.lib-cover-meta h1 { font-family: 'Playfair Display', serif; font-size: 1.65rem; margin: 0; color: var(--lib-ink); }
+.lib-cover-author { font-style: italic; color: var(--lib-ink-2); margin: 0; }
+.lib-cover-desc { color: var(--lib-ink-2); max-width: 44ch; margin: 0.3rem 0 0; line-height: 1.65; }
+.lib-cover-endings { color: var(--lib-muted); font-size: 0.85rem; letter-spacing: 0.08em; font-style: italic; margin: 0 0 0.7rem; }
+
+/* the page-turn interstitial */
+.lib-spread--turning { display: flex; align-items: center; justify-content: center; }
+.lib-turning-msg { font-style: italic; color: var(--lib-muted); letter-spacing: 0.04em; }
+@keyframes lib-turning-msg-fade { from { opacity: 0; } to { opacity: 1; } }
+.lib-turning-msg--fade { animation: lib-turning-msg-fade 400ms ease; }
+
+/* in-page continue: quiet, content-sized, set at the recto's foot */
+.lib-continue { align-self: flex-end; margin-top: 1.4rem; }
+
+/* verso ornament: rests at the foot of the blank page */
+.lib-ornament { display: block; margin-top: auto; text-align: center; color: var(--lib-muted); opacity: 0.6; font-size: 1.35rem; }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .lib-cover { transition: opacity 300ms ease; }
+  .lib-book--opening .lib-cover { transform: none; opacity: 0; }
+  .lib-page-turn-enter { animation: none; }
+  .lib-turning-msg--fade { animation: none; }
+  .lib-choice-foot { animation: none; }
+}
+
+/* ─── THE GRAND LIBRARY — Milestone 2: Atrium & Halls ─────────────────
+   [data-hall] swaps the room; markup is identical in every hall. */
+
+/* ── Library header (replaces the old reader header styles) ── */
+.lib-header { display: flex; align-items: baseline; justify-content: space-between; max-width: 1180px; margin: 0 auto; padding: 1.1rem 1.5rem 0.9rem; border-bottom: 1px solid color-mix(in srgb, var(--lib-gilt) 60%, transparent); }
+.lib-header-wordmark { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.15rem; color: var(--lib-ink); text-decoration: none; letter-spacing: 0.02em; }
+.lib-header-wordmark em { font-style: italic; color: var(--lib-accent-dark); }
+.lib-header-nav { display: flex; gap: 1.4rem; font-family: 'Playfair Display', serif; font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.lib-header-nav a { color: var(--lib-muted); text-decoration: none; }
+.lib-header-nav a:hover, .lib-header-nav a:focus-visible { color: var(--lib-accent-dark); }
+
+/* ── Scene shell: every room sits on this ── */
+.lib-scene { position: relative; min-height: calc(100vh - 60px); background: var(--hall-backdrop, var(--lib-paper)); color: var(--hall-ink, var(--lib-ink)); overflow: hidden; }
+.lib-ambience { position: absolute; inset: 0; pointer-events: none; background: var(--hall-ambience, none); opacity: 0.85; }
+.lib-scene > *:not(.lib-ambience) { position: relative; }
+
+/* ── Hall variable layers (registry values live in lib/library/halls.ts) ── */
+[data-hall="fantasy"] { --hall-paper: #F3E9D2; --hall-ink: #2B1D0E; --hall-glow: #E8A33D;
+  --hall-wood: #4A3118; --hall-backdrop: linear-gradient(180deg, #2B1D0E 0%, #4A3118 26%, #F3E9D2 26.2%);
+  --hall-ambience: radial-gradient(2px 2px at 18% 34%, rgba(232,163,61,0.5), transparent 60%), radial-gradient(1.5px 1.5px at 64% 22%, rgba(232,163,61,0.4), transparent 60%), radial-gradient(2px 2px at 82% 58%, rgba(232,163,61,0.35), transparent 60%); }
+[data-hall="sci-fi"] { --hall-paper: #E7EDF2; --hall-ink: #0D1B2A; --hall-glow: #5BC8D8;
+  --hall-wood: #16232E; --hall-backdrop: linear-gradient(180deg, #0D1B2A 0%, #16232E 26%, #E7EDF2 26.2%);
+  --hall-ambience: radial-gradient(1px 1px at 12% 8%, rgba(91,200,216,0.7), transparent 55%), radial-gradient(1px 1px at 38% 16%, rgba(231,237,242,0.55), transparent 55%), radial-gradient(1.5px 1.5px at 71% 6%, rgba(91,200,216,0.5), transparent 55%), radial-gradient(1px 1px at 89% 19%, rgba(231,237,242,0.45), transparent 55%); }
+[data-hall="horror"] { --hall-paper: #E4E1D5; --hall-ink: #141410; --hall-glow: #7C8F6C;
+  --hall-wood: #1C1B16; --hall-backdrop: linear-gradient(180deg, #0E0E0B 0%, #1C1B16 26%, #E4E1D5 26.2%);
+  --hall-ambience: radial-gradient(120% 70% at 50% 0%, transparent 40%, rgba(14,14,11,0.28) 100%); }
+[data-hall="mystery"] { --hall-paper: #EDE6D6; --hall-ink: #17201B; --hall-glow: #3F7A5A;
+  --hall-wood: #2A1A12; --hall-backdrop: linear-gradient(180deg, #17201B 0%, #2A1A12 26%, #EDE6D6 26.2%);
+  --hall-ambience: radial-gradient(60% 34% at 50% 12%, rgba(63,122,90,0.24), transparent 70%); }
+[data-hall="romance"] { --hall-paper: #F7EEE7; --hall-ink: #3B2430; --hall-glow: #D9899B;
+  --hall-wood: #7E5A70; --hall-backdrop: linear-gradient(180deg, #8C4A5E 0%, #7E5A70 26%, #F7EEE7 26.2%);
+  --hall-ambience: radial-gradient(50% 30% at 72% 8%, rgba(247,238,231,0.5), transparent 70%); }
+[data-hall="adventure"] { --hall-paper: #F0E6CE; --hall-ink: #2E2414; --hall-glow: #C98A3D;
+  --hall-wood: #5C4A1E; --hall-backdrop: linear-gradient(180deg, #2E2414 0%, #5C4A1E 26%, #F0E6CE 26.2%);
+  --hall-ambience: radial-gradient(46% 30% at 30% 10%, rgba(201,138,61,0.28), transparent 70%); }
+[data-hall="general"] { --hall-paper: #F5F0E8; --hall-ink: #1A1209; --hall-glow: #C4A882;
+  --hall-wood: #3A2E20; --hall-backdrop: linear-gradient(180deg, #1A1A2E 0%, #3A2E20 26%, #F5F0E8 26.2%);
+  --hall-ambience: radial-gradient(70% 40% at 50% 8%, rgba(196,168,130,0.22), transparent 70%); }
+
+@keyframes lib-drift { from { transform: translateY(0); } to { transform: translateY(-14px); } }
+[data-hall="fantasy"] .lib-ambience, [data-hall="sci-fi"] .lib-ambience { animation: lib-drift 16s ease-in-out infinite alternate; }
+
+/* ── Atrium ── */
+.lib-atrium { max-width: 1180px; margin: 0 auto; padding: 3.2rem 1.5rem 4rem; }
+.lib-atrium-title { font-family: 'Playfair Display', serif; font-size: 2.4rem; margin: 0 0 0.3rem; color: var(--lib-paper); text-shadow: 0 1px 0 rgba(0,0,0,0.4); }
+.lib-atrium-sub { font-style: italic; color: color-mix(in srgb, var(--lib-paper) 75%, transparent); margin: 0 0 2.6rem; }
+.lib-arrivals { background: var(--lib-paper); border: 1px solid var(--lib-gilt); border-radius: 8px; box-shadow: 2px 2px 0 var(--lib-gilt), 10px 14px 36px var(--lib-shadow); padding: 1.6rem 1.8rem; margin-bottom: 2.6rem; }
+.lib-arrivals-title { font-family: 'Playfair Display', serif; font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--lib-accent-dark); margin: 0 0 1rem; }
+.lib-arrivals-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.lib-arrivals-table td { padding: 0.55rem 0.4rem; border-top: 1px solid color-mix(in srgb, var(--lib-gilt) 40%, transparent); }
+.lib-arrivals-table tr:first-child td { border-top: none; }
+.lib-arrivals-table a { color: var(--lib-ink); font-family: 'Playfair Display', serif; text-decoration: none; }
+.lib-arrivals-table a:hover, .lib-arrivals-table a:focus-visible { color: var(--lib-accent-dark); text-decoration: underline; }
+.lib-arrivals-hall { color: var(--lib-muted); font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.lib-arrivals-date { color: var(--lib-muted); font-style: italic; text-align: right; white-space: nowrap; }
+
+.lib-doorways { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1.1rem; list-style: none; margin: 0; padding: 0; }
+.lib-doorway { display: block; border: 1px solid var(--lib-gilt); border-radius: 8px 8px 2px 2px; background: linear-gradient(180deg, color-mix(in srgb, var(--lib-board) 88%, #000) 0%, var(--lib-board) 100%); color: var(--lib-paper); text-decoration: none; padding: 1.5rem 1.2rem 1.2rem; min-height: 118px; height: 100%; transition: transform 160ms ease, box-shadow 160ms ease; }
+.lib-doorway:hover, .lib-doorway:focus-visible { transform: translateY(-3px); box-shadow: 0 10px 22px var(--lib-shadow); outline: 2px solid var(--lib-accent); outline-offset: 2px; }
+.lib-doorway-name { font-family: 'Playfair Display', serif; font-size: 1.15rem; display: block; margin-bottom: 0.25rem; }
+.lib-doorway-label { font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--lib-gilt); display: block; margin-bottom: 0.55rem; }
+.lib-doorway-count { font-style: italic; font-size: 0.85rem; color: color-mix(in srgb, var(--lib-paper) 70%, transparent); }
+.lib-doorway--latched { opacity: 0.55; cursor: default; }
+.lib-doorway--latched:hover { transform: none; box-shadow: none; }
+
+/* ── Hall ── */
+.lib-hall { max-width: 1180px; margin: 0 auto; padding: 2.6rem 1.5rem 4rem; }
+.lib-hall-header { margin-bottom: 2.2rem; }
+.lib-hall-back { font-family: 'Playfair Display', serif; font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: color-mix(in srgb, var(--lib-paper) 80%, transparent); text-decoration: none; }
+.lib-hall-back:hover, .lib-hall-back:focus-visible { color: var(--lib-paper); text-decoration: underline; }
+.lib-hall-title { font-family: 'Playfair Display', serif; font-size: 2.1rem; margin: 0.5rem 0 0.2rem; color: var(--lib-paper); text-shadow: 0 1px 0 rgba(0,0,0,0.4); }
+.lib-hall-sub { font-style: italic; color: color-mix(in srgb, var(--lib-paper) 72%, transparent); margin: 0; }
+.lib-hall-empty { background: var(--hall-paper); border: 1px solid var(--lib-gilt); border-radius: 8px; padding: 2.4rem; font-style: italic; color: var(--lib-ink-2); text-align: center; }
+
+/* ── Shelf: a wooden row of spine links ── */
+.lib-shelf { list-style: none; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.35rem; margin: 0 0 2rem; padding: 1.2rem 1.4rem 0; background: var(--hall-paper); border: 1px solid var(--lib-gilt); border-bottom: 12px solid var(--hall-wood, #3A2E20); border-radius: 6px; min-height: 190px; }
+.lib-spine-slot { display: block; }
+.lib-spine-link { display: block; text-decoration: none; transition: transform 180ms ease; transform: rotate(calc(var(--spine-lean, 0) * 1.6deg)); transform-origin: bottom center; }
+.lib-spine-link:hover, .lib-spine-link:focus-visible { transform: translateY(-10px) rotate(0deg); outline: 2px solid var(--lib-accent); outline-offset: 3px; }
+/* width/height steps set inline via CSS vars from spineDesign */
+.lib-spine-link svg { display: block; width: calc(34px + var(--spine-width, 0) * 7px); height: calc(150px + var(--spine-height, 0) * 14px); }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .lib-ambience { animation: none !important; }
+  .lib-doorway, .lib-spine-link { transition: none; }
+}
+
+@media (max-width: 700px) {
+  .lib-arrivals-date { display: none; }
+  .lib-atrium, .lib-hall { padding-top: 2rem; }
+}
+
+/* Cover's quiet way back to its shelf — must out-rank .lib-hall-back's hall colouring */
+.lib-hall-back.lib-cover-shelf-link { display: inline-block; margin-top: 0.9rem; color: var(--lib-muted); }
+.lib-hall-back.lib-cover-shelf-link:hover, .lib-hall-back.lib-cover-shelf-link:focus-visible { color: var(--lib-accent-dark); }

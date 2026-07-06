@@ -99,4 +99,37 @@ describe("generateScaffold", () => {
     expect(result.beatAchieved).toBe(testNode.beatInstruction)
     expect(result.keyFactsEstablished).toEqual([])
   })
+
+  it("parses the response correctly when the model wraps it in a ```json fence despite being told not to", async () => {
+    const apiResponse = {
+      beatAchieved: "The protagonist enters the forest and registers that something is profoundly wrong.",
+      keyFactsEstablished: ["The forest is completely silent"],
+    }
+
+    mockMessagesCreate.mockResolvedValueOnce({
+      content: [{ type: "text", text: "```json\n" + JSON.stringify(apiResponse) + "\n```" }],
+      usage: { input_tokens: 120, output_tokens: 60 },
+    })
+
+    const session = createTestSession()
+    const result: NarrativeScaffold = await generateScaffold(testProse, testNode, session)
+
+    // Must parse the real payload, not fall back — a fenced response is not
+    // "invalid output", it's the model's normal (if instruction-violating) shape.
+    expect(result.beatAchieved).toBe(apiResponse.beatAchieved)
+    expect(result.keyFactsEstablished).toEqual(apiResponse.keyFactsEstablished)
+  })
+
+  it("never includes reader-facing writing-style rules in its system prompt (structured JSON output, not prose)", async () => {
+    mockMessagesCreate.mockResolvedValueOnce({
+      content: [{ type: "text", text: JSON.stringify({ beatAchieved: "x", keyFactsEstablished: [] }) }],
+      usage: { input_tokens: 10, output_tokens: 5 },
+    })
+
+    const session = createTestSession()
+    await generateScaffold(testProse, testNode, session)
+
+    const call = mockMessagesCreate.mock.calls[0][0] as { system: string }
+    expect(call.system).not.toContain("WRITING STYLE")
+  })
 })
