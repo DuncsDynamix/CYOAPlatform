@@ -28,4 +28,17 @@ describe("Atrium", () => {
     expect(screen.getByText(/your study/i).closest("[aria-disabled]")).not.toBeNull()
     expect(screen.getByText(/the bindery/i).closest("[aria-disabled]")).not.toBeNull()
   })
+
+  it("unlatches the Bindery door for signed-in visitors", () => {
+    render(<Atrium stories={[]} signedIn />)
+    const door = screen.getByRole("link", { name: /the bindery/i })
+    expect(door.getAttribute("href")).toBe("/bindery")
+    expect(screen.getByText(/your study/i).closest("[aria-disabled]")).not.toBeNull() // Study stays latched (M3)
+  })
+
+  it("keeps the Bindery latched with a sign-in nudge when anonymous", () => {
+    render(<Atrium stories={[]} signedIn={false} />)
+    expect(screen.queryByRole("link", { name: /the bindery/i })).toBeNull()
+    expect(screen.getByText(/sign in to craft/i)).toBeInTheDocument()
+  })
 })

@@ -291,3 +291,40 @@
 /* Cover's quiet way back to its shelf — must out-rank .lib-hall-back's hall colouring */
 .lib-hall-back.lib-cover-shelf-link { display: inline-block; margin-top: 0.9rem; color: var(--lib-muted); }
 .lib-hall-back.lib-cover-shelf-link:hover, .lib-hall-back.lib-cover-shelf-link:focus-visible { color: var(--lib-accent-dark); }
+
+/* ── The Bindery: writing desk ── */
+.lib-bindery { max-width: 1080px; margin: 0 auto; padding: 2.6rem 1.5rem 4rem; }
+.lib-bindery-title { font-family: 'Playfair Display', serif; font-size: 2.1rem; margin: 0.5rem 0 0.2rem; color: var(--lib-paper); text-shadow: 0 1px 0 rgba(0,0,0,0.4); }
+.lib-bindery-sub { font-style: italic; color: color-mix(in srgb, var(--lib-paper) 72%, transparent); margin: 0 0 2rem; }
+.lib-desk { background: var(--lib-paper); border: 1px solid var(--lib-gilt); border-radius: 8px; box-shadow: 2px 2px 0 var(--lib-gilt), 10px 14px 36px var(--lib-shadow); padding: 1.8rem 2rem 2.2rem; }
+.lib-sheet-nav { display: flex; gap: 0.4rem; flex-wrap: wrap; list-style: none; margin: 0 0 1.6rem; padding: 0 0 1rem; border-bottom: 3px double color-mix(in srgb, var(--lib-gilt) 70%, transparent); }
+.lib-sheet-tab { font-family: 'Playfair Display', serif; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; background: none; border: 1px solid transparent; border-radius: 4px; color: var(--lib-muted); padding: 0.45rem 0.8rem; cursor: pointer; }
+.lib-sheet-tab[aria-current="step"] { color: var(--lib-accent-dark); border-color: var(--lib-gilt); background: var(--lib-paper-dark); }
+.lib-sheet-tab:disabled { opacity: 0.45; cursor: default; }
+.lib-field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.2rem; }
+.lib-field label { font-family: 'Playfair Display', serif; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lib-ink-2); }
+.lib-field input, .lib-field textarea, .lib-field select { font-family: 'Lora', serif; font-size: 1rem; color: var(--lib-ink); background: var(--lib-paper-dark); border: 1px solid var(--lib-gilt); border-radius: 4px; padding: 0.6rem 0.75rem; }
+.lib-field input:focus-visible, .lib-field textarea:focus-visible, .lib-field select:focus-visible { outline: 2px solid var(--lib-accent); outline-offset: 1px; }
+.lib-field-hint { font-size: 0.85rem; font-style: italic; color: var(--lib-muted); }
+.lib-drawer { list-style: none; margin: 0 0 2rem; padding: 0; display: grid; gap: 0.6rem; }
+.lib-drawer-item { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; border: 1px solid var(--lib-gilt); border-radius: 6px; background: var(--lib-paper); padding: 0.8rem 1rem; }
+.lib-drawer-item a { font-family: 'Playfair Display', serif; color: var(--lib-ink); text-decoration: none; }
+.lib-drawer-item a:hover, .lib-drawer-item a:focus-visible { color: var(--lib-accent-dark); text-decoration: underline; }
+.lib-chapter-rail { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.lib-chapter-rail button { font-family: 'Lora', serif; text-align: left; width: 100%; background: none; border: 1px solid transparent; border-radius: 4px; color: var(--lib-ink-2); padding: 0.5rem 0.7rem; cursor: pointer; }
+.lib-chapter-rail button[aria-current="true"] { border-color: var(--lib-gilt); background: var(--lib-paper-dark); color: var(--lib-ink); }
+.lib-pages-grid { display: grid; grid-template-columns: 220px 1fr; gap: 1.6rem; align-items: start; }
+.lib-plan { display: flex; flex-direction: column; gap: 0.8rem; }
+.lib-plan-row { border: 1px solid var(--lib-gilt); border-left: 4px solid var(--lib-gilt); border-radius: 6px; background: var(--lib-paper); padding: 1rem 1.2rem; }
+.lib-plan-row--choice { border-left-color: var(--lib-accent); }
+.lib-plan-row--ending { border-left-color: var(--lib-board); }
+.lib-plan-rejoin { font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--lib-muted); margin-bottom: 0.4rem; }
+.lib-plan-kind { font-family: 'Playfair Display', serif; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--lib-accent-dark); display: block; margin-bottom: 0.35rem; }
+.lib-plan-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.8rem; }
+.lib-binding-map { border: 1px solid var(--lib-gilt); border-radius: 6px; background: var(--lib-paper-dark); padding: 0.6rem; margin-top: 1rem; }
+.lib-binding-map svg { display: block; width: 100%; height: auto; }
+.lib-stitches { border: 1px solid var(--lib-accent); border-radius: 6px; background: var(--lib-paper); padding: 1.2rem 1.4rem; margin: 1.2rem 0; }
+.lib-stitches ul { margin: 0.6rem 0 0; padding-left: 1.2rem; }
+.lib-stitches a { color: var(--lib-accent-dark); }
+.lib-sample { border-left: 3px solid var(--lib-gilt); background: var(--lib-paper-dark); font-style: italic; padding: 0.8rem 1rem; margin-top: 0.8rem; }
+@media (max-width: 860px) { .lib-pages-grid { grid-template-columns: 1fr; } }

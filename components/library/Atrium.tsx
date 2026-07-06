@@ -13,7 +13,7 @@ function shelvedDate(publishedAt: string | null): string {
   return new Date(publishedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long" })
 }
 
-export function Atrium({ stories }: { stories: LibraryStory[] }) {
+export function Atrium({ stories, signedIn = false }: { stories: LibraryStory[]; signedIn?: boolean }) {
   const arrivals = stories.slice(0, 6)
   const grouped = groupStoriesByHall(stories)
 
@@ -65,11 +65,19 @@ export function Atrium({ stories }: { stories: LibraryStory[] }) {
             </span>
           </li>
           <li>
-            <span className="lib-doorway lib-doorway--latched" aria-disabled="true">
-              <span className="lib-doorway-label">Crafting</span>
-              <span className="lib-doorway-name">The Bindery</span>
-              <span className="lib-doorway-count">The door is locked, for now.</span>
-            </span>
+            {signedIn ? (
+              <Link href="/bindery" className="lib-doorway">
+                <span className="lib-doorway-label">Crafting</span>
+                <span className="lib-doorway-name">The Bindery</span>
+                <span className="lib-doorway-count">The presses are warm. Bring a story.</span>
+              </Link>
+            ) : (
+              <span className="lib-doorway lib-doorway--latched" aria-disabled="true">
+                <span className="lib-doorway-label">Crafting</span>
+                <span className="lib-doorway-name">The Bindery</span>
+                <span className="lib-doorway-count">Sign in to craft. The door knows its own.</span>
+              </span>
+            )}
           </li>
         </ul>
       </div>
