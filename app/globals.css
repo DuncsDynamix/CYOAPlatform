@@ -24,14 +24,6 @@
 
 * { box-sizing: border-box; }
 
-/* ─── STORY LIBRARY ────────────────────────────────────────── */
-
-.story-card { background: var(--colour-page); border: 1px solid var(--colour-border); padding: 1.5rem; cursor: pointer; transition: box-shadow 0.15s ease; text-decoration: none; display: block; color: inherit; }
-.story-card:hover { box-shadow: 4px 4px 0 var(--colour-border); }
-.story-card-genre { font-family: 'Playfair Display', Georgia, serif; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--colour-accent); margin-bottom: 0.5rem; }
-.story-card-title { font-family: 'Playfair Display', Georgia, serif; font-size: 1.4rem; color: var(--colour-text-primary); margin-bottom: 0.5rem; }
-.story-card-description { font-family: 'Lora', Georgia, serif; font-size: 0.9rem; line-height: 1.5; color: var(--colour-text-secondary); }
-
 /* ─── AUTHORING TOOL (dark mode) ──────────────────────────── */
 
 .auth-shell {
