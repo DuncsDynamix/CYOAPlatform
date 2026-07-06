@@ -41,7 +41,7 @@ interface StorySpec {
 
 const STORIES: StorySpec[] = [
   {
-    idSuffix: "050",
+    idSuffix: "50",
     title: "The Hollow Crown",
     slug: "the-hollow-crown",
     genre: "fantasy",
@@ -85,7 +85,7 @@ const STORIES: StorySpec[] = [
     },
   },
   {
-    idSuffix: "051",
+    idSuffix: "51",
     title: "Starfall Protocol",
     slug: "starfall-protocol",
     genre: "sci-fi",
@@ -129,7 +129,7 @@ const STORIES: StorySpec[] = [
     },
   },
   {
-    idSuffix: "052",
+    idSuffix: "52",
     title: "The House on Wren Lane",
     slug: "the-house-on-wren-lane",
     genre: "horror",
@@ -172,7 +172,7 @@ const STORIES: StorySpec[] = [
     },
   },
   {
-    idSuffix: "053",
+    idSuffix: "53",
     title: "The Butler's Second Letter",
     slug: "the-butlers-second-letter",
     genre: "mystery",
@@ -216,7 +216,7 @@ const STORIES: StorySpec[] = [
     },
   },
   {
-    idSuffix: "054",
+    idSuffix: "54",
     title: "A Letter Never Sent",
     slug: "a-letter-never-sent",
     genre: "romance",
@@ -260,7 +260,7 @@ const STORIES: StorySpec[] = [
     },
   },
   {
-    idSuffix: "055",
+    idSuffix: "55",
     title: "The Meridian Expedition",
     slug: "the-meridian-expedition",
     genre: "adventure",
@@ -355,7 +355,7 @@ function buildNodes(spec: StorySpec): Node[] {
     {
       id: "ep1",
       type: "ENDPOINT",
-      label: `Endpoint — ${spec.endingA.endpointLabel}`,
+      label: `Endpoint: ${spec.endingA.endpointLabel}`,
       endpointId: "ep-a",
       outcomeLabel: spec.endingA.endpointLabel,
       closingLine: spec.endingA.closingLine,
@@ -370,7 +370,7 @@ function buildNodes(spec: StorySpec): Node[] {
     {
       id: "ep2",
       type: "ENDPOINT",
-      label: `Endpoint — ${spec.endingB.endpointLabel}`,
+      label: `Endpoint: ${spec.endingB.endpointLabel}`,
       endpointId: "ep-b",
       outcomeLabel: spec.endingB.endpointLabel,
       closingLine: spec.endingB.closingLine,
@@ -400,7 +400,7 @@ function buildContextPack(spec: StorySpec): ExperienceContextPack {
       language: "en-GB",
       register: "literary",
       targetLength: { min: 80, max: 250 },
-      styleNotes: "Second person, present or near-present tense. Short, tiny story — no generation, all fixed prose.",
+      styleNotes: "Second person, present or near-present tense. Short, tiny story: no generation, all fixed prose.",
     },
     groundTruth: [],
     scripts: [],
