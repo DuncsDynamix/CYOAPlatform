@@ -16,7 +16,7 @@ function assertNoBrandStrings(content: string, filePath: string) {
 
 describe("User-facing brand strings", () => {
   it("reader layout contains no old brand names", () => {
-    assertNoBrandStrings(readSource("app/(reader)/layout.tsx"), "app/(reader)/layout.tsx")
+    assertNoBrandStrings(readSource("app/(library)/layout.tsx"), "app/(library)/layout.tsx")
   })
 
   it("authoring layout contains no old brand names", () => {
@@ -50,6 +50,6 @@ describe("User-facing brand strings", () => {
   })
 
   it("reader home page contains no old brand names", () => {
-    assertNoBrandStrings(readSource("app/(reader)/page.tsx"), "app/(reader)/page.tsx")
+    assertNoBrandStrings(readSource("app/(library)/page.tsx"), "app/(library)/page.tsx")
   })
 })
