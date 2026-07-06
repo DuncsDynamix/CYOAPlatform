@@ -61,14 +61,14 @@ export function Atrium({ stories }: { stories: LibraryStory[] }) {
             <span className="lib-doorway lib-doorway--latched" aria-disabled="true">
               <span className="lib-doorway-label">Private</span>
               <span className="lib-doorway-name">Your Study</span>
-              <span className="lib-doorway-count">The door is locked — for now.</span>
+              <span className="lib-doorway-count">The door is locked, for now.</span>
             </span>
           </li>
           <li>
             <span className="lib-doorway lib-doorway--latched" aria-disabled="true">
               <span className="lib-doorway-label">Crafting</span>
               <span className="lib-doorway-name">The Bindery</span>
-              <span className="lib-doorway-count">The door is locked — for now.</span>
+              <span className="lib-doorway-count">The door is locked, for now.</span>
             </span>
           </li>
         </ul>

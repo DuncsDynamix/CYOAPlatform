@@ -72,7 +72,7 @@ export function Colophon({ title, outcomeCard, closingLine, summary, endingsCoun
         {outcomeCard.showReadingTime && outcomeCard.readingTimeSeconds !== undefined && (
           <span>{Math.ceil(outcomeCard.readingTimeSeconds / 60)} min read</span>
         )}
-        <span>{endingsCount === 1 ? "This book has a single ending." : `This is one of ${endingsCount} endings — the others remain on the shelf.`}</span>
+        <span>{endingsCount === 1 ? "This book has a single ending." : `This is one of ${endingsCount} endings. ${endingsCount === 2 ? "The other remains on the shelf." : "The others remain on the shelf."}`}</span>
       </div>
 
       <div className="lib-colophon-actions">

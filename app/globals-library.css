@@ -173,7 +173,6 @@
 .lib-cover-author { font-style: italic; color: var(--lib-ink-2); margin: 0; }
 .lib-cover-desc { color: var(--lib-ink-2); max-width: 44ch; margin: 0.3rem 0 0; line-height: 1.65; }
 .lib-cover-endings { color: var(--lib-muted); font-size: 0.85rem; letter-spacing: 0.08em; font-style: italic; margin: 0 0 0.7rem; }
-.lib-cover-shelf-link { margin-top: 0.9rem; color: var(--lib-muted); }
 
 /* the page-turn interstitial */
 .lib-spread--turning { display: flex; align-items: center; justify-content: center; }
@@ -253,7 +252,7 @@
 .lib-arrivals-date { color: var(--lib-muted); font-style: italic; text-align: right; white-space: nowrap; }
 
 .lib-doorways { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1.1rem; list-style: none; margin: 0; padding: 0; }
-.lib-doorway { display: block; border: 1px solid var(--lib-gilt); border-radius: 8px 8px 2px 2px; background: linear-gradient(180deg, color-mix(in srgb, var(--lib-board) 88%, #000) 0%, var(--lib-board) 100%); color: var(--lib-paper); text-decoration: none; padding: 1.5rem 1.2rem 1.2rem; min-height: 118px; transition: transform 160ms ease, box-shadow 160ms ease; }
+.lib-doorway { display: block; border: 1px solid var(--lib-gilt); border-radius: 8px 8px 2px 2px; background: linear-gradient(180deg, color-mix(in srgb, var(--lib-board) 88%, #000) 0%, var(--lib-board) 100%); color: var(--lib-paper); text-decoration: none; padding: 1.5rem 1.2rem 1.2rem; min-height: 118px; height: 100%; transition: transform 160ms ease, box-shadow 160ms ease; }
 .lib-doorway:hover, .lib-doorway:focus-visible { transform: translateY(-3px); box-shadow: 0 10px 22px var(--lib-shadow); outline: 2px solid var(--lib-accent); outline-offset: 2px; }
 .lib-doorway-name { font-family: 'Playfair Display', serif; font-size: 1.15rem; display: block; margin-bottom: 0.25rem; }
 .lib-doorway-label { font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--lib-gilt); display: block; margin-bottom: 0.55rem; }
@@ -288,3 +287,7 @@
   .lib-arrivals-date { display: none; }
   .lib-atrium, .lib-hall { padding-top: 2rem; }
 }
+
+/* Cover's quiet way back to its shelf — must out-rank .lib-hall-back's hall colouring */
+.lib-hall-back.lib-cover-shelf-link { display: inline-block; margin-top: 0.9rem; color: var(--lib-muted); }
+.lib-hall-back.lib-cover-shelf-link:hover, .lib-hall-back.lib-cover-shelf-link:focus-visible { color: var(--lib-accent-dark); }

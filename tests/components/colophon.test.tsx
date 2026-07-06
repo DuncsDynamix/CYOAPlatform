@@ -9,7 +9,7 @@ describe("Colophon", () => {
     render(<Colophon title="The Hollow Crown" outcomeCard={card} closingLine={card.closingLine} summary="You went in." endingsCount={4} />)
     expect(screen.getByText("Into the Dark")).toBeInTheDocument()
     expect(screen.getByText(/34% of readers/i)).toBeInTheDocument()
-    expect(screen.getByText(/one of 4 endings — the others remain on the shelf/i)).toBeInTheDocument()
+    expect(screen.getByText(/one of 4 endings\. The others remain on the shelf/i)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /share this ending/i })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /return to the library/i })).toBeInTheDocument()
   })
