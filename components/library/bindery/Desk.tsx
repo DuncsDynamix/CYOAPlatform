@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState } from "react"
 import { getBinderyPack } from "@/lib/library/bindery-packs"
 import { normalizeGenre } from "@/lib/library/halls"
+import type { ExperienceContextPack } from "@/types/experience"
 import { Drawer, type DraftListItem } from "./Drawer"
 import { SheetTitle, type SheetTitleFields } from "./SheetTitle"
+import { SheetPremise } from "./SheetPremise"
+import { SheetCover } from "./SheetCover"
 
 export interface BinderyDraft {
   id: string
@@ -30,6 +33,39 @@ const SAVE_COPY: Record<SaveStatus, string> = {
 
 type SheetFields = { title: string; genre: string; description: string }
 
+const DEFAULT_CONTEXT_PACK: ExperienceContextPack = {
+  world: { description: "", rules: "", atmosphere: "" },
+  actors: [],
+  protagonist: { perspective: "second", role: "", knowledge: "", goal: "" },
+  style: {
+    tone: "",
+    language: "en-GB",
+    register: "literary",
+    targetLength: { min: 150, max: 250 },
+    styleNotes: "",
+  },
+  groundTruth: [],
+  scripts: [],
+}
+
+// A resumed draft's contextPack may be missing sub-objects (older drafts,
+// test fixtures) — fill in defaults for anything absent rather than let
+// SheetPremise dereference undefined.
+function mergeContextPack(raw: unknown): ExperienceContextPack {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Partial<ExperienceContextPack>
+  return {
+    ...DEFAULT_CONTEXT_PACK,
+    ...r,
+    world: { ...DEFAULT_CONTEXT_PACK.world, ...r.world },
+    protagonist: { ...DEFAULT_CONTEXT_PACK.protagonist, ...r.protagonist },
+    style: { ...DEFAULT_CONTEXT_PACK.style, ...r.style },
+  }
+}
+
+function getCoverVariant(shape: unknown): number {
+  return (shape as { coverVariant?: number } | null)?.coverVariant ?? 0
+}
+
 export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: string }) {
   const pack = getBinderyPack(packId ?? "cyoa_story")
 
@@ -45,7 +81,13 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
   const [description, setDescription] = useState("")
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved")
 
+  const [contextPack, setContextPack] = useState<ExperienceContextPack>(DEFAULT_CONTEXT_PACK)
+  const [shape, setShape] = useState<unknown>({})
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null)
+  const coverVariant = getCoverVariant(shape)
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const contextPackDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const experienceRef = useRef<BinderyDraft | null>(null)
   experienceRef.current = experience
   // True while the first save's POST is on the wire. A debounce that fires
@@ -57,6 +99,7 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
+      if (contextPackDebounceRef.current) clearTimeout(contextPackDebounceRef.current)
     }
   }, [])
 
@@ -65,6 +108,9 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
     setTitle("")
     setGenre("general")
     setDescription("")
+    setContextPack(DEFAULT_CONTEXT_PACK)
+    setShape({})
+    setCoverImageUrl(null)
     setSaveStatus("saved")
     setSheetIndex(0)
     setView("sheet")
@@ -78,6 +124,9 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
     setTitle(data.title ?? "")
     setGenre(normalizeGenre(data.genre))
     setDescription(data.description ?? "")
+    setContextPack(mergeContextPack(data.contextPack))
+    setShape(data.shape ?? {})
+    setCoverImageUrl(data.coverImageUrl ?? null)
     setSaveStatus("saved")
     setSheetIndex(0)
     setView("sheet")
@@ -145,6 +194,51 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
     }, 2000)
   }
 
+  // Sheets 2+ only ever PUT (an experience must already exist to reach
+  // them — the tabs are disabled until then), so this skips the
+  // create-vs-update branching that `save` handles for Sheet 1.
+  async function savePatch(patch: Record<string, unknown>) {
+    const current = experienceRef.current
+    if (!current) return
+    setSaveStatus("saving")
+    try {
+      const res = await fetch(`/api/v1/experience/${current.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      })
+      if (!res.ok) throw new Error("save failed")
+      setSaveStatus("saved")
+    } catch {
+      setSaveStatus("unsaved")
+    }
+  }
+
+  function handleContextPackChange(pack: ExperienceContextPack) {
+    setContextPack(pack)
+    setSaveStatus("unsaved")
+    if (contextPackDebounceRef.current) clearTimeout(contextPackDebounceRef.current)
+    contextPackDebounceRef.current = setTimeout(() => {
+      savePatch({ contextPack: pack })
+    }, 2000)
+  }
+
+  function handleShuffle() {
+    const nextShape = { ...(shape as Record<string, unknown>), coverVariant: (coverVariant + 1) % 8 }
+    setShape(nextShape)
+    savePatch({ shape: nextShape })
+  }
+
+  async function handleCoverUpload(file: File) {
+    const formData = new FormData()
+    formData.append("file", file)
+    const res = await fetch("/api/v1/upload/image", { method: "POST", body: formData })
+    if (!res.ok) return
+    const data = (await res.json()) as { url: string }
+    setCoverImageUrl(data.url)
+    savePatch({ coverImageUrl: data.url })
+  }
+
   function handleFieldsChange(fields: SheetTitleFields) {
     const merged: SheetFields = {
       title: fields.title ?? title,
@@ -193,6 +287,21 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
 
               {sheetIndex === 0 && (
                 <SheetTitle title={title} genre={genre} description={description} onChange={handleFieldsChange} />
+              )}
+
+              {sheetIndex === 1 && (
+                <SheetPremise contextPack={contextPack} onChange={handleContextPackChange} />
+              )}
+
+              {sheetIndex === 2 && (
+                <SheetCover
+                  title={title}
+                  genre={genre}
+                  coverVariant={coverVariant}
+                  coverImageUrl={coverImageUrl}
+                  onShuffle={handleShuffle}
+                  onUpload={handleCoverUpload}
+                />
               )}
             </>
           )}
