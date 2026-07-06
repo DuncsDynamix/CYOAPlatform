@@ -53,3 +53,37 @@ export function decorativePageNumber(nodeId: string): number {
 export function turnToPageNumber(nodeId: string, optionId: string): number {
   return 11 + (hashSeed(`${nodeId}::${optionId}`) % 94) * 2
 }
+
+export interface SpineDesign {
+  hall: HallId
+  background: string
+  foreground: string
+  accent: string
+  ornament: string
+  widthStep: 0 | 1 | 2 | 3
+  heightStep: 0 | 1 | 2
+  lean: -1 | 0 | 1
+}
+
+/** Spine rendering of the same seed as the cover — one book, one design. */
+export function spineDesign(title: string, genre: string | null | undefined): SpineDesign {
+  const cover = coverDesign(title, genre)
+  const seed = hashSeed(`${title}::${cover.hall}`)
+
+  const widthStep = ((seed >>> 11) % 4) as SpineDesign["widthStep"]
+  const heightStep = ((seed >>> 13) % 3) as SpineDesign["heightStep"]
+  // ~70% stand straight: 0..9 → 0..6 straight, 7,8 lean left/right
+  const leanRoll = (seed >>> 15) % 10
+  const lean = (leanRoll === 7 ? -1 : leanRoll === 8 ? 1 : 0) as SpineDesign["lean"]
+
+  return {
+    hall: cover.hall,
+    background: cover.background,
+    foreground: cover.foreground,
+    accent: cover.accent,
+    ornament: cover.ornament,
+    widthStep,
+    heightStep,
+    lean,
+  }
+}
