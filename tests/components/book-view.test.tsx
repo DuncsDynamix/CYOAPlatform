@@ -338,4 +338,16 @@ describe("BookView", () => {
     fireEvent.click(screen.getByRole("button", { name: /begin/i }))
     await screen.findByText(/belongs to another binding/i)
   })
+
+  it("shows times read and the shelf backlink on the cover", () => {
+    render(<BookView {...bookProps()} timesRead={3} />)
+    expect(screen.getByText(/read 3 times/i)).toBeInTheDocument()
+    const back = screen.getByRole("link", { name: /back to the shelf/i })
+    expect(back.getAttribute("href")).toBe("/hall/fantasy")
+  })
+
+  it("omits the read count for unread books", () => {
+    render(<BookView {...bookProps()} />)
+    expect(screen.queryByText(/read .* times/i)).toBeNull()
+  })
 })

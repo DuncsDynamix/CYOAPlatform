@@ -23,6 +23,7 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
       segments: true,
       renderingTheme: true,
       authorId: true,
+      totalCompletions: true,
     },
   })
 
@@ -55,6 +56,7 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
       coverImageUrl={experience.coverImageUrl}
       description={experience.description}
       endingsCount={endingsCount}
+      timesRead={experience.totalCompletions}
     />
   )
 }

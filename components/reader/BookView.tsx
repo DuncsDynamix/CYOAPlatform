@@ -11,6 +11,7 @@ import { ChoiceFoot } from "@/components/reader/ChoiceFoot"
 import { MarginInput } from "@/components/reader/MarginInput"
 import { OverheardScene } from "@/components/reader/OverheardScene"
 import { Colophon } from "@/components/reader/Colophon"
+import { normalizeGenre } from "@/lib/library/halls"
 import type { ChoiceOption, Node } from "@/types/experience"
 import type { OutcomeCardData, ResolvedContent } from "@/types/engine"
 
@@ -35,6 +36,7 @@ interface BookViewProps {
   coverImageUrl?: string | null
   description?: string | null
   endingsCount: number
+  timesRead?: number
 }
 
 /** Reads the engine's { error, retryable } envelope off a failed response — mirrors TrainingPlayer. */
@@ -47,7 +49,7 @@ async function readFailure(res: Response, fallback: string): Promise<{ message: 
   }
 }
 
-export function BookView({ slug, title, author, genre, coverImageUrl, description, endingsCount }: BookViewProps) {
+export function BookView({ slug, title, author, genre, coverImageUrl, description, endingsCount, timesRead }: BookViewProps) {
   const [status, setStatus] = useState<BookStatus>({ phase: "cover" })
   // A ref (not state) so choose() can update it and have dispatchContent see the
   // fresh value in the very same tick — state would still read stale via the
@@ -387,7 +389,11 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
           <p className="lib-cover-author">{author}</p>
           {description && <p className="lib-cover-desc">{description}</p>}
           <p className="lib-cover-endings">{endingsCount === 1 ? "A single ending awaits." : `${endingsCount} endings await.`}</p>
+          {!!timesRead && timesRead > 0 && (
+            <p className="lib-cover-endings">{timesRead === 1 ? "Read once." : `Read ${timesRead} times.`}</p>
+          )}
           <button className="lib-btn" onClick={begin}>Begin</button>
+          <Link href={`/hall/${normalizeGenre(genre)}`} className="lib-hall-back lib-cover-shelf-link">← Back to the shelf</Link>
         </div>
       </Stage>
     )

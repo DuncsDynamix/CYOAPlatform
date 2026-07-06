@@ -173,6 +173,7 @@
 .lib-cover-author { font-style: italic; color: var(--lib-ink-2); margin: 0; }
 .lib-cover-desc { color: var(--lib-ink-2); max-width: 44ch; margin: 0.3rem 0 0; line-height: 1.65; }
 .lib-cover-endings { color: var(--lib-muted); font-size: 0.85rem; letter-spacing: 0.08em; font-style: italic; margin: 0 0 0.7rem; }
+.lib-cover-shelf-link { margin-top: 0.9rem; color: var(--lib-muted); }
 
 /* the page-turn interstitial */
 .lib-spread--turning { display: flex; align-items: center; justify-content: center; }
