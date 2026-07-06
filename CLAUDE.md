@@ -41,11 +41,11 @@ Three Next.js route groups, each with its own layout and CSS:
 
 | Group | Path | Purpose |
 |-------|------|---------|
-| `(reader)` | `/story/[id]` | Book-style CYOA reader — TraverseStories |
+| `(library)` | `/` (Atrium), `/hall/[genre]`, `/story/[id]` | The Grand Library + book-style CYOA reader — TraverseStories |
 | `(traverse-training)` | `/scenario/[id]` | L&D training scenario player — TraverseTraining |
 | `(authoring)` | `/experience/[id]` | Experience editor — TraverseStudio |
 
-The story page (`app/(reader)/story/[id]/page.tsx`) checks `experience.renderingTheme` and redirects to `/scenario/[id]` if the theme is `"training"`.
+The story page (`app/(library)/story/[id]/page.tsx`) checks `experience.renderingTheme` and redirects to `/scenario/[id]` if the theme is `"training"`. Library listings (Atrium, halls, `/api/v1/stories`) come from the single-source query in `lib/library/stories.ts`, which excludes training experiences (`status: "published"`, `type: "cyoa_story"`, `NOT renderingTheme: "training"`).
 
 ### The Engine
 
