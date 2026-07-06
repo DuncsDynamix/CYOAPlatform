@@ -31,7 +31,7 @@ export function SheetPremise({
             commit({ ...contextPack, world: { ...contextPack.world, description: e.target.value } })
           }
         />
-        <p className="lib-field-hint">Setting, era, place — as much or as little as you like.</p>
+        <p className="lib-field-hint">Setting, era, place. As much or as little as you like.</p>
       </div>
 
       <div className="lib-field">
@@ -41,7 +41,7 @@ export function SheetPremise({
           value={contextPack.world.rules}
           onChange={(e) => commit({ ...contextPack, world: { ...contextPack.world, rules: e.target.value } })}
         />
-        <p className="lib-field-hint">Magic systems, physics, taboos — things that never bend.</p>
+        <p className="lib-field-hint">Magic systems, physics, taboos. The things that never bend.</p>
       </div>
 
       <div className="lib-field">
@@ -53,7 +53,7 @@ export function SheetPremise({
             commit({ ...contextPack, world: { ...contextPack.world, atmosphere: e.target.value } })
           }
         />
-        <p className="lib-field-hint">Mood, sensory detail — the air in the room.</p>
+        <p className="lib-field-hint">Mood and sensory detail. The air in the room.</p>
       </div>
 
       <div className="lib-field">
@@ -87,7 +87,7 @@ export function SheetPremise({
           value={contextPack.style.tone}
           onChange={(e) => commit({ ...contextPack, style: { ...contextPack.style, tone: e.target.value } })}
         />
-        <p className="lib-field-hint">Wry, solemn, breathless, plain — the voice of the telling.</p>
+        <p className="lib-field-hint">Wry, solemn, breathless, plain. The voice of the telling.</p>
       </div>
 
       <div className="lib-field">

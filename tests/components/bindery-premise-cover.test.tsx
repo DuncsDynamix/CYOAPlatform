@@ -74,7 +74,7 @@ describe("Sheet 2 / Sheet 3 jargon", () => {
     const { container: premiseContainer } = render(
       <SheetPremise contextPack={FULL_PACK} onChange={vi.fn()} />
     )
-    expect(premiseContainer.textContent).not.toMatch(/FIXED|GENERATED|JSON|contextPack/)
+    expect(premiseContainer.textContent).not.toMatch(/FIXED|GENERATED|JSON|contextPack|—/)
 
     const { container: coverContainer } = render(
       <SheetCover
@@ -86,6 +86,6 @@ describe("Sheet 2 / Sheet 3 jargon", () => {
         onUpload={vi.fn()}
       />
     )
-    expect(coverContainer.textContent).not.toMatch(/FIXED|GENERATED|JSON|contextPack/)
+    expect(coverContainer.textContent).not.toMatch(/FIXED|GENERATED|JSON|contextPack|—/)
   })
 })
