@@ -4,18 +4,18 @@ import type { NextRequest } from "next/server"
 import { db } from "@/lib/db/prisma"
 import { BookView } from "@/components/reader/BookView"
 import { getAllNodes } from "@/lib/engine/executor"
-import { requireAuth, canAccessExperience } from "@/lib/auth"
+import { requireAuth } from "@/lib/auth"
+import { canViewStory } from "@/lib/library/story-access"
 import type { Experience } from "@/types/experience"
 
-// requireAuth() is only ever called from the non-published branch below —
-// published rows (the overwhelming majority of traffic here) never touch
-// auth at all. /story is a PUBLIC path, so middleware's Supabase cookie
-// refresh never runs on it; calling getUser() here could inline-refresh a
-// near-expiry session and silently drop the rotated token (requireAuth's
-// setAll is a no-op — see the same concern noted in app/(library)/page.tsx).
-// For a draft/preview row the viewer is, by definition, the author mid-
-// authoring with a freshly minted session, so that risk doesn't meaningfully
-// apply here. Same cookie-shim approach as app/(library)/bindery/page.tsx.
+// requireAuth() is only ever called from the non-published branch below.
+// Published rows are public — auth could not change the outcome, so the page
+// skips the auth work (Supabase getUser, DB user sync) entirely on that
+// path. Draft/preview viewers are by definition active authors or their org
+// editors checking their own work, so paying the auth cost there is both
+// necessary and cheap. Middleware DOES run its session-cookie refresh on
+// /story (the path is matched, just not gated), so the cookies read here are
+// fresh. Same cookie-shim approach as app/(library)/bindery/page.tsx.
 async function getStoryViewer() {
   const cookieStore = await cookies()
   const reqShim = { cookies: { getAll: () => cookieStore.getAll() } } as unknown as NextRequest
@@ -54,9 +54,11 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
 
   // A draft or preview row is only for the author or their org editors —
   // published rows are public and skip this branch (and auth) entirely.
+  // canViewStory, not canAccessExperience: the shared helper's non-org
+  // preview-is-public carve-out would leak preview rows to anonymous readers.
   if (experience.status !== "published") {
     const viewer = await getStoryViewer()
-    if (!(await canAccessExperience(viewer, experience))) {
+    if (!canViewStory(viewer, experience)) {
       notFound()
     }
   }
