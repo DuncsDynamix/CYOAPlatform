@@ -8,6 +8,7 @@ import { Drawer, type DraftListItem } from "./Drawer"
 import { SheetTitle, type SheetTitleFields } from "./SheetTitle"
 import { SheetPremise } from "./SheetPremise"
 import { SheetCover } from "./SheetCover"
+import { SheetPages } from "./SheetPages"
 
 export interface BinderyDraft {
   id: string
@@ -83,6 +84,7 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
 
   const [contextPack, setContextPack] = useState<ExperienceContextPack>(DEFAULT_CONTEXT_PACK)
   const [shape, setShape] = useState<unknown>({})
+  const [segments, setSegments] = useState<unknown>([])
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null)
   const coverVariant = getCoverVariant(shape)
 
@@ -110,6 +112,7 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
     setDescription("")
     setContextPack(DEFAULT_CONTEXT_PACK)
     setShape({})
+    setSegments([])
     setCoverImageUrl(null)
     setSaveStatus("saved")
     setSheetIndex(0)
@@ -126,6 +129,7 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
     setDescription(data.description ?? "")
     setContextPack(mergeContextPack(data.contextPack))
     setShape(data.shape ?? {})
+    setSegments(data.segments ?? [])
     setCoverImageUrl(data.coverImageUrl ?? null)
     setSaveStatus("saved")
     setSheetIndex(0)
@@ -239,6 +243,15 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
     savePatch({ coverImageUrl: data.url })
   }
 
+  // SheetPages commits structural changes (a fresh outline laid out into
+  // segments) as discrete actions rather than a typing stream, so this
+  // patches straight through — no debounce, unlike handleContextPackChange.
+  function handlePagesChange(fields: Partial<BinderyDraft>) {
+    if (fields.segments !== undefined) setSegments(fields.segments)
+    if (fields.shape !== undefined) setShape(fields.shape)
+    savePatch(fields)
+  }
+
   function handleFieldsChange(fields: SheetTitleFields) {
     const merged: SheetFields = {
       title: fields.title ?? title,
@@ -301,6 +314,14 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
                   coverImageUrl={coverImageUrl}
                   onShuffle={handleShuffle}
                   onUpload={handleCoverUpload}
+                />
+              )}
+
+              {sheetIndex === 3 && experience && (
+                <SheetPages
+                  draft={{ ...experience, title, genre, description, contextPack, shape, segments, coverImageUrl }}
+                  pack={pack}
+                  onChange={handlePagesChange}
                 />
               )}
             </>

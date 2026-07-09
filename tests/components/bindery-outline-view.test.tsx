@@ -1,0 +1,130 @@
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { SheetPages } from "@/components/library/bindery/SheetPages"
+import { getBinderyPack } from "@/lib/library/bindery-packs"
+import type { BookOutline } from "@/lib/library/bindery"
+import type { Segment } from "@/types/experience"
+
+const pack = getBinderyPack("cyoa_story")
+
+const OUTLINE_FIXTURE: BookOutline = {
+  chapters: [
+    { title: "The Dig", arc: "The crown is found", approxPages: 4, choiceMoments: 1, convergesInto: null },
+    { title: "The Claim", arc: "Two paths to the vault", approxPages: 5, choiceMoments: 2, convergesInto: 2 },
+    { title: "The Vault", arc: "Endings", approxPages: 4, choiceMoments: 1, convergesInto: null },
+  ],
+  endpointCount: 2,
+  depthMin: 5,
+  depthMax: 9,
+}
+
+function jsonResponse(body: unknown, status = 200) {
+  return Promise.resolve({ ok: status < 400, status, json: () => Promise.resolve(body) } as Response)
+}
+
+function draftWithSegments(segments: Segment[]) {
+  return {
+    id: "exp-1",
+    title: "The Hollow Crown",
+    genre: "fantasy",
+    description: null,
+    contextPack: {},
+    shape: { totalDepthMin: 5, totalDepthMax: 9, endpointCount: 2 },
+    segments,
+    coverImageUrl: null,
+  }
+}
+
+beforeEach(() => {
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
+
+describe("SheetPages: template picker -> outline draft", () => {
+  it("clicking a template then Draft the outline fetches the endpoint and shows three editable chapter rows", async () => {
+    const fetchMock = vi.fn(() => jsonResponse({ outline: OUTLINE_FIXTURE }))
+    vi.stubGlobal("fetch", fetchMock)
+    const onChange = vi.fn()
+
+    render(<SheetPages draft={draftWithSegments([])} pack={pack} onChange={onChange} />)
+
+    // Template cards render from the pack.
+    for (const template of pack.templates) {
+      expect(screen.getByRole("button", { name: new RegExp(template.label, "i") })).toBeInTheDocument()
+    }
+
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(pack.templates[0].label, "i") }))
+    fireEvent.click(screen.getByRole("button", { name: /draft the outline/i }))
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/bindery/outline",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ experienceId: "exp-1", templateId: pack.templates[0].id }),
+        })
+      )
+    )
+
+    expect(await screen.findByDisplayValue("The Dig")).toBeInTheDocument()
+    expect(screen.getByDisplayValue("The Claim")).toBeInTheDocument()
+    expect(screen.getByDisplayValue("The Vault")).toBeInTheDocument()
+
+    // No engine jargon or em-dashes leak into the rendered copy.
+    expect(document.body.textContent).not.toMatch(/FIXED|GENERATED|JSON|—/)
+  })
+})
+
+describe("SheetPages: lay out the chapters", () => {
+  it("applies the drafted outline as segments via onChange", async () => {
+    const fetchMock = vi.fn(() => jsonResponse({ outline: OUTLINE_FIXTURE }))
+    vi.stubGlobal("fetch", fetchMock)
+    const onChange = vi.fn()
+
+    render(<SheetPages draft={draftWithSegments([])} pack={pack} onChange={onChange} />)
+
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(pack.templates[0].label, "i") }))
+    fireEvent.click(screen.getByRole("button", { name: /draft the outline/i }))
+    await screen.findByDisplayValue("The Dig")
+
+    fireEvent.click(screen.getByRole("button", { name: /lay out the chapters/i }))
+
+    expect(onChange).toHaveBeenCalledTimes(1)
+    const patch = onChange.mock.calls[0][0] as { segments: Segment[]; shape: Record<string, unknown> }
+    expect(patch.segments).toHaveLength(3)
+    expect(patch.segments.map((s) => s.label)).toEqual(["The Dig", "The Claim", "The Vault"])
+    expect(patch.shape).toMatchObject({ totalDepthMin: 5, totalDepthMax: 9, endpointCount: 2 })
+  })
+})
+
+describe("SheetPages: chapter rail", () => {
+  it("lists segments in order and switches the current chapter on click", () => {
+    const segments: Segment[] = [
+      { id: "s-b", label: "The Claim", order: 1, nodes: [] },
+      { id: "s-a", label: "The Dig", order: 0, nodes: [{ id: "n1", type: "FIXED", label: "p", content: "x", mandatory: false, nextNodeId: "" } as never] },
+      { id: "s-c", label: "The Vault", order: 2, nodes: [] },
+    ]
+
+    render(<SheetPages draft={draftWithSegments(segments)} pack={pack} onChange={vi.fn()} />)
+
+    const rail = document.querySelector(".lib-chapter-rail")
+    expect(rail).not.toBeNull()
+    const buttons = rail!.querySelectorAll("button")
+    expect(Array.from(buttons).map((b) => b.textContent)).toEqual([
+      expect.stringMatching(/The Dig/),
+      expect.stringMatching(/The Claim/),
+      expect.stringMatching(/The Vault/),
+    ])
+
+    // First chapter (order 0) is current by default.
+    expect(screen.getByRole("button", { name: /The Dig/i })).toHaveAttribute("aria-current", "true")
+    // A chapter with zero nodes is flagged as rough.
+    expect(screen.getByRole("button", { name: /The Claim/i }).textContent).toMatch(/rough/i)
+
+    fireEvent.click(screen.getByRole("button", { name: /The Vault/i }))
+    expect(screen.getByRole("button", { name: /The Vault/i })).toHaveAttribute("aria-current", "true")
+    expect(screen.getByRole("button", { name: /The Dig/i })).not.toHaveAttribute("aria-current", "true")
+
+    expect(screen.getByText(/this chapter is unbound/i)).toBeInTheDocument()
+  })
+})
