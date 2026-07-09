@@ -6,6 +6,7 @@ import type { BinderyPack } from "@/lib/library/bindery-packs"
 import type { Node, Segment } from "@/types/experience"
 import type { BinderyDraft } from "./Desk"
 import { ChapterPlan } from "./ChapterPlan"
+import { BindingMap } from "./BindingMap"
 
 const MODEL_FAILURE_COPY = "The assistant lost the thread. Try again."
 
@@ -158,6 +159,15 @@ export function SheetPages({
     onChange({ segments: next })
   }
 
+  // Binding map leaves jump into the matching row of the chapter plan below —
+  // scroll it into view and move focus there so keyboard users land on it too.
+  function handleJumpToPlanRow(nodeId: string) {
+    const row = document.getElementById(`plan-row-${nodeId}`)
+    if (!row) return
+    row.scrollIntoView({ behavior: "smooth", block: "center" })
+    row.focus()
+  }
+
   async function handleDraftChapter(segment: Segment, chapterIndex: number) {
     setPlanError(null)
     setPlanLoading(true)
@@ -290,29 +300,37 @@ export function SheetPages({
     return (
       <div className="lib-sheet lib-sheet-pages">
         <div className="lib-pages-grid">
-          <ul className="lib-chapter-rail">
-            {sortedSegments.map((segment) => {
-              const pageCount = segment.nodes.length
-              const isRough = pageCount === 0
-              return (
-                <li key={segment.id}>
-                  <button
-                    type="button"
-                    aria-current={activeSegment.id === segment.id ? "true" : undefined}
-                    onClick={() => setActiveSegmentId(segment.id)}
-                  >
-                    {segment.label}
-                    <span className="lib-field-hint">
-                      {" "}
-                      {pageCount} {pack.vocabulary.page}
-                      {pageCount === 1 ? "" : "s"}
-                      {isRough ? " · rough" : ""}
-                    </span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
+          <div>
+            <ul className="lib-chapter-rail">
+              {sortedSegments.map((segment) => {
+                const pageCount = segment.nodes.length
+                const isRough = pageCount === 0
+                return (
+                  <li key={segment.id}>
+                    <button
+                      type="button"
+                      aria-current={activeSegment.id === segment.id ? "true" : undefined}
+                      onClick={() => setActiveSegmentId(segment.id)}
+                    >
+                      {segment.label}
+                      <span className="lib-field-hint">
+                        {" "}
+                        {pageCount} {pack.vocabulary.page}
+                        {pageCount === 1 ? "" : "s"}
+                        {isRough ? " · rough" : ""}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+
+            {activeSegment.nodes.length > 0 && (
+              <div className="lib-binding-map">
+                <BindingMap segment={activeSegment} allNodes={allNodes} onJump={handleJumpToPlanRow} />
+              </div>
+            )}
+          </div>
 
           <div>
             <h2>{activeSegment.label}</h2>

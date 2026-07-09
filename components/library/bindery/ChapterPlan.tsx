@@ -84,6 +84,8 @@ export function ChapterPlan({
         <div key={row.node.id}>
           {row.isRejoin && <p className="lib-plan-rejoin">paths rejoin here</p>}
           <div
+            id={`plan-row-${row.node.id}`}
+            tabIndex={-1}
             className={
               row.kind === "choice"
                 ? "lib-plan-row lib-plan-row--choice"
