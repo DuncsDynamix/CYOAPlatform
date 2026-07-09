@@ -50,6 +50,19 @@ describe("BindingMap", () => {
     expect(onJump).toHaveBeenCalledTimes(2)
   })
 
+  it("calls onJump on keyboard Space, matching the button role convention", () => {
+    const nodes: Node[] = [
+      page("n1", "The Cellar Door", "n2"),
+      page("n2", "A Damp Corridor", ""),
+    ]
+    const onJump = vi.fn()
+    render(<BindingMap segment={segmentOf(nodes)} allNodes={nodes} onJump={onJump} />)
+
+    fireEvent.keyDown(screen.getByRole("button", { name: "The Cellar Door" }), { key: " " })
+    expect(onJump).toHaveBeenCalledWith("n1")
+    expect(onJump).toHaveBeenCalledTimes(1)
+  })
+
   it("renders more paths for a forking chapter than a linear chapter of equal length", () => {
     const linearNodes: Node[] = [
       page("l1", "Opening the Gate", "l2"),

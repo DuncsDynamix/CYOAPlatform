@@ -90,8 +90,10 @@ export function BindingMap({
   const width = PAD * 2 + LEAF_WIDTH + EXIT_STUB
   const height = PAD * 2 + (rows.length - 1) * ROW_HEIGHT + LEAF_HEIGHT
 
+  // role="button" convention: Enter and Space both activate. preventDefault
+  // stops Space from scrolling the page.
   function handleKeyDown(e: KeyboardEvent<SVGGElement>, nodeId: string) {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" || e.key === " ") {
       e.preventDefault()
       onJump(nodeId)
     }

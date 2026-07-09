@@ -339,3 +339,12 @@
 .lib-template-card strong { display: block; font-family: 'Playfair Display', serif; font-size: 1.05rem; margin-bottom: 0.3rem; }
 .lib-template-card span { font-size: 0.88rem; font-style: italic; color: var(--lib-ink-2); }
 @media (prefers-reduced-motion: reduce) { .lib-template-card { transition: none; } }
+
+/* ── Bindery: binding map leaves and threads ── */
+.lib-binding-leaf { cursor: pointer; outline: none; }
+.lib-binding-leaf rect { fill: var(--lib-paper-dark); stroke: var(--lib-gilt); stroke-width: 1; }
+.lib-binding-leaf text { fill: var(--lib-ink); font-family: 'Lora', serif; font-size: 9px; }
+.lib-binding-leaf:hover rect, .lib-binding-leaf:focus-visible rect { stroke: var(--lib-accent); stroke-width: 1.5; }
+.lib-binding-leaf--rejoin .lib-binding-leaf-outline { fill: none; stroke: var(--lib-gilt); stroke-width: 1; }
+.lib-binding-path { fill: none; stroke: var(--lib-accent-dark); stroke-width: 1.2; }
+.lib-binding-path--exit { stroke: var(--lib-gilt); stroke-opacity: 0.45; stroke-dasharray: 3 3; }
