@@ -10,6 +10,20 @@ import { BindingMap } from "./BindingMap"
 
 const MODEL_FAILURE_COPY = "The assistant lost the thread. Try again."
 
+// The bindery API routes only write in-fiction copy into `data.error` for a
+// 502 (the model call itself failing — see MODEL_FAILURE in the route
+// handlers). Every other failure (400 validation, 401, 500, ...) carries a
+// raw server/validation string like "chapterIndex is out of range", which
+// would break the desk's register if shown verbatim — fall back to the
+// in-fiction copy for those instead.
+function errorCopy(status: number, data: unknown): string {
+  if (status === 502) {
+    const serverError = (data as { error?: string })?.error
+    if (serverError) return serverError
+  }
+  return MODEL_FAILURE_COPY
+}
+
 function getSegments(draft: BinderyDraft): Segment[] {
   return Array.isArray(draft.segments) ? (draft.segments as Segment[]) : []
 }
@@ -111,7 +125,7 @@ export function SheetPages({
       const data = await res.json()
       if (abortRef.current !== controller) return
       if (!res.ok) {
-        setError((data as { error?: string })?.error ?? MODEL_FAILURE_COPY)
+        setError(errorCopy(res.status, data))
         return
       }
       setOutlineDraft((data as { outline: BookOutline }).outline)
@@ -216,7 +230,7 @@ export function SheetPages({
       const data = await res.json()
       if (chapterAbortRef.current !== controller) return
       if (!res.ok) {
-        setPlanError((data as { error?: string })?.error ?? MODEL_FAILURE_COPY)
+        setPlanError(errorCopy(res.status, data))
         return
       }
       updateSegmentNodes(segment.id, (data as { nodes: Node[] }).nodes)
@@ -244,7 +258,7 @@ export function SheetPages({
       const data = await res.json()
       if (pageAbortRef.current !== controller) return
       if (!res.ok) {
-        setPlanError((data as { error?: string })?.error ?? MODEL_FAILURE_COPY)
+        setPlanError(errorCopy(res.status, data))
         return
       }
       const [drafted] = (data as { nodes: Node[] }).nodes ?? []
@@ -270,7 +284,7 @@ export function SheetPages({
       body: JSON.stringify({ experienceId: draft.id, chapterIndex, mode: "sample", nodeId }),
     })
     const data = await res.json()
-    if (!res.ok) throw new Error((data as { error?: string })?.error ?? MODEL_FAILURE_COPY)
+    if (!res.ok) throw new Error(errorCopy(res.status, data))
     return (data as { sample: string }).sample
   }
 

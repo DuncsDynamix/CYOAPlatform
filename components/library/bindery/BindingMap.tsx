@@ -100,7 +100,7 @@ export function BindingMap({
   }
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`Binding map for ${segment.label}`}>
+    <svg viewBox={`0 0 ${width} ${height}`} role="group" aria-label={`Binding map for ${segment.label}`}>
       {paths}
       {rows.map((row, i) => {
         const top = leafTopY(i)

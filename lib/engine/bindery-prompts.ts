@@ -17,6 +17,18 @@ const REF_CONVENTIONS =
 
 const JSON_ONLY_INSTRUCTION = "Reply with the JSON object only. No prose, no code fences."
 
+// contextPack.protagonist.perspective is typically "second" ("you") or
+// "first" ("I"), but authoring UI free text and older drafts can leave it
+// blank or spell it out ("third person") — normalize to the sentence the
+// drafting prompts need, defaulting to second person (the platform's default
+// voice, see DEFAULT_CONTEXT_PACK in Desk.tsx) when the field is empty.
+function perspectiveLine(perspective: string): string {
+  const p = perspective.trim().toLowerCase()
+  if (p.startsWith("first")) return "PERSPECTIVE: told in the first person"
+  if (p.startsWith("third")) return "PERSPECTIVE: told in the third person"
+  return "PERSPECTIVE: told in the second person"
+}
+
 function contextSummary(contextPack: ExperienceContextPack): string {
   return `THE WORLD:
 ${contextPack.world.description}
@@ -24,6 +36,7 @@ ${contextPack.world.description}
 THE PROTAGONIST:
 Role: ${contextPack.protagonist.role}
 Goal: ${contextPack.protagonist.goal}
+${perspectiveLine(contextPack.protagonist.perspective)}
 
 STYLE:
 Tone: ${contextPack.style.tone}

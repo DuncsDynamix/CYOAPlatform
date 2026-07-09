@@ -34,6 +34,14 @@ describe("BindingMap", () => {
     expect(screen.getAllByRole("button")).toHaveLength(2)
   })
 
+  it("the SVG is a group, not an img, so its button leaves stay in the accessibility tree", () => {
+    const nodes: Node[] = [page("n1", "The Cellar Door", "")]
+    render(<BindingMap segment={segmentOf(nodes)} allNodes={nodes} onJump={vi.fn()} />)
+
+    expect(screen.getByRole("group", { name: /binding map for the dig/i })).toBeInTheDocument()
+    expect(screen.queryByRole("img")).not.toBeInTheDocument()
+  })
+
   it("calls onJump with the node id on click and on keyboard Enter", () => {
     const nodes: Node[] = [
       page("n1", "The Cellar Door", "n2"),

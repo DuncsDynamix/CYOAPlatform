@@ -121,7 +121,21 @@ describe("Desk", () => {
       resolveCreate!({
         ok: true,
         status: 201,
-        json: () => Promise.resolve({ id: "exp-9", title: "First", genre: null, description: null }),
+        json: () =>
+          Promise.resolve({
+            id: "exp-9",
+            title: "First",
+            genre: null,
+            description: null,
+            // A populated server default shape, as the create route actually
+            // returns (see app/api/v1/experience/route.ts's defaultShape) —
+            // exercises that Desk adopts it into state rather than leaving
+            // local `shape` at its initial `{}`.
+            shape: { totalDepthMin: 6, totalDepthMax: 12, endpointCount: 3, pacingModel: "narrative_arc" },
+            contextPack: {},
+            segments: [],
+            coverImageUrl: null,
+          }),
       } as Response)
       await vi.advanceTimersByTimeAsync(4000)
     })
@@ -131,5 +145,25 @@ describe("Desk", () => {
     const putCalls = fetchMock.mock.calls.filter((c) => (c[1] as RequestInit | undefined)?.method === "PUT")
     expect(putCalls.length).toBeGreaterThanOrEqual(1)
     expect(String(putCalls[0][0])).toBe("/api/v1/experience/exp-9")
+
+    // Sheet 3 ("the cover") is now enabled since `experience` is set.
+    // Shuffling immediately must PUT a shape that still carries the server's
+    // real defaults (pacingModel here) merged with the new coverVariant —
+    // not `{ coverVariant }` alone, which would clobber them.
+    fireEvent.click(screen.getByRole("button", { name: /the cover/i }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /shuffle the binding/i }))
+      await vi.advanceTimersByTimeAsync(0)
+    })
+
+    const shuffleCall = fetchMock.mock.calls.find(
+      (c) =>
+        (c[1] as RequestInit | undefined)?.method === "PUT" &&
+        String((c[1] as RequestInit).body).includes("coverVariant")
+    )
+    expect(shuffleCall).toBeDefined()
+    const shuffleBody = JSON.parse(String((shuffleCall![1] as RequestInit).body))
+    expect(shuffleBody.shape.pacingModel).toBe("narrative_arc")
+    expect(shuffleBody.shape.coverVariant).toBe(1)
   })
 })

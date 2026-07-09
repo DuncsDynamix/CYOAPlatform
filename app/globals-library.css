@@ -356,3 +356,5 @@
 .lib-bound-cover { max-width: 320px; margin: 0 auto 1.8rem; }
 .lib-bound-walk { display: inline-block; font-family: 'Playfair Display', serif; font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--lib-accent-dark); border: 1px solid var(--lib-gilt); border-radius: 4px; padding: 0.7rem 1.3rem; text-decoration: none; }
 .lib-bound-walk:hover, .lib-bound-walk:focus-visible { background: var(--lib-paper-dark); }
+
+.lib-cover-preview { max-width: 320px; margin: 0 auto 1.4rem; }

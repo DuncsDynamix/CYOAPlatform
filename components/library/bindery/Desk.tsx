@@ -179,6 +179,20 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
         }
         experienceRef.current = created
         setExperience(created)
+        // Sheets 2+ are disabled until an experience exists, so nothing local
+        // could have diverged from the server's defaults yet — adopt them
+        // now. Without this, `shape` stays the local `{}` it started as, and
+        // an immediate shuffle on Sheet 3 would PUT `{ coverVariant }` alone,
+        // clobbering the real default shape the server just wrote (depth,
+        // endpoints, pacing model, etc). Local state still wins where it's
+        // already been set (e.g. a shuffle that raced the create).
+        setShape((prev: unknown) => ({
+          ...(created.shape && typeof created.shape === "object" ? (created.shape as Record<string, unknown>) : {}),
+          ...(prev && typeof prev === "object" ? (prev as Record<string, unknown>) : {}),
+        }))
+        setContextPack((prev) => mergeContextPack({ ...((created.contextPack as object) ?? {}), ...prev }))
+        setSegments((prev: unknown) => (Array.isArray(prev) && prev.length > 0 ? prev : created.segments ?? []))
+        setCoverImageUrl((prev) => prev ?? created.coverImageUrl ?? null)
       } else {
         const res = await fetch(`/api/v1/experience/${current.id}`, {
           method: "PUT",

@@ -36,4 +36,15 @@ describe("bindery prompts", () => {
     expect(p.user).toMatch(/EXIT:/)
     expect(p.user).toMatch(/END:/)
   })
+
+  it("chapter prompts carry the protagonist's perspective so drafted prose matches the book's voice", () => {
+    const p = buildChapterPrompt({ pack, outline, chapterIndex: 0, title: "T", contextPack: ctx, existingChapterTitles: ["The Dig"] })
+    expect(p.user).toMatch(/PERSPECTIVE: told in the second person/)
+  })
+
+  it("defaults to second person when perspective is blank", () => {
+    const blankCtx = { ...ctx, protagonist: { ...ctx.protagonist, perspective: "" } }
+    const p = buildChapterPrompt({ pack, outline, chapterIndex: 0, title: "T", contextPack: blankCtx, existingChapterTitles: ["The Dig"] })
+    expect(p.user).toMatch(/PERSPECTIVE: told in the second person/)
+  })
 })
