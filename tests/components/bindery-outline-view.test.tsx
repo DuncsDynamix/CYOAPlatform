@@ -29,7 +29,7 @@ function draftWithSegments(segments: Segment[]) {
     genre: "fantasy",
     description: null,
     contextPack: {},
-    shape: { totalDepthMin: 5, totalDepthMax: 9, endpointCount: 2 },
+    shape: { totalDepthMin: 5, totalDepthMax: 9, endpointCount: 2, coverVariant: 5 },
     segments,
     coverImageUrl: null,
   }
@@ -93,7 +93,9 @@ describe("SheetPages: lay out the chapters", () => {
     const patch = onChange.mock.calls[0][0] as { segments: Segment[]; shape: Record<string, unknown> }
     expect(patch.segments).toHaveLength(3)
     expect(patch.segments.map((s) => s.label)).toEqual(["The Dig", "The Claim", "The Vault"])
-    expect(patch.shape).toMatchObject({ totalDepthMin: 5, totalDepthMax: 9, endpointCount: 2 })
+    // The patch must preserve fields already on shape (e.g. coverVariant) alongside the
+    // outline-derived depth/endpoint fields — a naive rebuild would clobber them.
+    expect(patch.shape).toMatchObject({ totalDepthMin: 5, totalDepthMax: 9, endpointCount: 2, coverVariant: 5 })
   })
 })
 

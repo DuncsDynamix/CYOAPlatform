@@ -331,3 +331,11 @@
 .lib-stitches a { color: var(--lib-accent-dark); }
 .lib-sample { border-left: 3px solid var(--lib-gilt); background: var(--lib-paper-dark); font-style: italic; padding: 0.8rem 1rem; margin-top: 0.8rem; }
 @media (max-width: 860px) { .lib-pages-grid { grid-template-columns: 1fr; } }
+
+/* ── Bindery: shape-template cards ── */
+.lib-template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; list-style: none; margin: 0 0 1.6rem; padding: 0; }
+.lib-template-card { text-align: left; font-family: 'Lora', serif; background: var(--lib-paper-dark); border: 1px solid var(--lib-gilt); border-radius: 6px; color: var(--lib-ink); padding: 1.1rem 1.2rem; cursor: pointer; transition: transform 160ms ease, box-shadow 160ms ease; }
+.lib-template-card:hover, .lib-template-card:focus-visible { transform: translateY(-2px); box-shadow: 0 8px 18px var(--lib-shadow); outline: 2px solid var(--lib-accent); outline-offset: 2px; }
+.lib-template-card strong { display: block; font-family: 'Playfair Display', serif; font-size: 1.05rem; margin-bottom: 0.3rem; }
+.lib-template-card span { font-size: 0.88rem; font-style: italic; color: var(--lib-ink-2); }
+@media (prefers-reduced-motion: reduce) { .lib-template-card { transition: none; } }

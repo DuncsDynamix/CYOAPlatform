@@ -75,6 +75,7 @@ export function SheetPages({
         signal: controller.signal,
       })
       const data = await res.json()
+      if (abortRef.current !== controller) return
       if (!res.ok) {
         setError((data as { error?: string })?.error ?? MODEL_FAILURE_COPY)
         return
@@ -82,9 +83,10 @@ export function SheetPages({
       setOutlineDraft((data as { outline: BookOutline }).outline)
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return
+      if (abortRef.current !== controller) return
       setError(MODEL_FAILURE_COPY)
     } finally {
-      setLoading(false)
+      if (abortRef.current === controller) setLoading(false)
     }
   }
 
@@ -209,7 +211,8 @@ export function SheetPages({
                     {segment.label}
                     <span className="lib-field-hint">
                       {" "}
-                      {pageCount} page{pageCount === 1 ? "" : "s"}
+                      {pageCount} {pack.vocabulary.page}
+                      {pageCount === 1 ? "" : "s"}
                       {isRough ? " · rough" : ""}
                     </span>
                   </button>
@@ -245,7 +248,7 @@ export function SheetPages({
               onClick={() => setSelectedTemplateId(template.id)}
             >
               <strong>{template.label}</strong>
-              <p>{template.blurb}</p>
+              <span>{template.blurb}</span>
             </button>
           ))}
         </div>
