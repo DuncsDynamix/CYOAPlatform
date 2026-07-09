@@ -188,21 +188,16 @@ type ProposedNode = z.infer<typeof ProposedNodeSchema>
 /**
  * Resolves a proposed node's symbolic `next` ref:
  *  - a label matching another proposed node in this chapter -> its materialised id
- *  - "EXIT:<i>" -> unresolved (author wires cross-chapter); the *carrier's* own
- *    label (the option, for choices; the node, for pages) gets " → chapter <i+1>"
- *    appended so the loose stitch reads human in the authoring UI
- *  - "END:<n>" -> unresolved, no label suffix (an in-chapter ending the author
- *    will point at directly once it exists)
+ *  - "EXIT:<i>" -> unresolved (author wires cross-chapter later, via "Turn to…")
+ *  - "END:<n>" -> unresolved (an in-chapter ending the author will point at
+ *    directly once it exists)
+ * Neither symbolic form appends anything to the carrier's label — the "Turn
+ * to…" select's "Not yet chosen" state already communicates an unwired exit,
+ * and readers would otherwise see the raw ref leak into a choice's copy.
  */
-function resolveRef(ref: string, labelToId: Map<string, string>): { targetId: string; suffix: string } {
-  const exitMatch = /^EXIT:(\d+)$/.exec(ref)
-  if (exitMatch) {
-    return { targetId: "", suffix: ` → chapter ${Number(exitMatch[1]) + 1}` }
-  }
-  if (/^END:\d+$/.test(ref)) {
-    return { targetId: "", suffix: "" }
-  }
-  return { targetId: labelToId.get(ref) ?? "", suffix: "" }
+function resolveRef(ref: string, labelToId: Map<string, string>): { targetId: string } {
+  if (SYMBOLIC_REF.test(ref)) return { targetId: "" }
+  return { targetId: labelToId.get(ref) ?? "" }
 }
 
 /** Materialises a chapter proposal's symbolic refs into real node ids and wiring. */
@@ -222,12 +217,12 @@ export function proposalToNodes(proposal: ChapterProposal): Node[] {
 
     switch (proposed.kind) {
       case "page": {
-        const { targetId, suffix } = resolveRef(proposed.next, ids)
+        const { targetId } = resolveRef(proposed.next, ids)
         if (proposed.mode === "written") {
           const node: FixedNode = {
             id,
             type: "FIXED",
-            label: proposed.label + suffix,
+            label: proposed.label,
             content: proposed.text,
             mandatory: false,
             nextNodeId: targetId,
@@ -238,7 +233,7 @@ export function proposalToNodes(proposal: ChapterProposal): Node[] {
         const node: GeneratedNode = {
           id,
           type: "GENERATED",
-          label: proposed.label + suffix,
+          label: proposed.label,
           beatInstruction: proposed.text,
           constraints: { lengthMin, lengthMax, mustEndAt: "a moment of decision or motion", mustNotDo: [] },
           nextNodeId: targetId,
@@ -253,10 +248,10 @@ export function proposalToNodes(proposal: ChapterProposal): Node[] {
           responseType: "closed",
           prompt: proposed.prompt,
           options: proposed.options.map((opt) => {
-            const { targetId, suffix } = resolveRef(opt.next, ids)
+            const { targetId } = resolveRef(opt.next, ids)
             return {
               id: crypto.randomUUID(),
-              label: opt.label + suffix,
+              label: opt.label,
               nextNodeId: targetId,
               isLoadBearing: false,
             }
@@ -370,6 +365,8 @@ export interface LooseStitch {
   nodeId: string
   nodeLabel: string
   message: string
+  /** "blocking" (brokenLinks/deadEnds) hard-gates the bind button; "adrift" (unreachable) is a warning only. */
+  severity: "blocking" | "adrift"
 }
 
 /**
@@ -403,6 +400,7 @@ export function looseStitches(result: GraphValidationResult, allNodes: Node[]): 
       nodeId: issue.nodeId,
       nodeLabel: label,
       message: `a thread from '${label}' is not yet tied to a page`,
+      severity: "blocking",
     })
   }
 
@@ -413,6 +411,7 @@ export function looseStitches(result: GraphValidationResult, allNodes: Node[]): 
       nodeId,
       nodeLabel: label,
       message: `the thread from '${label}' leads nowhere yet`,
+      severity: "blocking",
     })
   }
 
@@ -422,6 +421,7 @@ export function looseStitches(result: GraphValidationResult, allNodes: Node[]): 
       nodeId,
       nodeLabel: label,
       message: `no path reaches '${label}'`,
+      severity: "adrift",
     })
   }
 

@@ -348,3 +348,11 @@
 .lib-binding-leaf--rejoin .lib-binding-leaf-outline { fill: none; stroke: var(--lib-gilt); stroke-width: 1; }
 .lib-binding-path { fill: none; stroke: var(--lib-accent-dark); stroke-width: 1.2; }
 .lib-binding-path--exit { stroke: var(--lib-gilt); stroke-opacity: 0.45; stroke-dasharray: 3 3; }
+
+/* ── Bindery: the bound book ── */
+.lib-bound { text-align: center; padding: 1rem 0 0.5rem; }
+.lib-bound-title { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--lib-ink); margin: 0 0 0.4rem; }
+.lib-bound-sub { font-style: italic; color: var(--lib-muted); margin: 0 0 1.6rem; }
+.lib-bound-cover { max-width: 320px; margin: 0 auto 1.8rem; }
+.lib-bound-walk { display: inline-block; font-family: 'Playfair Display', serif; font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--lib-accent-dark); border: 1px solid var(--lib-gilt); border-radius: 4px; padding: 0.7rem 1.3rem; text-decoration: none; }
+.lib-bound-walk:hover, .lib-bound-walk:focus-visible { background: var(--lib-paper-dark); }

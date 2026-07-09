@@ -135,4 +135,18 @@ describe("buildArcAwareness", () => {
     expect(result.arcPhase).toBe("opening")
     expect(result.depthPercentage).toBe(0)
   })
+
+  it("survives a Bindery-style shape missing loadBearingChoices/convergencePoints rather than throwing", () => {
+    // Mirrors the malformed shape SheetPages.handleLayOutChapters used to
+    // write: only the outline-derived fields, no structural fields at all.
+    const experience = createTestExperience({
+      shape: { totalDepthMin: 6, totalDepthMax: 12, endpointCount: 3 } as never,
+    })
+    expect(() =>
+      buildArcAwareness(mockGeneratedNode, createTestSessionWithChoices(2), experience)
+    ).not.toThrow()
+    const result = buildArcAwareness(mockGeneratedNode, createTestSessionWithChoices(2), experience)
+    expect(result.isApproachingLoadBearingChoice).toBe(false)
+    expect(result.isConvergencePoint).toBe(false)
+  })
 })

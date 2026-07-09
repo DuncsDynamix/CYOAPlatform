@@ -115,6 +115,11 @@ Produce a chapter proposal as a JSON object with this exact shape:
 
 Every node's "label" must be UNIQUE within this chapter.
 
+Labels are page headings a reader could see. Write them as plain words with
+spaces, capitalised like a book heading (for example "The Well at Dusk").
+NEVER use underscores, hyphens as word separators, or identifier-style names
+(for example "the_well" or "the-well" are wrong).
+
 ${REF_CONVENTIONS}
 
 ${JSON_ONLY_INSTRUCTION}`

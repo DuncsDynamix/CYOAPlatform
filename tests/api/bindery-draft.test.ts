@@ -177,6 +177,40 @@ describe("draftChapter", () => {
     // The choice option still resolves to the ending despite the stripping.
     expect(choice.options![0].nextNodeId).toBe(nodes[2].id)
   })
+
+  it("humanises identifier-style labels and their matching refs, keeping wiring intact", async () => {
+    const snakeCaseProposal = {
+      nodes: [
+        { kind: "page", mode: "told", label: "the_well", text: "Dust and old gold", next: "the-choice" },
+        {
+          kind: "choice",
+          label: "the-choice",
+          prompt: "Take it?",
+          options: [
+            { label: "Lift it free", next: "crowned" },
+            { label: "Leave it", next: "EXIT:2" },
+          ],
+        },
+        { kind: "ending", label: "crowned", closingLine: "It will not come off.", summaryInstruction: "Reflect on the claim" },
+      ],
+    }
+    mockMessagesCreate.mockResolvedValueOnce(textResponse(JSON.stringify(snakeCaseProposal)))
+
+    const experience = createTestExperience({ segments: testSegments })
+    const nodes = await draftChapter(experience, 0, "test-key")
+
+    expect(nodes).toHaveLength(3)
+    const page = nodes[0] as GeneratedNode
+    const choice = nodes[1] as ChoiceNode
+    const ending = nodes[2] as { label: string }
+    expect(page.label).toBe("The Well")
+    expect(choice.label).toBe("The Choice")
+    expect(ending.label).toBe("Crowned")
+    // Wiring survives: the humanised ref still resolves to the humanised label's id.
+    expect(page.nextNodeId).toBe(choice.id)
+    expect(choice.options![0].nextNodeId).toBe(nodes[2].id)
+    expect(choice.options![1].nextNodeId).toBe("") // EXIT:2 untouched by the transform
+  })
 })
 
 // ─── draftSinglePage: one page redrafted in place ───────────────────────────

@@ -158,11 +158,24 @@ export function SheetPages({
     if (!outlineDraft) return
     const existingSegments = getSegments(draft)
     const newSegments = applyOutline(outlineDraft, existingSegments)
+    const existingShape = getShapeRecord(draft)
+    // Every other authoring path (the generic node graph editor, seed
+    // scripts) writes a fully-populated ShapeDefinition. This is the one
+    // path that only ever set the outline-derived fields — leaving
+    // loadBearingChoices/convergencePoints undefined crashed the engine's
+    // arc calculation the instant a reader hit a GENERATED page. Merge in
+    // the structural defaults, preserving anything already set (e.g. a
+    // cover variant chosen on Sheet 3).
     const newShape = {
-      ...getShapeRecord(draft),
+      ...existingShape,
       totalDepthMin: outlineDraft.depthMin,
       totalDepthMax: outlineDraft.depthMax,
       endpointCount: outlineDraft.endpointCount,
+      loadBearingChoices: Array.isArray(existingShape.loadBearingChoices) ? existingShape.loadBearingChoices : [],
+      convergencePoints: Array.isArray(existingShape.convergencePoints) ? existingShape.convergencePoints : [],
+      mandatoryNodeIds: Array.isArray(existingShape.mandatoryNodeIds) ? existingShape.mandatoryNodeIds : [],
+      endpoints: Array.isArray(existingShape.endpoints) ? existingShape.endpoints : [],
+      pacingModel: existingShape.pacingModel ?? "narrative_arc",
     }
     onChange({ segments: newSegments, shape: newShape })
     setOutlineDraft(null)

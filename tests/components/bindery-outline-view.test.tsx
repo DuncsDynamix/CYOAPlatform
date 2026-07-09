@@ -95,7 +95,19 @@ describe("SheetPages: lay out the chapters", () => {
     expect(patch.segments.map((s) => s.label)).toEqual(["The Dig", "The Claim", "The Vault"])
     // The patch must preserve fields already on shape (e.g. coverVariant) alongside the
     // outline-derived depth/endpoint fields — a naive rebuild would clobber them.
-    expect(patch.shape).toMatchObject({ totalDepthMin: 5, totalDepthMax: 9, endpointCount: 2, coverVariant: 5 })
+    // It must also guarantee the structural fields every other authoring path
+    // supplies, or the reader-side arc calculation crashes on a GENERATED page.
+    expect(patch.shape).toMatchObject({
+      totalDepthMin: 5,
+      totalDepthMax: 9,
+      endpointCount: 2,
+      coverVariant: 5,
+      loadBearingChoices: [],
+      convergencePoints: [],
+      mandatoryNodeIds: [],
+      endpoints: [],
+      pacingModel: "narrative_arc",
+    })
   })
 })
 

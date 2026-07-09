@@ -110,6 +110,54 @@ export async function draftOutline(
 
 type ChapterProposal = z.infer<typeof ChapterProposalSchema>
 
+const SYMBOLIC_REF = /^(EXIT:\d+|END:\d+)$/
+
+/**
+ * Turns an identifier-style string ("the_well", "the-well") into a page
+ * heading a reader could see ("The Well"). Belt-and-braces alongside the
+ * prompt instruction in bindery-prompts.ts, for whenever the model ignores
+ * it. Underscores/hyphens become spaces, whitespace collapses, and the
+ * first word plus any word of 4+ letters is capitalised.
+ */
+function humaniseLabel(label: string): string {
+  const spaced = label.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim()
+  if (!spaced) return spaced
+  return spaced
+    .split(" ")
+    .map((word, i) => (i === 0 || word.length >= 4 ? word.charAt(0).toUpperCase() + word.slice(1) : word))
+    .join(" ")
+}
+
+/** Same transform as humaniseLabel, but leaves EXIT:<i>/END:<n> refs untouched. */
+function humaniseRef(ref: string): string {
+  return SYMBOLIC_REF.test(ref) ? ref : humaniseLabel(ref)
+}
+
+/**
+ * Applies humaniseLabel uniformly to every node label AND every `next` ref
+ * that isn't a symbolic EXIT:/END: ref. Applying the same transform to both
+ * sides keeps label -> ref matching intact (proposalToNodes resolves refs by
+ * matching the raw label string).
+ */
+function humaniseProposalLabels(proposal: ChapterProposal): ChapterProposal {
+  return {
+    nodes: proposal.nodes.map((node) => {
+      switch (node.kind) {
+        case "page":
+          return { ...node, label: humaniseLabel(node.label), next: humaniseRef(node.next) }
+        case "choice":
+          return {
+            ...node,
+            label: humaniseLabel(node.label),
+            options: node.options.map((opt) => ({ label: opt.label, next: humaniseRef(opt.next) })),
+          }
+        case "ending":
+          return { ...node, label: humaniseLabel(node.label) }
+      }
+    }),
+  }
+}
+
 /**
  * Strips em-dashes from every author-visible string in a validated proposal:
  * prose/beat text, choice prompts, option labels, closing lines, summary
@@ -168,7 +216,7 @@ export async function draftChapter(
   })
 
   const proposal = await callStructured(anthropic, system, user, 3000, ChapterProposalSchema)
-  return proposalToNodes(stripProposalEmDashes(proposal))
+  return proposalToNodes(stripProposalEmDashes(humaniseProposalLabels(proposal)))
 }
 
 const SinglePageProposalSchema = z.object({ text: z.string().min(1) })

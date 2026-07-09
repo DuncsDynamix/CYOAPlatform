@@ -96,7 +96,9 @@ describe("derivePlan + looseStitches", () => {
     expect(plan.map((r) => r.kind)).toEqual(["page", "choice", "page", "page"])
     expect(plan[3].isRejoin).toBe(true)
     const stitches = looseStitches(validateExperienceGraph(all), all)
-    expect(stitches.some((s) => s.nodeId === d.id && /leads nowhere yet/.test(s.message))).toBe(true)
+    const deadEndStitch = stitches.find((s) => s.nodeId === d.id && /leads nowhere yet/.test(s.message))
+    expect(deadEndStitch).toBeDefined()
+    expect(deadEndStitch!.severity).toBe("blocking")
   })
 
   it("collapses an unwired choice into exactly one stitch", () => {
@@ -109,5 +111,22 @@ describe("derivePlan + looseStitches", () => {
     const forChoice = stitches.filter((s) => s.nodeId === choice.id)
     expect(forChoice).toHaveLength(1)
     expect(forChoice[0].message).toBe("a thread from 'The reader decides' is not yet tied to a page")
+    expect(forChoice[0].severity).toBe("blocking")
+  })
+
+  it("marks unreachable pages as adrift severity, distinct from blocking broken links/dead ends", () => {
+    const start = makeBinderyPage("written")
+    const end = makeBinderyEnding("The Close")
+    start.nextNodeId = end.id
+    const orphan = makeBinderyPage("written")
+    orphan.label = "The Cellar"
+    orphan.nextNodeId = end.id // wired, so it is unreachable only — not also a dead end
+    const all = [start, end, orphan]
+    const result = validateExperienceGraph(all)
+    expect(result.valid).toBe(true) // unreachable is a warning, not an error
+    const stitches = looseStitches(result, all)
+    expect(stitches).toHaveLength(1)
+    expect(stitches[0]).toMatchObject({ nodeId: orphan.id, severity: "adrift" })
+    expect(stitches[0].message).toMatch(/no path reaches 'The Cellar'/)
   })
 })

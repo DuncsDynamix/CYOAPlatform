@@ -5,11 +5,12 @@ import Link from "next/link"
 import type { Node, Segment } from "@/types/experience"
 import { validateExperienceGraph } from "@/lib/authoring/graph"
 import { looseStitches, type LooseStitch } from "@/lib/library/bindery"
-import { normalizeGenre } from "@/lib/library/halls"
+import { normalizeGenre, getHall } from "@/lib/library/halls"
 import { BookCover } from "@/components/library/BookCover"
 import type { BinderyDraft } from "./Desk"
 
 const LOOSE_INTRO = "the binding is loose on these pages:"
+const ADRIFT_INTRO = "No path leads to these pages. Readers will never find them:"
 const JAMMED_COPY = "the presses jammed. Try again."
 
 function getSegments(draft: BinderyDraft): Segment[] {
@@ -53,7 +54,8 @@ export function SheetBind({
 
   const sortedSegments = [...getSegments(draft)].sort((a, b) => a.order - b.order)
   const allNodes: Node[] = sortedSegments.flatMap((s) => s.nodes)
-  const stitches = looseStitches(validateExperienceGraph(allNodes), allNodes)
+  const validation = validateExperienceGraph(allNodes)
+  const stitches = looseStitches(validation, allNodes)
 
   async function handleBind() {
     setBinding(true)
@@ -77,7 +79,9 @@ export function SheetBind({
           allNodes
         )
         setServerStitches(
-          fromServer.length > 0 ? fromServer : [{ nodeId: "", nodeLabel: "", message: JAMMED_COPY }]
+          fromServer.length > 0
+            ? fromServer
+            : [{ nodeId: "", nodeLabel: "", message: JAMMED_COPY, severity: "blocking" }]
         )
         return
       }
@@ -89,20 +93,24 @@ export function SheetBind({
   }
 
   if (shelved) {
+    const hall = getHall(normalizeGenre(draft.genre))
     return (
       <div className="lib-sheet lib-sheet-bind">
-        <p>It is bound.</p>
-        <div className="lib-cover-preview">
-          <BookCover
-            title={draft.title || "Untitled binding"}
-            author="Anonymous"
-            genre={draft.genre}
-            coverImageUrl={draft.coverImageUrl}
-            variant={getCoverVariant(draft)}
-          />
-        </div>
-        <div className="lib-cover-meta">
-          <Link href={`/hall/${normalizeGenre(draft.genre)}`}>Walk to the shelf</Link>
+        <div className="lib-bound">
+          <h2 className="lib-bound-title">It is bound.</h2>
+          <p className="lib-bound-sub">Shelved in {hall.roomName}.</p>
+          <div className="lib-bound-cover">
+            <BookCover
+              title={draft.title || "Untitled binding"}
+              author="Anonymous"
+              genre={draft.genre}
+              coverImageUrl={draft.coverImageUrl}
+              variant={getCoverVariant(draft)}
+            />
+          </div>
+          <Link href={`/hall/${normalizeGenre(draft.genre)}`} className="lib-bound-walk">
+            Walk to the shelf
+          </Link>
         </div>
       </div>
     )
@@ -110,6 +118,32 @@ export function SheetBind({
 
   const displayStitches = serverStitches ?? stitches
   const showStitches = displayStitches.length > 0
+  const blockingStitches = displayStitches.filter((s) => s.severity === "blocking")
+  const adriftStitches = displayStitches.filter((s) => s.severity === "adrift")
+
+  function renderStitchList(list: LooseStitch[]) {
+    return (
+      <ul>
+        {list.map((stitch, i) => (
+          <li key={`${i}-${stitch.nodeId}`}>
+            {stitch.nodeId ? (
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  onJumpToNode(stitch.nodeId)
+                }}
+              >
+                {stitch.message}
+              </a>
+            ) : (
+              stitch.message
+            )}
+          </li>
+        ))}
+      </ul>
+    )
+  }
 
   return (
     <div className="lib-sheet lib-sheet-bind">
@@ -117,26 +151,18 @@ export function SheetBind({
 
       {showStitches ? (
         <div className="lib-stitches" role={serverStitches ? "alert" : undefined}>
-          <p>{LOOSE_INTRO}</p>
-          <ul>
-            {displayStitches.map((stitch, i) => (
-              <li key={`${i}-${stitch.nodeId}`}>
-                {stitch.nodeId ? (
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      onJumpToNode(stitch.nodeId)
-                    }}
-                  >
-                    {stitch.message}
-                  </a>
-                ) : (
-                  stitch.message
-                )}
-              </li>
-            ))}
-          </ul>
+          {blockingStitches.length > 0 && (
+            <>
+              <p>{LOOSE_INTRO}</p>
+              {renderStitchList(blockingStitches)}
+            </>
+          )}
+          {adriftStitches.length > 0 && (
+            <>
+              <p>{ADRIFT_INTRO}</p>
+              {renderStitchList(adriftStitches)}
+            </>
+          )}
         </div>
       ) : (
         <p className="lib-field-hint">Every thread is tied off. The book is ready to bind.</p>
@@ -148,7 +174,7 @@ export function SheetBind({
             Read a proof
           </a>
         )}
-        <button type="button" className="lib-btn" disabled={stitches.length > 0 || binding} onClick={handleBind}>
+        <button type="button" className="lib-btn" disabled={!validation.valid || binding} onClick={handleBind}>
           {binding ? "Binding…" : "Bind and shelve this book"}
         </button>
       </div>

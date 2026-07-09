@@ -20,11 +20,14 @@ export function buildArcAwareness(
 ): ArcAwareness {
   const shape = experience.shape as ShapeDefinition
   const choicesMade = session.state.choicesMade
-  const totalDepthMid = (shape.totalDepthMin + shape.totalDepthMax) / 2
+  // Bindery-bound shapes (and any other malformed row already written to the
+  // DB) may omit these fields entirely — default to sensible values rather
+  // than crash the reader on a "told by the engine" page.
+  const totalDepthMid = ((shape.totalDepthMin ?? 1) + (shape.totalDepthMax ?? 1)) / 2
 
   const depthPct = Math.round((choicesMade / totalDepthMid) * 100)
-  const isLoadBearing = shape.loadBearingChoices.includes(choicesMade + 1)
-  const isConvergence = shape.convergencePoints.includes(choicesMade + 1)
+  const isLoadBearing = (shape.loadBearingChoices ?? []).includes(choicesMade + 1)
+  const isConvergence = (shape.convergencePoints ?? []).includes(choicesMade + 1)
 
   let arcPhase: ArcPhase
   if (depthPct < 20) arcPhase = "opening"
