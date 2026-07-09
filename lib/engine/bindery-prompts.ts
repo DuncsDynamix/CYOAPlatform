@@ -122,6 +122,38 @@ ${JSON_ONLY_INSTRUCTION}`
   return { system, user }
 }
 
+export function buildSinglePagePrompt(args: {
+  pack: BinderyPack
+  title: string
+  contextPack: ExperienceContextPack
+  written: boolean
+  label: string
+}): { system: string; user: string } {
+  const { pack, title, contextPack, written, label } = args
+
+  const system = `${pack.chapterFraming}
+
+You are drafting a single page of the book, in isolation from the rest of the chapter. ${
+    written
+      ? "This is a written page: produce finished narrative prose."
+      : "This is a told page: produce a beat instruction for the narration engine, not finished prose."
+  }
+
+You produce structured data as raw JSON. You never write prose directly outside the JSON's "text" field.`
+
+  const user = `BOOK TITLE: ${title}
+PAGE NAME: ${label || "(untitled)"}
+
+${contextSummary(contextPack)}
+
+Produce a JSON object with this exact shape:
+- "text" (string): ${written ? "the finished prose for this page" : "a beat instruction for the narration engine"}
+
+${JSON_ONLY_INSTRUCTION}`
+
+  return { system, user }
+}
+
 export function buildSamplePrompt(args: {
   beatInstruction: string
   title: string

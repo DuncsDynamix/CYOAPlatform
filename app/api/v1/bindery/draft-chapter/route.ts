@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db/prisma"
 import { requireAuth, canEditExperience, getAnthropicKey } from "@/lib/auth"
-import { draftChapter, sampleTelling } from "@/lib/engine/bindery-draft"
+import { draftChapter, draftSinglePage, sampleTelling } from "@/lib/engine/bindery-draft"
 import type { Experience, Segment } from "@/types/experience"
 
 const MODEL_FAILURE = { error: "The Bindery's assistant lost the thread. Try again." }
@@ -46,6 +46,19 @@ export async function POST(req: NextRequest) {
   const segments = (experience.segments as unknown as Segment[]) ?? []
   if (chapterIndex < 0 || chapterIndex >= segments.length) {
     return NextResponse.json({ error: "chapterIndex is out of range" }, { status: 400 })
+  }
+
+  // A nodeId without mode: "sample" is a single-page redraft (PageCard's
+  // "Draft this page for me") — it preserves the page's id/type/nextNodeId
+  // and only fills in its prose/beat instruction, unlike the full chapter
+  // draft below which fabricates an entirely new set of nodes.
+  if (nodeId) {
+    try {
+      const node = await draftSinglePage(experience as unknown as Experience, nodeId, apiKey)
+      return NextResponse.json({ nodes: [node] })
+    } catch {
+      return NextResponse.json(MODEL_FAILURE, { status: 502 })
+    }
   }
 
   try {

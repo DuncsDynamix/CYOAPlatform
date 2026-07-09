@@ -127,6 +127,8 @@ describe("SheetPages: chapter rail", () => {
     expect(screen.getByRole("button", { name: /The Vault/i })).toHaveAttribute("aria-current", "true")
     expect(screen.getByRole("button", { name: /The Dig/i })).not.toHaveAttribute("aria-current", "true")
 
-    expect(screen.getByText(/this chapter is unbound/i)).toBeInTheDocument()
+    // The Vault has no pages yet: Task 11's ChapterPlan shows the draft
+    // invitation rather than the old "This chapter is unbound" placeholder.
+    expect(screen.getByRole("button", { name: /draft this chapter/i })).toBeInTheDocument()
   })
 })

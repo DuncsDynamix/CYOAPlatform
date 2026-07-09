@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react"
 import { applyOutline, outlineFromSegments, type BookOutline, type ChapterOutline } from "@/lib/library/bindery"
 import type { BinderyPack } from "@/lib/library/bindery-packs"
-import type { Segment } from "@/types/experience"
+import type { Node, Segment } from "@/types/experience"
 import type { BinderyDraft } from "./Desk"
+import { ChapterPlan } from "./ChapterPlan"
 
 const MODEL_FAILURE_COPY = "The assistant lost the thread. Try again."
 
@@ -53,11 +54,17 @@ export function SheetPages({
   const [error, setError] = useState<string | null>(null)
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null)
 
+  const [planLoading, setPlanLoading] = useState(false)
+  const [planError, setPlanError] = useState<string | null>(null)
+  const [draftingPageId, setDraftingPageId] = useState<string | null>(null)
+
   const abortRef = useRef<AbortController | null>(null)
+  const planAbortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     return () => {
       abortRef.current?.abort()
+      planAbortRef.current?.abort()
     }
   }, [])
 
@@ -140,6 +147,84 @@ export function SheetPages({
     setOutlineDraft(outlineFromSegments(getSegments(draft), shapeVals))
   }
 
+  function updateSegmentNodes(segmentId: string, nodes: Node[]) {
+    const next = getSegments(draft).map((s) => (s.id === segmentId ? { ...s, nodes } : s))
+    onChange({ segments: next })
+  }
+
+  async function handleDraftChapter(segment: Segment, chapterIndex: number) {
+    setPlanError(null)
+    setPlanLoading(true)
+    const controller = new AbortController()
+    planAbortRef.current = controller
+    try {
+      const res = await fetch("/api/v1/bindery/draft-chapter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ experienceId: draft.id, chapterIndex }),
+        signal: controller.signal,
+      })
+      const data = await res.json()
+      if (planAbortRef.current !== controller) return
+      if (!res.ok) {
+        setPlanError((data as { error?: string })?.error ?? MODEL_FAILURE_COPY)
+        return
+      }
+      updateSegmentNodes(segment.id, (data as { nodes: Node[] }).nodes)
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return
+      if (planAbortRef.current !== controller) return
+      setPlanError(MODEL_FAILURE_COPY)
+    } finally {
+      if (planAbortRef.current === controller) setPlanLoading(false)
+    }
+  }
+
+  async function handleDraftPage(segment: Segment, chapterIndex: number, nodeId: string) {
+    setPlanError(null)
+    setDraftingPageId(nodeId)
+    const controller = new AbortController()
+    planAbortRef.current = controller
+    try {
+      const res = await fetch("/api/v1/bindery/draft-chapter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ experienceId: draft.id, chapterIndex, nodeId }),
+        signal: controller.signal,
+      })
+      const data = await res.json()
+      if (planAbortRef.current !== controller) return
+      if (!res.ok) {
+        setPlanError((data as { error?: string })?.error ?? MODEL_FAILURE_COPY)
+        return
+      }
+      const [drafted] = (data as { nodes: Node[] }).nodes ?? []
+      if (drafted) {
+        updateSegmentNodes(
+          segment.id,
+          segment.nodes.map((n) => (n.id === nodeId ? drafted : n))
+        )
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return
+      if (planAbortRef.current !== controller) return
+      setPlanError(MODEL_FAILURE_COPY)
+    } finally {
+      if (planAbortRef.current === controller) setDraftingPageId(null)
+    }
+  }
+
+  async function handleSample(chapterIndex: number, nodeId: string): Promise<string> {
+    const res = await fetch("/api/v1/bindery/draft-chapter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ experienceId: draft.id, chapterIndex, mode: "sample", nodeId }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error((data as { error?: string })?.error ?? MODEL_FAILURE_COPY)
+    return (data as { sample: string }).sample
+  }
+
   const segments = getSegments(draft)
   const sortedSegments = [...segments].sort((a, b) => a.order - b.order)
 
@@ -194,6 +279,8 @@ export function SheetPages({
 
   if (sortedSegments.length > 0) {
     const activeSegment = sortedSegments.find((s) => s.id === activeSegmentId) ?? sortedSegments[0]
+    const activeChapterIndex = sortedSegments.findIndex((s) => s.id === activeSegment.id)
+    const allNodes = sortedSegments.flatMap((s) => s.nodes)
     return (
       <div className="lib-sheet lib-sheet-pages">
         <div className="lib-pages-grid">
@@ -221,9 +308,35 @@ export function SheetPages({
             })}
           </ul>
 
-          <div className="lib-plan">
+          <div>
             <h2>{activeSegment.label}</h2>
-            <p>This chapter is unbound.</p>
+
+            {planError && (
+              <p className="lib-field-hint" role="alert">
+                {planError}
+              </p>
+            )}
+            {planLoading && (
+              <p className="lib-field-hint" role="status">
+                The assistant is filling this chapter…
+              </p>
+            )}
+            {draftingPageId && (
+              <p className="lib-field-hint" role="status">
+                The assistant is drafting this page…
+              </p>
+            )}
+
+            <ChapterPlan
+              segment={activeSegment}
+              allNodes={allNodes}
+              segments={sortedSegments}
+              pack={pack}
+              onNodesChange={(nodes) => updateSegmentNodes(activeSegment.id, nodes)}
+              onDraftChapter={() => handleDraftChapter(activeSegment, activeChapterIndex)}
+              onDraftPage={(nodeId) => handleDraftPage(activeSegment, activeChapterIndex, nodeId)}
+              onSample={(nodeId) => handleSample(activeChapterIndex, nodeId)}
+            />
           </div>
         </div>
 

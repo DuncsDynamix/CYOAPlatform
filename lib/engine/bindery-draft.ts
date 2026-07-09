@@ -3,10 +3,10 @@
 // lookup, and the fixed 502 error envelope live in the route handlers; this
 // module owns prompt assembly, the model call, and Zod validation.
 import Anthropic from "@anthropic-ai/sdk"
-import type { z } from "zod"
+import { z } from "zod"
 import { generationQueue } from "./queue"
 import { stripEmDashes, stripJsonFence } from "./style"
-import { buildOutlinePrompt, buildChapterPrompt, buildSamplePrompt } from "./bindery-prompts"
+import { buildOutlinePrompt, buildChapterPrompt, buildSamplePrompt, buildSinglePagePrompt } from "./bindery-prompts"
 import { getBinderyPack } from "@/lib/library/bindery-packs"
 import {
   OutlineProposalSchema,
@@ -16,7 +16,7 @@ import {
   type BookOutline,
 } from "@/lib/library/bindery"
 import { getAllNodes } from "./executor"
-import type { Experience, ExperienceContextPack, GeneratedNode, Node } from "@/types/experience"
+import type { Experience, ExperienceContextPack, FixedNode, GeneratedNode, Node } from "@/types/experience"
 
 const MODEL = "claude-sonnet-5"
 
@@ -129,6 +129,42 @@ export async function draftChapter(
 
   const proposal = await callStructured(anthropic, system, user, 3000, ChapterProposalSchema)
   return proposalToNodes(proposal)
+}
+
+const SinglePageProposalSchema = z.object({ text: z.string().min(1) })
+
+/**
+ * Drafts prose (written pages) or a beat instruction (told pages) for exactly
+ * one existing page, preserving its id/type/nextNodeId — unlike draftChapter,
+ * which fabricates a whole new set of nodes with fresh ids.
+ */
+export async function draftSinglePage(experience: Experience, nodeId: string, apiKey?: string): Promise<Node> {
+  const anthropic = getAnthropicClient(apiKey)
+  const contextPack = experience.contextPack as ExperienceContextPack
+  const node = getAllNodes(experience).find((n) => n.id === nodeId)
+
+  if (!node || (node.type !== "FIXED" && node.type !== "GENERATED")) {
+    throw new Error(`Node ${nodeId} is not a page`)
+  }
+
+  const pack = getBinderyPack(experience.type)
+  const written = node.type === "FIXED"
+  const { system, user } = buildSinglePagePrompt({
+    pack,
+    title: experience.title,
+    contextPack,
+    written,
+    label: node.label,
+  })
+
+  const proposal = await callStructured(anthropic, system, user, 600, SinglePageProposalSchema)
+
+  if (written) {
+    const drafted: FixedNode = { ...(node as FixedNode), content: proposal.text }
+    return drafted
+  }
+  const drafted: GeneratedNode = { ...(node as GeneratedNode), beatInstruction: proposal.text }
+  return drafted
 }
 
 export async function sampleTelling(
