@@ -108,6 +108,46 @@ export async function draftOutline(
   return callStructured(anthropic, system, user, 1000, OutlineProposalSchema)
 }
 
+type ChapterProposal = z.infer<typeof ChapterProposalSchema>
+
+/**
+ * Strips em-dashes from every author-visible string in a validated proposal:
+ * prose/beat text, choice prompts, option labels, closing lines, summary
+ * instructions, and node labels. Because `next` refs point at node labels,
+ * refs are stripped with the same transform so the label -> id resolution in
+ * proposalToNodes stays consistent (EXIT:<i>/END:<n> carry no dashes and pass
+ * through untouched).
+ */
+function stripProposalEmDashes(proposal: ChapterProposal): ChapterProposal {
+  return {
+    nodes: proposal.nodes.map((node) => {
+      switch (node.kind) {
+        case "page":
+          return {
+            ...node,
+            label: stripEmDashes(node.label),
+            text: stripEmDashes(node.text),
+            next: stripEmDashes(node.next),
+          }
+        case "choice":
+          return {
+            ...node,
+            label: stripEmDashes(node.label),
+            prompt: stripEmDashes(node.prompt),
+            options: node.options.map((opt) => ({ label: stripEmDashes(opt.label), next: stripEmDashes(opt.next) })),
+          }
+        case "ending":
+          return {
+            ...node,
+            label: stripEmDashes(node.label),
+            closingLine: stripEmDashes(node.closingLine),
+            summaryInstruction: stripEmDashes(node.summaryInstruction),
+          }
+      }
+    }),
+  }
+}
+
 export async function draftChapter(
   experience: Experience,
   chapterIndex: number,
@@ -128,7 +168,7 @@ export async function draftChapter(
   })
 
   const proposal = await callStructured(anthropic, system, user, 3000, ChapterProposalSchema)
-  return proposalToNodes(proposal)
+  return proposalToNodes(stripProposalEmDashes(proposal))
 }
 
 const SinglePageProposalSchema = z.object({ text: z.string().min(1) })
@@ -158,12 +198,15 @@ export async function draftSinglePage(experience: Experience, nodeId: string, ap
   })
 
   const proposal = await callStructured(anthropic, system, user, 600, SinglePageProposalSchema)
+  // Drafted page text is author-kept, reader-facing copy — the no-em-dash
+  // rule applies here just as it does in draftChapter and sampleTelling.
+  const text = stripEmDashes(proposal.text)
 
   if (written) {
-    const drafted: FixedNode = { ...(node as FixedNode), content: proposal.text }
+    const drafted: FixedNode = { ...(node as FixedNode), content: text }
     return drafted
   }
-  const drafted: GeneratedNode = { ...(node as GeneratedNode), beatInstruction: proposal.text }
+  const drafted: GeneratedNode = { ...(node as GeneratedNode), beatInstruction: text }
   return drafted
 }
 

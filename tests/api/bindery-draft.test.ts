@@ -26,12 +26,12 @@ vi.mock("@/lib/auth", () => ({
 }))
 
 // Import after mocks are registered
-const { draftOutline, draftChapter, sampleTelling } = await import("@/lib/engine/bindery-draft")
+const { draftOutline, draftChapter, draftSinglePage, sampleTelling } = await import("@/lib/engine/bindery-draft")
 const { POST: draftOutlineRoute } = await import("@/app/api/v1/bindery/outline/route")
 const { POST: draftChapterRoute } = await import("@/app/api/v1/bindery/draft-chapter/route")
 const { db } = await import("@/lib/db/prisma")
 const { requireAuth, canEditExperience } = await import("@/lib/auth")
-const { createTestExperience } = await import("../helpers/factories")
+const { createTestExperience, createTestNodeGraph } = await import("../helpers/factories")
 
 const mockFindExperience = vi.mocked(db.experience.findUnique)
 const mockUpdateExperience = vi.mocked(db.experience.update)
@@ -133,6 +133,96 @@ describe("draftChapter", () => {
 
     const call = mockMessagesCreate.mock.calls[0][0] as { max_tokens: number }
     expect(call.max_tokens).toBe(3000)
+  })
+
+  it("strips em-dashes from every author-visible string in the proposal", async () => {
+    const dashedProposal = {
+      nodes: [
+        {
+          kind: "page",
+          mode: "written",
+          label: "The chamber",
+          text: "Dust and old gold — and something else.",
+          next: "The reader decides",
+        },
+        {
+          kind: "choice",
+          label: "The reader decides",
+          prompt: "Take it — or leave it?",
+          options: [
+            { label: "Lift it free — carefully", next: "Crowned" },
+            { label: "Leave it", next: "EXIT:2" },
+          ],
+        },
+        {
+          kind: "ending",
+          label: "Crowned",
+          closingLine: "It will not come off — ever.",
+          summaryInstruction: "Reflect on the claim",
+        },
+      ],
+    }
+    mockMessagesCreate.mockResolvedValueOnce(textResponse(JSON.stringify(dashedProposal)))
+
+    const experience = createTestExperience({ segments: testSegments })
+    const nodes = await draftChapter(experience, 0, "test-key")
+
+    const page = nodes[0] as { content: string }
+    const choice = nodes[1] as ChoiceNode
+    const ending = nodes[2] as { closingLine: string }
+    expect(page.content).toBe("Dust and old gold, and something else.")
+    expect(choice.prompt).toBe("Take it, or leave it?")
+    expect(choice.options![0].label).toBe("Lift it free, carefully")
+    expect(ending.closingLine).toBe("It will not come off, ever.")
+    // The choice option still resolves to the ending despite the stripping.
+    expect(choice.options![0].nextNodeId).toBe(nodes[2].id)
+  })
+})
+
+// ─── draftSinglePage: one page redrafted in place ───────────────────────────
+
+// The route's nodeId branch reads the page through getAllNodes, which prefers
+// segments when present — so the page graph must live inside the segment the
+// chapterIndex bounds-check passes for.
+const pageSegments: Segment[] = [
+  { id: "seg-0", label: "The Dig", description: "The crew unearths a sealed door.", order: 0, nodes: createTestNodeGraph() },
+]
+
+describe("draftSinglePage", () => {
+  it("redrafts a told page in place: same id/type/nextNodeId, new beat instruction, em-dashes stripped", async () => {
+    mockMessagesCreate.mockResolvedValueOnce(
+      textResponse(JSON.stringify({ text: "The forest closes in — silent and watchful." }))
+    )
+
+    const experience = createTestExperience({ segments: pageSegments })
+    const drafted = (await draftSinglePage(experience, "node-2a", "test-key")) as GeneratedNode
+
+    expect(drafted.id).toBe("node-2a")
+    expect(drafted.type).toBe("GENERATED")
+    expect(drafted.nextNodeId).toBe("endpoint-1") // wiring preserved
+    expect(drafted.beatInstruction).toBe("The forest closes in, silent and watchful.")
+    expect(mockUpdateExperience).not.toHaveBeenCalled()
+  })
+
+  it("retries once when the first response fails validation, then succeeds", async () => {
+    mockMessagesCreate.mockResolvedValueOnce(textResponse(JSON.stringify({ wrong: "shape" })))
+    mockMessagesCreate.mockResolvedValueOnce(textResponse(JSON.stringify({ text: "A clean second take." })))
+
+    const experience = createTestExperience({ segments: pageSegments })
+    const drafted = (await draftSinglePage(experience, "node-2a", "test-key")) as GeneratedNode
+
+    expect(mockMessagesCreate).toHaveBeenCalledTimes(2)
+    expect(drafted.beatInstruction).toBe("A clean second take.")
+
+    // The retry prompt must carry the validation failure forward.
+    const secondCallUser = mockMessagesCreate.mock.calls[1][0].messages[0].content as string
+    expect(secondCallUser).toMatch(/invalid|failed/i)
+  })
+
+  it("throws for a node that is not a page", async () => {
+    const experience = createTestExperience({ segments: pageSegments })
+    await expect(draftSinglePage(experience, "choice-1", "test-key")).rejects.toThrow(/not a page/)
+    expect(mockMessagesCreate).not.toHaveBeenCalled()
   })
 })
 
@@ -263,6 +353,60 @@ describe("POST /api/v1/bindery/draft-chapter — chapterIndex validation", () =>
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.nodes).toHaveLength(3)
+  })
+
+  it("drafts a single page in place when nodeId is sent without mode, preserving id and wiring", async () => {
+    mockRequireAuth.mockResolvedValue({ id: "author-1", email: "a@b.c", isOperator: false })
+    mockFindExperience.mockResolvedValue(
+      createTestExperience({ authorId: "author-1", segments: pageSegments }) as never
+    )
+    mockCanEditExperience.mockResolvedValue(true)
+    mockMessagesCreate.mockResolvedValueOnce(
+      textResponse(JSON.stringify({ text: "A drafted beat — em-dash and all." }))
+    )
+
+    const res = await draftChapterRoute(
+      draftChapterRequest({ experienceId: "exp-1", chapterIndex: 0, nodeId: "node-2a" })
+    )
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.nodes).toHaveLength(1)
+    expect(body.nodes[0].id).toBe("node-2a")
+    expect(body.nodes[0].type).toBe("GENERATED")
+    expect(body.nodes[0].nextNodeId).toBe("endpoint-1")
+    expect(body.nodes[0].beatInstruction).not.toMatch(/—/)
+  })
+
+  it("502s the in-fiction envelope when the nodeId is not a page", async () => {
+    mockRequireAuth.mockResolvedValue({ id: "author-1", email: "a@b.c", isOperator: false })
+    mockFindExperience.mockResolvedValue(
+      createTestExperience({ authorId: "author-1", segments: pageSegments }) as never
+    )
+    mockCanEditExperience.mockResolvedValue(true)
+
+    const res = await draftChapterRoute(
+      draftChapterRequest({ experienceId: "exp-1", chapterIndex: 0, nodeId: "choice-1" })
+    )
+    expect(res.status).toBe(502)
+    const body = await res.json()
+    expect(body.error).toBe("The Bindery's assistant lost the thread. Try again.")
+    expect(mockMessagesCreate).not.toHaveBeenCalled()
+  })
+
+  it("502s the in-fiction envelope for a nodeId that does not exist", async () => {
+    mockRequireAuth.mockResolvedValue({ id: "author-1", email: "a@b.c", isOperator: false })
+    mockFindExperience.mockResolvedValue(
+      createTestExperience({ authorId: "author-1", segments: pageSegments }) as never
+    )
+    mockCanEditExperience.mockResolvedValue(true)
+
+    const res = await draftChapterRoute(
+      draftChapterRequest({ experienceId: "exp-1", chapterIndex: 0, nodeId: "no-such-node" })
+    )
+    expect(res.status).toBe(502)
+    const body = await res.json()
+    expect(body.error).toBe("The Bindery's assistant lost the thread. Try again.")
+    expect(mockMessagesCreate).not.toHaveBeenCalled()
   })
 
   it("returns a sample telling without validating chapterIndex against chapter content", async () => {

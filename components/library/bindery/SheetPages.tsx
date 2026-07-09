@@ -58,13 +58,19 @@ export function SheetPages({
   const [planError, setPlanError] = useState<string | null>(null)
   const [draftingPageId, setDraftingPageId] = useState<string | null>(null)
 
+  // One abort ref per flow (mirrors handleDraftOutline/abortRef): the chapter
+  // and page drafts each track their own loading flag, so sharing a ref would
+  // let one flow supersede the other's controller and strand its loading
+  // message — the superseded flow's finally guard would never match.
   const abortRef = useRef<AbortController | null>(null)
-  const planAbortRef = useRef<AbortController | null>(null)
+  const chapterAbortRef = useRef<AbortController | null>(null)
+  const pageAbortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     return () => {
       abortRef.current?.abort()
-      planAbortRef.current?.abort()
+      chapterAbortRef.current?.abort()
+      pageAbortRef.current?.abort()
     }
   }, [])
 
@@ -156,7 +162,7 @@ export function SheetPages({
     setPlanError(null)
     setPlanLoading(true)
     const controller = new AbortController()
-    planAbortRef.current = controller
+    chapterAbortRef.current = controller
     try {
       const res = await fetch("/api/v1/bindery/draft-chapter", {
         method: "POST",
@@ -165,7 +171,7 @@ export function SheetPages({
         signal: controller.signal,
       })
       const data = await res.json()
-      if (planAbortRef.current !== controller) return
+      if (chapterAbortRef.current !== controller) return
       if (!res.ok) {
         setPlanError((data as { error?: string })?.error ?? MODEL_FAILURE_COPY)
         return
@@ -173,10 +179,10 @@ export function SheetPages({
       updateSegmentNodes(segment.id, (data as { nodes: Node[] }).nodes)
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return
-      if (planAbortRef.current !== controller) return
+      if (chapterAbortRef.current !== controller) return
       setPlanError(MODEL_FAILURE_COPY)
     } finally {
-      if (planAbortRef.current === controller) setPlanLoading(false)
+      if (chapterAbortRef.current === controller) setPlanLoading(false)
     }
   }
 
@@ -184,7 +190,7 @@ export function SheetPages({
     setPlanError(null)
     setDraftingPageId(nodeId)
     const controller = new AbortController()
-    planAbortRef.current = controller
+    pageAbortRef.current = controller
     try {
       const res = await fetch("/api/v1/bindery/draft-chapter", {
         method: "POST",
@@ -193,7 +199,7 @@ export function SheetPages({
         signal: controller.signal,
       })
       const data = await res.json()
-      if (planAbortRef.current !== controller) return
+      if (pageAbortRef.current !== controller) return
       if (!res.ok) {
         setPlanError((data as { error?: string })?.error ?? MODEL_FAILURE_COPY)
         return
@@ -207,10 +213,10 @@ export function SheetPages({
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return
-      if (planAbortRef.current !== controller) return
+      if (pageAbortRef.current !== controller) return
       setPlanError(MODEL_FAILURE_COPY)
     } finally {
-      if (planAbortRef.current === controller) setDraftingPageId(null)
+      if (pageAbortRef.current === controller) setDraftingPageId(null)
     }
   }
 
