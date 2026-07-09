@@ -44,10 +44,13 @@ export function SheetPages({
   draft,
   pack,
   onChange,
+  jumpTarget,
 }: {
   draft: BinderyDraft
   pack: BinderyPack
   onChange: (fields: Partial<BinderyDraft>) => void
+  /** Set by Sheet 5's stitch report — jumps to the chapter holding this node and scrolls its plan row into view. */
+  jumpTarget?: { nodeId: string; token: number } | null
 }) {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [outlineDraft, setOutlineDraft] = useState<BookOutline | null>(null)
@@ -74,6 +77,23 @@ export function SheetPages({
       pageAbortRef.current?.abort()
     }
   }, [])
+
+  // Sheet 5's stitch links set jumpTarget: switch to the chapter holding the
+  // node, then (in a second effect, once that chapter's rows are on the page)
+  // scroll the matching row into view. Two effects rather than one because
+  // the scroll target only exists in the DOM after activeSegmentId updates.
+  useEffect(() => {
+    if (!jumpTarget) return
+    const target = getSegments(draft).find((s) => s.nodes.some((n) => n.id === jumpTarget.nodeId))
+    if (target) setActiveSegmentId(target.id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpTarget])
+
+  useEffect(() => {
+    if (!jumpTarget) return
+    handleJumpToPlanRow(jumpTarget.nodeId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpTarget, activeSegmentId])
 
   async function handleDraftOutline() {
     if (!selectedTemplateId) return

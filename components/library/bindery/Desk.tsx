@@ -9,6 +9,7 @@ import { SheetTitle, type SheetTitleFields } from "./SheetTitle"
 import { SheetPremise } from "./SheetPremise"
 import { SheetCover } from "./SheetCover"
 import { SheetPages } from "./SheetPages"
+import { SheetBind } from "./SheetBind"
 
 export interface BinderyDraft {
   id: string
@@ -19,6 +20,7 @@ export interface BinderyDraft {
   shape?: unknown
   segments?: unknown
   coverImageUrl?: string | null
+  slug?: string
 }
 
 type SaveStatus = "saved" | "saving" | "unsaved"
@@ -87,6 +89,11 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
   const [segments, setSegments] = useState<unknown>([])
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null)
   const coverVariant = getCoverVariant(shape)
+  // Set by a stitch link on Sheet 5; SheetPages consumes it to switch to the
+  // right chapter and scroll the matching plan row into view. A token rides
+  // along so re-clicking the same stitch (already on Sheet 4) still re-fires
+  // the scroll, not just a same-value no-op.
+  const [jumpTarget, setJumpTarget] = useState<{ nodeId: string; token: number } | null>(null)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const contextPackDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -264,7 +271,15 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
     scheduleAutoSave(merged)
   }
 
+  function handleJumpToNode(nodeId: string) {
+    setSheetIndex(3)
+    setJumpTarget({ nodeId, token: Date.now() })
+  }
+
   const hasExperience = !!experience
+  const currentDraft: BinderyDraft | null = experience
+    ? { ...experience, title, genre, description, contextPack, shape, segments, coverImageUrl }
+    : null
 
   return (
     <div className="lib-scene" data-hall={normalizeGenre(genre)}>
@@ -317,12 +332,17 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
                 />
               )}
 
-              {sheetIndex === 3 && experience && (
+              {sheetIndex === 3 && currentDraft && (
                 <SheetPages
-                  draft={{ ...experience, title, genre, description, contextPack, shape, segments, coverImageUrl }}
+                  draft={currentDraft}
                   pack={pack}
                   onChange={handlePagesChange}
+                  jumpTarget={jumpTarget}
                 />
+              )}
+
+              {sheetIndex === 4 && currentDraft && (
+                <SheetBind draft={currentDraft} onJumpToNode={handleJumpToNode} onShelved={() => {}} />
               )}
             </>
           )}
