@@ -360,3 +360,6 @@
 .lib-cover-preview { max-width: 320px; margin: 0 auto 1.4rem; }
 
 .lib-plan-tied { font-style: italic; color: var(--lib-muted); margin: 0.6rem 0 0; }
+
+.lib-btn:disabled { opacity: 0.45; cursor: default; }
+.lib-btn:disabled:hover { background: var(--lib-accent); }

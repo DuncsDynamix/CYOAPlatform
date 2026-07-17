@@ -14,6 +14,16 @@ const ctx = {
 const pack = getBinderyPack("cyoa_story")
 const outline = { chapters: [{ title: "The Dig", arc: "found", approxPages: 3, choiceMoments: 1, convergesInto: null }], endpointCount: 2, depthMin: 4, depthMax: 8 }
 
+const multiChapterOutline = {
+  chapters: [
+    { title: "The Dig", arc: "found", approxPages: 3, choiceMoments: 1, convergesInto: null },
+    { title: "The Descent", arc: "endings", approxPages: 3, choiceMoments: 1, convergesInto: null },
+  ],
+  endpointCount: 2,
+  depthMin: 4,
+  depthMax: 8,
+}
+
 describe("bindery prompts", () => {
   it("structured prompts demand raw JSON and exclude writing style rules", () => {
     for (const p of [
@@ -46,5 +56,19 @@ describe("bindery prompts", () => {
     const blankCtx = { ...ctx, protagonist: { ...ctx.protagonist, perspective: "" } }
     const p = buildChapterPrompt({ pack, outline, chapterIndex: 0, title: "T", contextPack: blankCtx, existingChapterTitles: ["The Dig"] })
     expect(p.user).toMatch(/PERSPECTIVE: told in the second person/)
+  })
+
+  it("instructs the final chapter that it must include ending nodes, and leaves non-final chapters alone", () => {
+    const titles = multiChapterOutline.chapters.map((c) => c.title)
+
+    const finalChapter = buildChapterPrompt({
+      pack, outline: multiChapterOutline, chapterIndex: 1, title: "T", contextPack: ctx, existingChapterTitles: titles,
+    })
+    expect(finalChapter.user).toMatch(/MUST include its ending/)
+
+    const nonFinalChapter = buildChapterPrompt({
+      pack, outline: multiChapterOutline, chapterIndex: 0, title: "T", contextPack: ctx, existingChapterTitles: titles,
+    })
+    expect(nonFinalChapter.user).not.toMatch(/MUST include its ending/)
   })
 })

@@ -97,6 +97,7 @@ export function buildChapterPrompt(args: {
 }): { system: string; user: string } {
   const { pack, outline, chapterIndex, title, contextPack, existingChapterTitles } = args
   const chapter = outline.chapters[chapterIndex]
+  const isFinalChapter = chapterIndex === outline.chapters.length - 1
 
   const system = `${pack.chapterFraming}
 
@@ -105,6 +106,10 @@ You produce structured chapter data as raw JSON. You never write narrative prose
   const adjacentTitles = existingChapterTitles
     .map((t, i) => `${i}: ${t}`)
     .join("\n")
+
+  const finalChapterInstruction = isFinalChapter
+    ? `\n\nThis is a final chapter: you MUST include its ending nodes (kind "ending"), enough for the endings the outline places here. A final chapter with no ending traps the reader.`
+    : ""
 
   const user = `BOOK TITLE: ${title}
 THIS CHAPTER (index ${chapterIndex}): ${chapter.title}
@@ -133,7 +138,7 @@ spaces, capitalised like a book heading (for example "The Well at Dusk").
 NEVER use underscores, hyphens as word separators, or identifier-style names
 (for example "the_well" or "the-well" are wrong).
 
-${REF_CONVENTIONS}
+${REF_CONVENTIONS}${finalChapterInstruction}
 
 ${JSON_ONLY_INSTRUCTION}`
 

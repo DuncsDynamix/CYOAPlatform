@@ -9,7 +9,7 @@ import { normalizeGenre, getHall } from "@/lib/library/halls"
 import { BookCover } from "@/components/library/BookCover"
 import type { BinderyDraft } from "./Desk"
 
-const LOOSE_INTRO = "the binding is loose on these pages:"
+const LOOSE_INTRO = "The binding is loose on these pages:"
 const ADRIFT_INTRO = "No path leads to these pages. Readers will never find them:"
 const JAMMED_COPY = "the presses jammed. Try again."
 
