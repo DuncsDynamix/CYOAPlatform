@@ -427,3 +427,104 @@ export function looseStitches(result: GraphValidationResult, allNodes: Node[]): 
 
   return stitches
 }
+
+export interface PendingRef { nodeId: string; optionId?: string; ref: string }
+export interface TieNote { nodeId: string; optionId?: string; targetId: string }
+
+const EXIT_REF = /^EXIT:(\d+)$/
+const END_REF = /^END:\d+$/
+
+function firstPageId(segment: Segment, allNodes: Node[]): string | null {
+  const row = derivePlan(segment.nodes, allNodes).find((r) => r.kind === "page")
+  return row?.node.id ?? null
+}
+
+function firstEndingId(segment: Segment, allNodes: Node[]): string | null {
+  const row = derivePlan(segment.nodes, allNodes).find((r) => r.kind === "ending")
+  return row?.node.id ?? null
+}
+
+/** Fills a node's empty thread (or a specific option's) with targetId.
+ *  Returns the updated node, or null when the thread was not empty. */
+function tieThread(node: Node, optionId: string | undefined, targetId: string): Node | null {
+  if (node.type === "CHOICE") {
+    const options = node.options ?? []
+    const idx = optionId
+      ? options.findIndex((o) => o.id === optionId)
+      : options.findIndex((o) => o.nextNodeId === "")
+    if (idx < 0 || options[idx].nextNodeId !== "") return null
+    const next = options.map((o, i) => (i === idx ? { ...o, nextNodeId: targetId } : o))
+    return { ...node, options: next }
+  }
+  if (node.type === "FIXED" || node.type === "GENERATED") {
+    if (node.nextNodeId !== "") return null
+    return { ...node, nextNodeId: targetId }
+  }
+  return null
+}
+
+export function applyPendingRefs(segments: Segment[], refs: PendingRef[]): { segments: Segment[]; ties: TieNote[] } {
+  const sorted = [...segments].sort((a, b) => a.order - b.order)
+  const out = sorted.map((s) => ({ ...s, nodes: [...s.nodes] }))
+  const allNodes = out.flatMap((s) => s.nodes)
+  const ties: TieNote[] = []
+
+  for (const pending of refs) {
+    const segIdx = out.findIndex((s) => s.nodes.some((n) => n.id === pending.nodeId))
+    if (segIdx < 0) continue
+    let targetId: string | null = null
+    const exit = EXIT_REF.exec(pending.ref)
+    if (exit) {
+      const target = out[Number(exit[1])]
+      if (target) targetId = firstPageId(target, allNodes)
+    } else if (END_REF.test(pending.ref)) {
+      targetId = firstEndingId(out[segIdx], allNodes)
+    }
+    if (!targetId) continue
+    const nodeIdx = out[segIdx].nodes.findIndex((n) => n.id === pending.nodeId)
+    const tied = tieThread(out[segIdx].nodes[nodeIdx], pending.optionId, targetId)
+    if (!tied) continue
+    out[segIdx].nodes[nodeIdx] = tied
+    ties.push({ nodeId: pending.nodeId, optionId: pending.optionId, targetId })
+  }
+  return { segments: out, ties }
+}
+
+/** The positional sweep: every loose thread ties forward to the next
+ *  non-empty chapter's first page, or to a local ending in the last chapter.
+ *  Only empty targets are written; nothing is ever created. */
+export function autoTie(segments: Segment[]): { segments: Segment[]; ties: TieNote[] } {
+  const sorted = [...segments].sort((a, b) => a.order - b.order)
+  const out = sorted.map((s) => ({ ...s, nodes: [...s.nodes] }))
+  const allNodes = out.flatMap((s) => s.nodes)
+  const ties: TieNote[] = []
+
+  out.forEach((segment, k) => {
+    let forward: string | null = null
+    for (let j = k + 1; j < out.length; j++) {
+      if (out[j].nodes.length > 0) { forward = firstPageId(out[j], allNodes); break }
+    }
+    const fallback = forward ?? firstEndingId(segment, allNodes)
+    if (!fallback) return
+
+    segment.nodes = segment.nodes.map((node) => {
+      if (node.type === "FIXED" || node.type === "GENERATED") {
+        if (node.nextNodeId !== "") return node
+        ties.push({ nodeId: node.id, targetId: fallback })
+        return { ...node, nextNodeId: fallback }
+      }
+      if (node.type === "CHOICE") {
+        let changed = false
+        const options = (node.options ?? []).map((o) => {
+          if (o.nextNodeId !== "") return o
+          changed = true
+          ties.push({ nodeId: node.id, optionId: o.id, targetId: fallback })
+          return { ...o, nextNodeId: fallback }
+        })
+        return changed ? { ...node, options } : node
+      }
+      return node
+    })
+  })
+  return { segments: out, ties }
+}
