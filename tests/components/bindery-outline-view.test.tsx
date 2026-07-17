@@ -3,9 +3,13 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { SheetPages } from "@/components/library/bindery/SheetPages"
 import { getBinderyPack } from "@/lib/library/bindery-packs"
 import type { BookOutline } from "@/lib/library/bindery"
-import type { Segment } from "@/types/experience"
+import type { ChoiceNode, FixedNode, Segment } from "@/types/experience"
 
 const pack = getBinderyPack("cyoa_story")
+
+// The hardened jargon/em-dash guard (tests/components/bindery-premise-cover.test.tsx):
+// engine vocabulary and em-dashes must never leak into rendered copy.
+const JARGON_RE = /\bFIXED\b|\bGENERATED\b|\bCHOICE\b|\bENDPOINT\b|JSON|contextPack|—/
 
 const OUTLINE_FIXTURE: BookOutline = {
   chapters: [
@@ -142,5 +146,101 @@ describe("SheetPages: chapter rail", () => {
     // The Vault has no pages yet: Task 11's ChapterPlan shows the draft
     // invitation rather than the old "This chapter is unbound" placeholder.
     expect(screen.getByRole("button", { name: /draft this chapter/i })).toBeInTheDocument()
+  })
+})
+
+describe("SheetPages: chapter draft sweeps pending refs and reports the tie", () => {
+  it("applies pendingRefs, persists the swept segments, and shows the tied-for-you line", async () => {
+    const chapter1Page: FixedNode = {
+      id: "chapter1-page-1",
+      type: "FIXED",
+      label: "Vault Entrance",
+      content: "The vault door stands ajar.",
+      mandatory: false,
+      nextNodeId: "",
+    }
+    const segments: Segment[] = [
+      { id: "s-a", label: "The Dig", order: 0, nodes: [] },
+      { id: "s-b", label: "The Claim", order: 1, nodes: [chapter1Page] },
+    ]
+
+    const draftedPage: FixedNode = {
+      id: "draft-page-1",
+      type: "FIXED",
+      label: "Cave Mouth",
+      content: "Cold air rises from the dark.",
+      mandatory: false,
+      nextNodeId: "draft-choice-1",
+    }
+    const draftedChoice: ChoiceNode = {
+      id: "draft-choice-1",
+      type: "CHOICE",
+      label: "Which way",
+      responseType: "closed",
+      prompt: "Which way?",
+      options: [{ id: "opt-a", label: "Onward", nextNodeId: "", isLoadBearing: false }],
+    }
+
+    const fetchMock = vi.fn(() =>
+      jsonResponse({
+        nodes: [draftedPage, draftedChoice],
+        pendingRefs: [{ nodeId: "draft-choice-1", optionId: "opt-a", ref: "EXIT:1" }],
+      })
+    )
+    vi.stubGlobal("fetch", fetchMock)
+    const onChange = vi.fn()
+
+    render(<SheetPages draft={draftWithSegments(segments)} pack={pack} onChange={onChange} />)
+
+    fireEvent.click(screen.getByRole("button", { name: /draft this chapter/i }))
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/bindery/draft-chapter",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ experienceId: "exp-1", chapterIndex: 0 }),
+        })
+      )
+    )
+
+    // (a) the persisted segments have the option tied to chapter 1's first page id.
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    const patch = onChange.mock.calls[onChange.mock.calls.length - 1][0] as { segments: Segment[] }
+    const persistedChapter0 = patch.segments.find((s) => s.id === "s-a")!
+    const persistedChoice = persistedChapter0.nodes.find((n) => n.id === "draft-choice-1") as ChoiceNode
+    expect(persistedChoice.options![0].nextNodeId).toBe("chapter1-page-1")
+
+    // (b) the tied-for-you line renders with the correct count and pluralisation.
+    expect(await screen.findByText("One thread tied for you. Change any of them with Turn to…")).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(JARGON_RE)
+  })
+
+  it("shows no tied-for-you line when the response has no refs and nothing was loose", async () => {
+    const segments: Segment[] = [
+      { id: "s-a", label: "The Dig", order: 0, nodes: [] },
+      { id: "s-b", label: "The Claim", order: 1, nodes: [] },
+    ]
+
+    const draftedPage: FixedNode = {
+      id: "solo-page-1",
+      type: "FIXED",
+      label: "Cave Mouth",
+      content: "Cold air rises from the dark.",
+      mandatory: false,
+      nextNodeId: "already-set",
+    }
+
+    const fetchMock = vi.fn(() => jsonResponse({ nodes: [draftedPage], pendingRefs: [] }))
+    vi.stubGlobal("fetch", fetchMock)
+    const onChange = vi.fn()
+
+    render(<SheetPages draft={draftWithSegments(segments)} pack={pack} onChange={onChange} />)
+
+    fireEvent.click(screen.getByRole("button", { name: /draft this chapter/i }))
+
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+
+    expect(screen.queryByText(/tied for you/i)).not.toBeInTheDocument()
   })
 })

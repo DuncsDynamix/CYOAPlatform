@@ -1,7 +1,16 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { applyOutline, outlineFromSegments, type BookOutline, type ChapterOutline } from "@/lib/library/bindery"
+import {
+  applyOutline,
+  applyPendingRefs,
+  autoTie,
+  outlineFromSegments,
+  type BookOutline,
+  type ChapterOutline,
+  type PendingRef,
+  type TieNote,
+} from "@/lib/library/bindery"
 import type { BinderyPack } from "@/lib/library/bindery-packs"
 import type { Node, Segment } from "@/types/experience"
 import type { BinderyDraft } from "./Desk"
@@ -75,6 +84,10 @@ export function SheetPages({
   const [planLoading, setPlanLoading] = useState(false)
   const [planError, setPlanError] = useState<string | null>(null)
   const [draftingPageId, setDraftingPageId] = useState<string | null>(null)
+  // Set only by the chapter-draft sweep (handleDraftChapter); handleDraftPage
+  // and manual adds never touch this. Clears on chapter switch (the effect
+  // below) or at the start of the next chapter draft.
+  const [tieCount, setTieCount] = useState(0)
 
   // One abort ref per flow (mirrors handleDraftOutline/abortRef): the chapter
   // and page drafts each track their own loading flag, so sharing a ref would
@@ -91,6 +104,12 @@ export function SheetPages({
       pageAbortRef.current?.abort()
     }
   }, [])
+
+  // The tied-for-you line only ever describes the chapter that was just
+  // drafted — clear it the moment the active chapter changes.
+  useEffect(() => {
+    setTieCount(0)
+  }, [activeSegmentId])
 
   // Sheet 5's stitch links set jumpTarget: switch to the chapter holding the
   // node, then (in a second effect, once that chapter's rows are on the page)
@@ -218,6 +237,7 @@ export function SheetPages({
   async function handleDraftChapter(segment: Segment, chapterIndex: number) {
     setPlanError(null)
     setPlanLoading(true)
+    setTieCount(0)
     const controller = new AbortController()
     chapterAbortRef.current = controller
     try {
@@ -233,7 +253,25 @@ export function SheetPages({
         setPlanError(errorCopy(res.status, data))
         return
       }
-      updateSegmentNodes(segment.id, (data as { nodes: Node[] }).nodes)
+      const { nodes, pendingRefs } = data as { nodes: Node[]; pendingRefs: PendingRef[] }
+      // Merge the drafted pages into the chapter first (as before), then sweep
+      // the FULL book: pendingRefs resolve the drafted chapter's symbolic
+      // exits, autoTie catches anything still loose across every chapter.
+      const merged = getSegments(draft).map((s) => (s.id === segment.id ? { ...s, nodes } : s))
+      const applied = applyPendingRefs(merged, pendingRefs ?? [])
+      const swept = autoTie(applied.segments)
+      onChange({ segments: swept.segments })
+
+      const seen = new Set<string>()
+      const allTies: TieNote[] = [...applied.ties, ...swept.ties]
+      let count = 0
+      for (const tie of allTies) {
+        const key = `${tie.nodeId}:${tie.optionId ?? ""}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        count++
+      }
+      setTieCount(count)
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return
       if (chapterAbortRef.current !== controller) return
@@ -408,6 +446,14 @@ export function SheetPages({
               onDraftPage={(nodeId) => handleDraftPage(activeSegment, activeChapterIndex, nodeId)}
               onSample={(nodeId) => handleSample(activeChapterIndex, nodeId)}
             />
+
+            {tieCount > 0 && (
+              <p className="lib-plan-tied">
+                {tieCount === 1
+                  ? "One thread tied for you. Change any of them with Turn to…"
+                  : `${tieCount} threads tied for you. Change any of them with Turn to…`}
+              </p>
+            )}
           </div>
         </div>
 

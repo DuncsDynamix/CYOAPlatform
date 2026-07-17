@@ -358,3 +358,5 @@
 .lib-bound-walk:hover, .lib-bound-walk:focus-visible { background: var(--lib-paper-dark); }
 
 .lib-cover-preview { max-width: 320px; margin: 0 auto 1.4rem; }
+
+.lib-plan-tied { font-style: italic; color: var(--lib-muted); margin: 0.6rem 0 0; }
