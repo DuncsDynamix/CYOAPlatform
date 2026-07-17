@@ -20,11 +20,15 @@ import type { Experience, ExperienceContextPack, FixedNode, GeneratedNode, Node 
 
 const MODEL = "claude-sonnet-5"
 
-// Identical to the client factory in generator.ts (not exported from there).
+// Like the client factory in generator.ts (not exported from there), but with
+// a longer timeout: chapter drafts run to 3000 output tokens and routinely
+// need more than the reader path's 30s. The generator's tight timeout is for
+// small in-session calls a reader is actively waiting on; an author at the
+// desk is told the assistant is working and can wait for a whole chapter.
 function getAnthropicClient(apiKey?: string): Anthropic {
   return new Anthropic({
     apiKey: apiKey ?? process.env.ANTHROPIC_API_KEY,
-    timeout: 30_000,
+    timeout: 120_000,
     maxRetries: 2,
   })
 }
