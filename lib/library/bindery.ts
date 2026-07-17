@@ -200,8 +200,15 @@ function resolveRef(ref: string, labelToId: Map<string, string>): { targetId: st
   return { targetId: labelToId.get(ref) ?? "" }
 }
 
-/** Materialises a chapter proposal's symbolic refs into real node ids and wiring. */
-export function proposalToNodes(proposal: ChapterProposal): Node[] {
+/**
+ * Materialises a chapter proposal's symbolic refs into real node ids and
+ * wiring. Every symbolic ref (`EXIT:<i>`/`END:<n>`) resolves to an empty
+ * `nextNodeId`/option target as before, but is now also recorded as a
+ * `PendingRef` so the apply path can tie it later — a page's unresolved
+ * `next` yields `{ nodeId, ref }`; a choice option's yields
+ * `{ nodeId, optionId, ref }` for the option that was just materialised.
+ */
+export function proposalToNodes(proposal: ChapterProposal): { nodes: Node[]; pendingRefs: PendingRef[] } {
   // Every node gets its own id; the ref map keeps the FIRST id per label.
   // The schema rejects duplicate labels, but if that refinement is ever
   // bypassed, refs resolve to the first occurrence rather than silently
@@ -212,12 +219,15 @@ export function proposalToNodes(proposal: ChapterProposal): Node[] {
     if (!ids.has(n.label)) ids.set(n.label, nodeIds[i])
   })
 
-  return proposal.nodes.map((proposed: ProposedNode, index) => {
+  const pendingRefs: PendingRef[] = []
+
+  const nodes = proposal.nodes.map((proposed: ProposedNode, index) => {
     const id = nodeIds[index]
 
     switch (proposed.kind) {
       case "page": {
         const { targetId } = resolveRef(proposed.next, ids)
+        if (SYMBOLIC_REF.test(proposed.next)) pendingRefs.push({ nodeId: id, ref: proposed.next })
         if (proposed.mode === "written") {
           const node: FixedNode = {
             id,
@@ -249,8 +259,10 @@ export function proposalToNodes(proposal: ChapterProposal): Node[] {
           prompt: proposed.prompt,
           options: proposed.options.map((opt) => {
             const { targetId } = resolveRef(opt.next, ids)
+            const optionId = crypto.randomUUID()
+            if (SYMBOLIC_REF.test(opt.next)) pendingRefs.push({ nodeId: id, optionId, ref: opt.next })
             return {
-              id: crypto.randomUUID(),
+              id: optionId,
               label: opt.label,
               nextNodeId: targetId,
               isLoadBearing: false,
@@ -274,6 +286,8 @@ export function proposalToNodes(proposal: ChapterProposal): Node[] {
       }
     }
   })
+
+  return { nodes, pendingRefs }
 }
 
 // ─── CHAPTER PLAN (the flat, readable view of one chapter) ─────────────────

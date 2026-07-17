@@ -54,16 +54,16 @@ export async function POST(req: NextRequest) {
   // draft below which fabricates an entirely new set of nodes.
   if (nodeId) {
     try {
-      const node = await draftSinglePage(experience as unknown as Experience, nodeId, apiKey)
-      return NextResponse.json({ nodes: [node] })
+      const { nodes, pendingRefs } = await draftSinglePage(experience as unknown as Experience, nodeId, apiKey)
+      return NextResponse.json({ nodes, pendingRefs })
     } catch {
       return NextResponse.json(MODEL_FAILURE, { status: 502 })
     }
   }
 
   try {
-    const nodes = await draftChapter(experience as unknown as Experience, chapterIndex, apiKey)
-    return NextResponse.json({ nodes })
+    const { nodes, pendingRefs } = await draftChapter(experience as unknown as Experience, chapterIndex, apiKey)
+    return NextResponse.json({ nodes, pendingRefs })
   } catch {
     return NextResponse.json(MODEL_FAILURE, { status: 502 })
   }

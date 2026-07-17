@@ -39,13 +39,17 @@ describe("chapter proposals", () => {
 
   it("validates and materialises refs into wired nodes", () => {
     const parsed = ChapterProposalSchema.parse(proposal)
-    const nodes = proposalToNodes(parsed)
+    const { nodes, pendingRefs } = proposalToNodes(parsed)
     expect(nodes).toHaveLength(3)
     const page = nodes[0] as GeneratedNode
     const choice = nodes[1] as ChoiceNode
     expect(page.nextNodeId).toBe(choice.id)
     expect(choice.options![0].nextNodeId).toBe(nodes[2].id)
     expect(choice.options![1].nextNodeId).toBe("")           // EXIT ref: author wires it
+    // The symbolic EXIT:2 ref travels forward as a PendingRef for the apply path.
+    expect(pendingRefs).toEqual([
+      { nodeId: choice.id, optionId: choice.options![1].id, ref: "EXIT:2" },
+    ])
   })
 
   it("rejects unknown kinds and fenced garbage", () => {

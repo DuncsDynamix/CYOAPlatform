@@ -122,7 +122,7 @@ describe("draftChapter", () => {
     mockMessagesCreate.mockResolvedValueOnce(textResponse(JSON.stringify(chapterProposalFixture)))
 
     const experience = createTestExperience({ segments: testSegments })
-    const nodes = await draftChapter(experience, 0, "test-key")
+    const { nodes, pendingRefs } = await draftChapter(experience, 0, "test-key")
 
     expect(nodes).toHaveLength(3)
     const page = nodes[0] as GeneratedNode
@@ -130,6 +130,10 @@ describe("draftChapter", () => {
     expect(page.nextNodeId).toBe(choice.id)
     expect(choice.options![0].nextNodeId).toBe(nodes[2].id)
     expect(choice.options![1].nextNodeId).toBe("") // EXIT:2 ref — author wires it later
+    // The symbolic EXIT:2 ref travels forward as a PendingRef for the apply path.
+    expect(pendingRefs).toEqual([
+      { nodeId: choice.id, optionId: choice.options![1].id, ref: "EXIT:2" },
+    ])
 
     const call = mockMessagesCreate.mock.calls[0][0] as { max_tokens: number }
     expect(call.max_tokens).toBe(3000)
@@ -165,7 +169,7 @@ describe("draftChapter", () => {
     mockMessagesCreate.mockResolvedValueOnce(textResponse(JSON.stringify(dashedProposal)))
 
     const experience = createTestExperience({ segments: testSegments })
-    const nodes = await draftChapter(experience, 0, "test-key")
+    const { nodes, pendingRefs } = await draftChapter(experience, 0, "test-key")
 
     const page = nodes[0] as { content: string }
     const choice = nodes[1] as ChoiceNode
@@ -176,6 +180,11 @@ describe("draftChapter", () => {
     expect(ending.closingLine).toBe("It will not come off, ever.")
     // The choice option still resolves to the ending despite the stripping.
     expect(choice.options![0].nextNodeId).toBe(nodes[2].id)
+    // The em-dash strip runs before materialisation but must not touch the
+    // symbolic ref itself — pendingRefs still carries the untouched "EXIT:2".
+    expect(pendingRefs).toEqual([
+      { nodeId: choice.id, optionId: choice.options![1].id, ref: "EXIT:2" },
+    ])
   })
 
   it("humanises identifier-style labels and their matching refs, keeping wiring intact", async () => {
@@ -197,7 +206,7 @@ describe("draftChapter", () => {
     mockMessagesCreate.mockResolvedValueOnce(textResponse(JSON.stringify(snakeCaseProposal)))
 
     const experience = createTestExperience({ segments: testSegments })
-    const nodes = await draftChapter(experience, 0, "test-key")
+    const { nodes, pendingRefs } = await draftChapter(experience, 0, "test-key")
 
     expect(nodes).toHaveLength(3)
     const page = nodes[0] as GeneratedNode
@@ -210,6 +219,10 @@ describe("draftChapter", () => {
     expect(page.nextNodeId).toBe(choice.id)
     expect(choice.options![0].nextNodeId).toBe(nodes[2].id)
     expect(choice.options![1].nextNodeId).toBe("") // EXIT:2 untouched by the transform
+    // The humanise transform must not alter the symbolic ref carried in pendingRefs.
+    expect(pendingRefs).toEqual([
+      { nodeId: choice.id, optionId: choice.options![1].id, ref: "EXIT:2" },
+    ])
   })
 })
 
@@ -229,12 +242,14 @@ describe("draftSinglePage", () => {
     )
 
     const experience = createTestExperience({ segments: pageSegments })
-    const drafted = (await draftSinglePage(experience, "node-2a", "test-key")) as GeneratedNode
+    const { nodes, pendingRefs } = await draftSinglePage(experience, "node-2a", "test-key")
+    const drafted = nodes[0] as GeneratedNode
 
     expect(drafted.id).toBe("node-2a")
     expect(drafted.type).toBe("GENERATED")
     expect(drafted.nextNodeId).toBe("endpoint-1") // wiring preserved
     expect(drafted.beatInstruction).toBe("The forest closes in, silent and watchful.")
+    expect(pendingRefs).toEqual([]) // no proposal materialisation involved
     expect(mockUpdateExperience).not.toHaveBeenCalled()
   })
 
@@ -243,7 +258,8 @@ describe("draftSinglePage", () => {
     mockMessagesCreate.mockResolvedValueOnce(textResponse(JSON.stringify({ text: "A clean second take." })))
 
     const experience = createTestExperience({ segments: pageSegments })
-    const drafted = (await draftSinglePage(experience, "node-2a", "test-key")) as GeneratedNode
+    const { nodes } = await draftSinglePage(experience, "node-2a", "test-key")
+    const drafted = nodes[0] as GeneratedNode
 
     expect(mockMessagesCreate).toHaveBeenCalledTimes(2)
     expect(drafted.beatInstruction).toBe("A clean second take.")
@@ -387,6 +403,11 @@ describe("POST /api/v1/bindery/draft-chapter — chapterIndex validation", () =>
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.nodes).toHaveLength(3)
+    // EXIT:2 on "Leave it" travels through the endpoint as a pendingRef.
+    const choice = body.nodes[1] as ChoiceNode
+    expect(body.pendingRefs).toEqual([
+      { nodeId: choice.id, optionId: choice.options![1].id, ref: "EXIT:2" },
+    ])
   })
 
   it("drafts a single page in place when nodeId is sent without mode, preserving id and wiring", async () => {
@@ -409,6 +430,7 @@ describe("POST /api/v1/bindery/draft-chapter — chapterIndex validation", () =>
     expect(body.nodes[0].type).toBe("GENERATED")
     expect(body.nodes[0].nextNodeId).toBe("endpoint-1")
     expect(body.nodes[0].beatInstruction).not.toMatch(/—/)
+    expect(body.pendingRefs).toEqual([])
   })
 
   it("502s the in-fiction envelope when the nodeId is not a page", async () => {

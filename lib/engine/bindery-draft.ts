@@ -14,6 +14,7 @@ import {
   proposalToNodes,
   outlineFromSegments,
   type BookOutline,
+  type PendingRef,
 } from "@/lib/library/bindery"
 import { getAllNodes } from "./executor"
 import type { Experience, ExperienceContextPack, FixedNode, GeneratedNode, Node } from "@/types/experience"
@@ -204,7 +205,7 @@ export async function draftChapter(
   experience: Experience,
   chapterIndex: number,
   apiKey?: string
-): Promise<Node[]> {
+): Promise<{ nodes: Node[]; pendingRefs: PendingRef[] }> {
   const anthropic = getAnthropicClient(apiKey)
   const pack = getBinderyPack(experience.type)
   const contextPack = experience.contextPack as ExperienceContextPack
@@ -230,7 +231,11 @@ const SinglePageProposalSchema = z.object({ text: z.string().min(1) })
  * one existing page, preserving its id/type/nextNodeId — unlike draftChapter,
  * which fabricates a whole new set of nodes with fresh ids.
  */
-export async function draftSinglePage(experience: Experience, nodeId: string, apiKey?: string): Promise<Node> {
+export async function draftSinglePage(
+  experience: Experience,
+  nodeId: string,
+  apiKey?: string
+): Promise<{ nodes: Node[]; pendingRefs: PendingRef[] }> {
   const anthropic = getAnthropicClient(apiKey)
   const contextPack = experience.contextPack as ExperienceContextPack
   const node = getAllNodes(experience).find((n) => n.id === nodeId)
@@ -256,10 +261,10 @@ export async function draftSinglePage(experience: Experience, nodeId: string, ap
 
   if (written) {
     const drafted: FixedNode = { ...(node as FixedNode), content: text }
-    return drafted
+    return { nodes: [drafted], pendingRefs: [] }
   }
   const drafted: GeneratedNode = { ...(node as GeneratedNode), beatInstruction: text }
-  return drafted
+  return { nodes: [drafted], pendingRefs: [] }
 }
 
 export async function sampleTelling(
