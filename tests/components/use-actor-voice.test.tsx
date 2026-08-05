@@ -89,6 +89,26 @@ describe("useActorVoice", () => {
     expect(MockAudio.instances[0].pause).toHaveBeenCalled()
   })
 
+  it("reports speaking while a line plays and stops on ended", async () => {
+    mockFetchActorAudio.mockResolvedValue({ kind: "audio", blob: new Blob(["x"], { type: "audio/mpeg" }) })
+    const { result } = renderHook(() => useActorVoice("session-1"))
+
+    await act(() => result.current.speak("Margaret Ellery", "A line."))
+    expect(result.current.speaking).toBe(true)
+
+    act(() => { MockAudio.instances[0].onended?.() })
+    expect(result.current.speaking).toBe(false)
+  })
+
+  it("stops reporting speaking when muted mid-line", async () => {
+    mockFetchActorAudio.mockResolvedValue({ kind: "audio", blob: new Blob(["x"], { type: "audio/mpeg" }) })
+    const { result } = renderHook(() => useActorVoice("session-1"))
+
+    await act(() => result.current.speak("Margaret Ellery", "A line."))
+    act(() => result.current.toggle())
+    expect(result.current.speaking).toBe(false)
+  })
+
   it("replaces current playback when a new line is spoken", async () => {
     mockFetchActorAudio.mockResolvedValue({ kind: "audio", blob: new Blob(["x"], { type: "audio/mpeg" }) })
     const { result } = renderHook(() => useActorVoice("session-1"))

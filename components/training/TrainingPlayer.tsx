@@ -582,7 +582,7 @@ function DialoguePanel({
 }) {
   const [draft, setDraft] = useState("")
   const [submitting, setSubmitting] = useState(false)
-  const { voiceOn, available, toggle, speak } = useActorVoice(sessionId)
+  const { voiceOn, available, speaking, toggle, speak } = useActorVoice(sessionId)
 
   // Speak each character turn once as it arrives (including the opening line)
   const spokenCountRef = useRef(0)
@@ -610,7 +610,10 @@ function DialoguePanel({
   return (
     <div className="t-dialogue-panel">
       <div className="t-dialogue-header">
-        <span className="t-dialogue-actor">{actorName}</span>
+        <span className="t-dialogue-actor">
+          {actorName}
+          {speaking && <span className="t-dialogue-speaking" aria-hidden="true" />}
+        </span>
         <span className="t-dialogue-role">{actorRole}</span>
         <span className="t-dialogue-turns">{turnCount}/{maxTurns} turns</span>
         {available && (

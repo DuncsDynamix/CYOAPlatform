@@ -15,6 +15,7 @@ import { fetchActorAudio } from "@/lib/voice/client"
 export function useActorVoice(sessionId: string | null) {
   const [enabled, setEnabled] = useState(true)
   const [available, setAvailable] = useState(true)
+  const [speakingState, setSpeakingState] = useState(false)
   const audioRef = useRef<{ el: HTMLAudioElement; url: string } | null>(null)
 
   const stop = useCallback(() => {
@@ -23,6 +24,7 @@ export function useActorVoice(sessionId: string | null) {
       URL.revokeObjectURL(audioRef.current.url)
       audioRef.current = null
     }
+    setSpeakingState(false)
   }, [])
 
   useEffect(() => stop, [stop])
@@ -45,10 +47,14 @@ export function useActorVoice(sessionId: string | null) {
       audioRef.current = { el, url }
       el.onended = () => {
         URL.revokeObjectURL(url)
-        if (audioRef.current?.el === el) audioRef.current = null
+        if (audioRef.current?.el === el) {
+          audioRef.current = null
+          setSpeakingState(false)
+        }
       }
       // Autoplay may be blocked before the first user gesture — text carries the line
-      el.play().catch(() => {})
+      setSpeakingState(true)
+      el.play().catch(() => setSpeakingState(false))
     },
     [sessionId, enabled, available, stop]
   )
@@ -60,5 +66,5 @@ export function useActorVoice(sessionId: string | null) {
     })
   }, [stop])
 
-  return { voiceOn: enabled && available, available, toggle, speak }
+  return { voiceOn: enabled && available, available, speaking: speakingState, toggle, speak }
 }
