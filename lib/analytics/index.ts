@@ -15,6 +15,7 @@ export type EventType =
   | "page_view"
   | "generation_metric"
   | "dialogue_turn"
+  | "dialogue_concluded"
   | "checkpoint_reached"
   | "scaffold_generation_failed"
   | "pre_generation_failed"
@@ -99,6 +100,14 @@ export interface EventProperties {
   dialogue_turn: {
     sessionId: string
     experienceId: string
+    nodeId: string
+    turnCount: number
+    breakthrough: boolean
+  }
+  dialogue_concluded: {
+    sessionId: string
+    experienceId: string
+    orgId?: string
     nodeId: string
     turnCount: number
     breakthrough: boolean

@@ -430,6 +430,11 @@
   width: 100%;
 }
 
+.traverse-training-theme .t-situation p {
+  margin: 0 0 1.1em;
+}
+.traverse-training-theme .t-situation p:last-child { margin-bottom: 0; }
+
 /* ── Markdown content in FIXED nodes ────────────────────────────── */
 .traverse-training-theme .t-situation img,
 .traverse-training-theme .tt-scene-prose img {
@@ -735,6 +740,15 @@
   0%, 100% { opacity: 0.35; transform: scale(0.85); }
   50% { opacity: 1; transform: scale(1.15); }
 }
+.traverse-training-theme .t-dialogue-conclude-row {
+  padding: 0 1.25rem 1rem; text-align: right;
+}
+.traverse-training-theme .t-dialogue-conclude {
+  background: none; border: none; color: var(--t-text-muted); font-family: var(--t-font-ui);
+  font-size: 0.8rem; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+}
+.traverse-training-theme .t-dialogue-conclude:hover { color: var(--t-accent); }
+.traverse-training-theme .t-dialogue-conclude:disabled { opacity: 0.5; cursor: default; }
 
 /* ─── EVIDENCE RECORD (tt-evidence) ─────────────────────────── */
 .traverse-training-theme .tt-evidence {

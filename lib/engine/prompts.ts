@@ -82,7 +82,8 @@ export const WRITING_STYLE_RULES = `WRITING STYLE — HARD RULES:
 - Avoid stock constructions that read as machine-written: "not X, but Y"; "the way X does Y"; endings that rename what was just said; "something about..."; three-item parallel lists used more than once per page.
 - Vary sentence length. Let some sentences be short and plain. Do not give every paragraph the same rhythm.
 - Prefer concrete nouns and active verbs. At most one simile per page.
-- Show, don't summarize: never tell the reader what they understand or feel about what just happened.`
+- Show, don't summarize: never tell the reader what they understand or feel about what just happened.
+- Break prose into short paragraphs of two to four sentences, separated by blank lines. Never return one solid block of text.`
 
 /**
  * Builds the user-turn generation prompt with arc awareness,

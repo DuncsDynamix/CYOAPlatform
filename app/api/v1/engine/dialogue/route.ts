@@ -11,10 +11,17 @@ import { engineErrorResponse } from "@/lib/api/errors"
 import type { DialogueNode, ExperienceContextPack } from "@/types/experience"
 import type { DialogueTurn } from "@/types/session"
 
-const DialogueTurnSchema = z.object({
-  sessionId: z.string().uuid(),
-  participantText: z.string().min(1).max(1000),
-})
+const DialogueTurnSchema = z
+  .object({
+    sessionId: z.string().uuid(),
+    participantText: z.string().min(1).max(1000).optional(),
+    /** True = participant wraps the conversation up early: no new turn is
+     * generated; the dialogue resolves on its current breakthrough state. */
+    conclude: z.boolean().optional(),
+  })
+  .refine((d) => d.conclude === true || (d.participantText && d.participantText.length > 0), {
+    message: "participantText is required unless concluding",
+  })
 
 /**
  * POST /api/engine/dialogue
@@ -44,7 +51,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { sessionId, participantText } = parsed.data
+  const { sessionId, participantText, conclude } = parsed.data
 
   const user = await requireAuth(req, { allowAnonymous: true })
   const session = await getSession(sessionId)
@@ -94,9 +101,55 @@ export async function POST(req: NextRequest) {
 
   const apiKey = getAnthropicKey(user)
 
+  // Early wrap-up: the participant considers the conversation done. No new
+  // turn is generated; the dialogue resolves on its stored breakthrough state
+  // (a breakthrough would have completed the dialogue at the turn it happened,
+  // so concluding here follows the same routing as running out of turns).
+  if (conclude) {
+    const priorBreakthrough = dialogue.breakthroughAchieved
+    const updated = await commitSessionMutation(sessionId, (draft) => {
+      draft.state.dialogue = null
+    })
+    if (!updated) {
+      return NextResponse.json({ error: "Failed to conclude dialogue" }, { status: 500 })
+    }
+
+    trackEvent("dialogue_concluded", {
+      sessionId,
+      experienceId: experience.id,
+      orgId: experience.orgId ?? undefined,
+      nodeId: currentNode.id,
+      turnCount: dialogue.turnCount,
+      breakthrough: priorBreakthrough,
+    })
+
+    const nextNodeId = (!priorBreakthrough && currentNode.failureNodeId)
+      ? currentNode.failureNodeId
+      : currentNode.nextNodeId
+
+    try {
+      let arrival = await arriveAtNode(sessionId, nextNodeId, experience, apiKey)
+      if (arrival.content.type === "redirect") {
+        arrival = await arriveAtNode(sessionId, arrival.content.targetNodeId, experience, apiKey)
+      }
+
+      return NextResponse.json({
+        characterLine: null,
+        turnCount: dialogue.turnCount,
+        maxTurns: currentNode.maxTurns,
+        breakthroughAchieved: priorBreakthrough,
+        dialogueComplete: true,
+        nextNode: arrival.node,
+        nextContent: arrival.content,
+      })
+    } catch (err) {
+      return engineErrorResponse(err, { route: "engine/dialogue", sessionId, experienceId: experience.id })
+    }
+  }
+
   const participantTurn: DialogueTurn = {
     role: "participant",
-    content: participantText,
+    content: participantText!,
     timestamp: new Date().toISOString(),
   }
   const turnsForGeneration = [...dialogue.turns, participantTurn]

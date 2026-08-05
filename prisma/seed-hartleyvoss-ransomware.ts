@@ -108,7 +108,7 @@ const nodes: Node[] = [
     type: "CHECKPOINT",
     label: "Inject gate — containment phase closed",
     visible: false,
-    marksCompletionOf: "containment-phase",
+    marksCompletionOf: "Apply first-hour containment discipline: isolate without destroying evidence, log from minute one",
     unlocks: ["escalation-phase"],
     snapshotsState: true,
     nextNodeId: "n2",
@@ -257,7 +257,7 @@ const nodes: Node[] = [
     type: "CHECKPOINT",
     label: "Inject gate — regulatory phase closed",
     visible: false,
-    marksCompletionOf: "regulatory-phase",
+    marksCompletionOf: "Make the UK GDPR 72-hour notification decision correctly: notify on awareness, update in phases",
     unlocks: ["crisis-peak"],
     snapshotsState: true,
     nextNodeId: "n4",
@@ -584,6 +584,7 @@ const shape: ShapeDefinition = {
   convergencePoints: [2],
   pacingModel: "competency_build",
   mandatoryNodeIds: ["n1"],
+  displaySteps: 10,
 }
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────

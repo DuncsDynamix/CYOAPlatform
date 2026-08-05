@@ -110,7 +110,7 @@ const nodes: Node[] = [
     type: "CHECKPOINT",
     label: "Inject gate — triage closed",
     visible: false,
-    marksCompletionOf: "triage-phase",
+    marksCompletionOf: "Recognise a complaint cluster after network work as a possible water quality event",
     unlocks: ["escalation-phase"],
     snapshotsState: true,
     nextNodeId: "n2",
@@ -255,7 +255,7 @@ const nodes: Node[] = [
     type: "CHECKPOINT",
     label: "Inject gate — regulatory phase closed",
     visible: false,
-    marksCompletionOf: "regulatory-phase",
+    marksCompletionOf: "Apply notification duties on suspicion: DWI event notification and authorised, consistent consumer advice",
     unlocks: ["street-phase"],
     snapshotsState: true,
     nextNodeId: "n4",
@@ -570,6 +570,7 @@ const shape: ShapeDefinition = {
   convergencePoints: [2],
   pacingModel: "competency_build",
   mandatoryNodeIds: ["n1"],
+  displaySteps: 10,
 }
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────

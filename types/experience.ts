@@ -109,6 +109,8 @@ export interface ShapeDefinition {
   convergencePoints: number[]
   pacingModel: "narrative_arc" | "competency_build" | "socratic"
   mandatoryNodeIds: string[]
+  /** Optional display-only step count for player progress UI (path nodes, not choices). Does not affect arc pacing. */
+  displaySteps?: number
 }
 
 export interface EndpointShape {

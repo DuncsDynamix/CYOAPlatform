@@ -15,6 +15,7 @@ import type { Node } from "@/types/experience"
 import type { DialogueTurn, CompetencyResult } from "@/types/session"
 import { buildEvidenceRecord } from "@/lib/training/evidence"
 import { DEFAULT_BRAND, type BrandTheme } from "@/lib/branding"
+import { shuffleWith } from "@/lib/training/shuffle"
 import { SlideDeckPanel } from "@/components/traverse-training/SlideDeckPanel"
 import { LayoutRenderer } from "@/components/traverse-training/LayoutRenderer"
 import { useActorVoice } from "./useActorVoice"
@@ -106,7 +107,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND }: Traini
         content: ResolvedContent
         experienceTitle?: string
         contextPack?: ExperienceContextPack
-        shape?: { totalDepthMax?: number }
+        shape?: { totalDepthMax?: number; displaySteps?: number }
       }
 
       setSessionId(data.sessionId)
@@ -119,7 +120,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND }: Traini
         completed: false,
       }))
       setObjectives(objectives)
-      setTotalSteps(data.shape?.totalDepthMax ?? 0)
+      setTotalSteps(data.shape?.displaySteps ?? data.shape?.totalDepthMax ?? 0)
 
       arriveAtNode(data.sessionId, data.node, data.content)
     } catch (err) {
@@ -148,6 +149,12 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND }: Traini
       return
     }
 
+    // Progress: every content-bearing arrival is a step (checkpoints auto-advance
+    // above; the endpoint is the destination, not a step)
+    if (content.type !== "endpoint") {
+      setCurrentStep((s) => s + 1)
+    }
+
     if (content.type === "endpoint") {
       setPlayerStatus({
         status: "debrief",
@@ -172,7 +179,8 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND }: Traini
       const choiceNode = node as Extract<Node, { type: "CHOICE" }>
       setPlayerStatus({
         status: "at_decision",
-        options: choiceNode.options ?? [],
+        // Shuffled per arrival so the load-bearing answer isn't always option A
+        options: shuffleWith(choiceNode.options ?? [], Math.random),
         responseType: choiceNode.responseType,
         prompt: content.prompt,
         openPrompt: choiceNode.openPrompt,
@@ -263,16 +271,14 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND }: Traini
 
     // Show feedback panel if this option has training feedback
     if (option.trainingFeedback) {
-      const decisionStep = currentStep + 1
       const review: DecisionReview = {
         nodeId: option.id,
-        sceneLabel: `Decision ${decisionStep}`,
+        sceneLabel: `Decision ${decisionHistory.length + 1}`,
         choiceLabel,
         feedbackTone: option.feedbackTone,
         competencySignal: option.competencySignal,
       }
       setDecisionHistory((prev) => [...prev, review])
-      setCurrentStep((s) => s + 1)
 
       setPlayerStatus({
         status: "reviewing_decision",
@@ -288,7 +294,6 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND }: Traini
       // Trigger slide-in animation on next tick
       setTimeout(() => setFeedbackVisible(true), 20)
     } else {
-      setCurrentStep((s) => s + 1)
       submitChoice(choiceId)
     }
   }
@@ -353,6 +358,32 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND }: Traini
     } catch (err) {
       if (isAbort(err)) return
       setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: () => submitDialogueTurn(participantText) })
+    }
+  }
+
+  // Early wrap-up: participant declares the conversation done before max turns
+  async function handleConcludeDialogue() {
+    if (!sessionId) return
+    try {
+      const res = await fetch("/api/v1/engine/dialogue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, conclude: true }),
+        signal: nextSignal(),
+      })
+      if (!res.ok) {
+        const failure = await readFailure(res, "Could not finish the conversation")
+        setPlayerStatus({ status: "error", ...failure, retry: handleConcludeDialogue })
+        return
+      }
+      const data = await res.json() as { nextNode?: Node; nextContent?: ResolvedContent }
+      if (data.nextNode && data.nextContent) {
+        setDialogueHistory([])
+        arriveAtNode(sessionId, data.nextNode, data.nextContent)
+      }
+    } catch (err) {
+      if (isAbort(err)) return
+      setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: handleConcludeDialogue })
     }
   }
 
@@ -546,6 +577,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND }: Traini
           turnCount={playerStatus.turnCount}
           maxTurns={playerStatus.maxTurns}
           onSubmit={handleDialogueTurn}
+          onConclude={handleConcludeDialogue}
         />
       )}
 
@@ -571,6 +603,7 @@ function DialoguePanel({
   turnCount,
   maxTurns,
   onSubmit,
+  onConclude,
 }: {
   sessionId: string | null
   actorName: string
@@ -579,10 +612,20 @@ function DialoguePanel({
   turnCount: number
   maxTurns: number
   onSubmit: (text: string) => void
+  onConclude: () => void
 }) {
   const [draft, setDraft] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [concluding, setConcluding] = useState(false)
   const { voiceOn, available, speaking, toggle, speak } = useActorVoice(sessionId)
+
+  // Keep the newest turn in view — without this the box sits scrolled to the
+  // top and a new reply below the fold looks like nothing happened
+  const historyRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = historyRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [history, submitting])
 
   // Speak each character turn once as it arrives (including the opening line)
   const spokenCountRef = useRef(0)
@@ -629,7 +672,7 @@ function DialoguePanel({
           </button>
         )}
       </div>
-      <div className="t-dialogue-history">
+      <div className="t-dialogue-history" ref={historyRef}>
         {history.map((turn, i) => (
           <div key={i} className={`t-dialogue-turn t-dialogue-turn--${turn.role}`}>
             <span className="t-dialogue-turn-label">
@@ -668,6 +711,21 @@ function DialoguePanel({
           Send
         </button>
       </div>
+      {turnCount >= 1 && (
+        <div className="t-dialogue-conclude-row">
+          <button
+            type="button"
+            className="t-dialogue-conclude"
+            onClick={() => {
+              setConcluding(true)
+              onConclude()
+            }}
+            disabled={submitting || concluding}
+          >
+            {concluding ? "Finishing…" : "I've said what I need to — finish the conversation"}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

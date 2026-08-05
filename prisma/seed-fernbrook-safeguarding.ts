@@ -488,6 +488,7 @@ const shape: ShapeDefinition = {
   convergencePoints: [2],
   pacingModel: "competency_build",
   mandatoryNodeIds: ["n1"],
+  displaySteps: 9,
 }
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────

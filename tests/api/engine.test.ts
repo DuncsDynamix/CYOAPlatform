@@ -101,6 +101,42 @@ describe("POST /api/v1/engine/start", () => {
     expect(data.content).toBeDefined()
   })
 
+  it("returns learning objectives and a shape summary without leaking authoring internals", async () => {
+    const experience = createTestExperience({ status: "published" })
+    const cp = experience.contextPack as { learningObjectives?: string[]; groundTruth?: unknown[] }
+    cp.learningObjectives = ["Spot the cluster", "Sample before flushing"]
+    cp.groundTruth = [{ label: "secret", type: "inline", fetchStrategy: "on_session_start", priority: "must_include", content: "answers" }]
+    const shape = experience.shape as { totalDepthMax: number; displaySteps?: number }
+    shape.totalDepthMax = 8
+    shape.displaySteps = 11
+
+    const session = createTestSession()
+    mockGetExperience.mockResolvedValue(experience)
+    mockCreateSession.mockResolvedValue(session)
+    mockArriveAtNode.mockResolvedValue({
+      node: experience.nodes[0],
+      content: { type: "prose" as const, content: "..." },
+      session,
+    })
+
+    const res = await startSession(
+      new NextRequest("http://localhost/api/v1/engine/start", {
+        method: "POST",
+        body: JSON.stringify({ experienceId: experience.id }),
+        headers: { "Content-Type": "application/json" },
+      })
+    )
+    expect(res.status).toBe(200)
+    const data = await res.json()
+
+    expect(data.contextPack.learningObjectives).toEqual(["Spot the cluster", "Sample before flushing"])
+    // Never leak authored internals to the client
+    expect(data.contextPack.groundTruth).toBeUndefined()
+    expect(data.contextPack.actors).toBeUndefined()
+    expect(data.shape.totalDepthMax).toBe(8)
+    expect(data.shape.displaySteps).toBe(11)
+  })
+
   it("returns 400 for invalid JSON body", async () => {
     const req = new NextRequest("http://localhost/api/v1/engine/start", {
       method: "POST",
