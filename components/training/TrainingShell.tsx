@@ -2,27 +2,37 @@
 
 import { useState } from "react"
 import type { LearningObjective } from "@/types/engine"
+import type { BrandTheme } from "@/lib/branding"
 import { ObjectivesDrawer } from "./ObjectivesDrawer"
 
 interface TrainingShellProps {
   moduleTitle: string
   organisationName?: string
+  brand?: BrandTheme
   totalSteps: number
   currentStep: number
   objectives: LearningObjective[]
   children: React.ReactNode
 }
 
-export function TrainingShell({ moduleTitle, organisationName, totalSteps, currentStep, objectives, children }: TrainingShellProps) {
+export function TrainingShell({ moduleTitle, organisationName, brand, totalSteps, currentStep, objectives, children }: TrainingShellProps) {
   const [objectivesOpen, setObjectivesOpen] = useState(false)
   const pct = totalSteps > 0 ? Math.min(100, Math.round((currentStep / totalSteps) * 100)) : 0
+  const brandStyle = brand
+    ? ({
+        "--t-accent": brand.accent,
+        "--t-accent-hover": brand.accentHover,
+        "--t-accent-light": brand.accentLight,
+      } as React.CSSProperties)
+    : undefined
+  const orgName = brand?.name ?? organisationName
 
   return (
-    <div className="t-shell">
+    <div className="t-shell" style={brandStyle}>
       {/* Header */}
       <header className="t-shell-header">
-        {organisationName && (
-          <span className="t-shell-org">{organisationName}</span>
+        {orgName && (
+          <span className="t-shell-org">{orgName}</span>
         )}
         <span className="t-shell-title">{moduleTitle}</span>
         <button

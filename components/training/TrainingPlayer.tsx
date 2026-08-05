@@ -13,11 +13,15 @@ import type { ChoiceOption, ExperienceContextPack, FixedNode, GeneratedNode } fr
 import type { ResolvedContent } from "@/types/engine"
 import type { Node } from "@/types/experience"
 import type { DialogueTurn, CompetencyResult } from "@/types/session"
+import { buildEvidenceRecord } from "@/lib/training/evidence"
+import { DEFAULT_BRAND, type BrandTheme } from "@/lib/branding"
 import { SlideDeckPanel } from "@/components/traverse-training/SlideDeckPanel"
 import { LayoutRenderer } from "@/components/traverse-training/LayoutRenderer"
+import { useActorVoice } from "./useActorVoice"
 
 interface TrainingPlayerProps {
   experienceSlug: string
+  brand?: BrandTheme
 }
 
 function buildCompetencyProfile(history: DecisionReview[]): CompetencyProfile[] {
@@ -48,7 +52,7 @@ async function readFailure(res: Response, fallback: string): Promise<{ message: 
   }
 }
 
-export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
+export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND }: TrainingPlayerProps) {
   const [playerStatus, setPlayerStatus] = useState<TrainingPlayerStatus>({ status: "loading_module" })
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [moduleTitle, setModuleTitle] = useState("")
@@ -58,6 +62,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
   const [totalSteps, setTotalSteps] = useState(0)
   const [feedbackVisible, setFeedbackVisible] = useState(false)
   const [dialogueHistory, setDialogueHistory] = useState<DialogueTurn[]>([])
+  const [competencyResults, setCompetencyResults] = useState<CompetencyResult[]>([])
 
   // Abort in-flight requests on unmount so late responses can't set state
   const abortRef = useRef<AbortController | null>(null)
@@ -81,6 +86,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
     setCurrentStep(0)
     setFeedbackVisible(false)
     setDialogueHistory([])
+    setCompetencyResults([])
 
     try {
       const res = await fetch("/api/v1/engine/start", {
@@ -150,6 +156,14 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
         aiSummary: content.summary,
         decisionHistory,
         score: content.outcomeCard.score,
+        evidence: buildEvidenceRecord({
+          moduleTitle,
+          outcomeLabel: content.outcomeCard.outcomeLabel,
+          aiSummary: content.summary,
+          completedAt: new Date().toISOString(),
+          results: competencyResults,
+          decisions: decisionHistory,
+        }),
       })
       return
     }
@@ -215,6 +229,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
     }
 
     if (content.type === "evaluative") {
+      setCompetencyResults((prev) => [...prev, ...content.results])
       setPlayerStatus({
         status: "evaluative_result",
         passed: content.passed,
@@ -413,6 +428,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
           competencies={buildCompetencyProfile(playerStatus.decisionHistory)}
           moduleTitle={moduleTitle}
           score={playerStatus.score}
+          evidence={playerStatus.evidence}
           onRestart={startSession}
           onExit={() => { window.location.href = "/" }}
         />
@@ -423,6 +439,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
   if (playerStatus.status === "viewing_slides") {
     return (
       <TrainingShell
+        brand={brand}
         moduleTitle={moduleTitle}
         totalSteps={totalSteps}
         currentStep={currentStep}
@@ -439,6 +456,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
   if (playerStatus.status === "evaluative_result") {
     return (
       <TrainingShell
+        brand={brand}
         moduleTitle={moduleTitle}
         totalSteps={totalSteps}
         currentStep={currentStep}
@@ -459,6 +477,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
 
   return (
     <TrainingShell
+      brand={brand}
       moduleTitle={moduleTitle}
       totalSteps={totalSteps}
       currentStep={currentStep}
@@ -520,6 +539,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
       {/* Dialogue panel */}
       {playerStatus.status === "in_dialogue" && (
         <DialoguePanel
+          sessionId={sessionId}
           actorName={playerStatus.actorName}
           actorRole={playerStatus.actorRole}
           history={playerStatus.dialogueHistory}
@@ -544,6 +564,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
 // ─── INLINE SUB-COMPONENTS ────────────────────────────────────
 
 function DialoguePanel({
+  sessionId,
   actorName,
   actorRole,
   history,
@@ -551,6 +572,7 @@ function DialoguePanel({
   maxTurns,
   onSubmit,
 }: {
+  sessionId: string | null
   actorName: string
   actorRole: string
   history: DialogueTurn[]
@@ -560,6 +582,21 @@ function DialoguePanel({
 }) {
   const [draft, setDraft] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const { voiceOn, available, speaking, toggle, speak } = useActorVoice(sessionId)
+
+  // Speak each character turn once as it arrives (including the opening line)
+  const spokenCountRef = useRef(0)
+  useEffect(() => {
+    if (history.length <= spokenCountRef.current) {
+      spokenCountRef.current = history.length
+      return
+    }
+    const latest = history[history.length - 1]
+    spokenCountRef.current = history.length
+    if (latest.role === "character") {
+      speak(actorName, latest.content)
+    }
+  }, [history, actorName, speak])
 
   async function submit() {
     const text = draft.trim()
@@ -573,9 +610,24 @@ function DialoguePanel({
   return (
     <div className="t-dialogue-panel">
       <div className="t-dialogue-header">
-        <span className="t-dialogue-actor">{actorName}</span>
+        <span className="t-dialogue-actor">
+          {actorName}
+          {speaking && <span className="t-dialogue-speaking" aria-hidden="true" />}
+        </span>
         <span className="t-dialogue-role">{actorRole}</span>
         <span className="t-dialogue-turns">{turnCount}/{maxTurns} turns</span>
+        {available && (
+          <button
+            type="button"
+            className="t-dialogue-voice-toggle"
+            onClick={toggle}
+            aria-pressed={voiceOn}
+            aria-label={voiceOn ? "Mute actor voice" : "Unmute actor voice"}
+            title={voiceOn ? "Mute actor voice" : "Unmute actor voice"}
+          >
+            {voiceOn ? "🔊" : "🔇"}
+          </button>
+        )}
       </div>
       <div className="t-dialogue-history">
         {history.map((turn, i) => (
