@@ -250,7 +250,24 @@ Phase 2 enhancement: replace `isOperator` check with org-level licence tier chec
 
 **Target:** End of April 2026 (soft)
 **MVP total estimated effort:** 18–20 hours (Phases 1–6 with scoped Phase 4)
-**Deferred (post-April):** DebriefScreen, ProgressIndicator, ScenarioCard, scenario library home, account page (~3–5h additional)
+
+**Deferred list — superseded 2026-08-05** (see `docs/strategy-refocus-2026-08.md`).
+The original post-April list (DebriefScreen, ProgressIndicator, ScenarioCard,
+scenario library home, account page, "~3–5h") assumed a like-for-like migration
+plus learner-facing chrome. Under the refocus it inverts:
+
+- **Promoted to centrepiece:** tt- `DebriefScreen` — now the on-screen rendering of
+  the evidence report (rubric results with quoted moments, competency profile,
+  decision timeline, date-stamped, exportable). Absorbs the "certification
+  tracking / audit export" blocker from the April Gold Tap roadmap.
+- **Still in:** `TraversePlayer` orchestrator (replacing `TrainingPlayer`), with the
+  voice hook (`useActorVoice`, added Aug 2026) carried into the new DialoguePanel;
+  org branding hooks via per-org `--c-` token overrides (April sales blocker,
+  cheap to provision during the rebuild).
+- **Cut for pilot** (re-entry trigger: a client running multiple scenarios per
+  cohort): `ScenarioCard`, scenario library home, account page. Learners arrive
+  by employer link in the B2B2B shape; nobody browses a catalogue.
+- `ProgressIndicator`: only if nearly free within the shell.
 
 ---
 
