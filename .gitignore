@@ -29,7 +29,7 @@ npm-debug.log*
 .idea/
 
 # Uploaded media (V1 local filesystem storage)
-public/uploads/
+public/uploads/*
 !public/uploads/seed/
 
 # TypeScript incremental build cache
