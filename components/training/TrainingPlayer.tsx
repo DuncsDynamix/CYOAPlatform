@@ -15,6 +15,7 @@ import type { Node } from "@/types/experience"
 import type { DialogueTurn, CompetencyResult } from "@/types/session"
 import { SlideDeckPanel } from "@/components/traverse-training/SlideDeckPanel"
 import { LayoutRenderer } from "@/components/traverse-training/LayoutRenderer"
+import { useActorVoice } from "./useActorVoice"
 
 interface TrainingPlayerProps {
   experienceSlug: string
@@ -520,6 +521,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
       {/* Dialogue panel */}
       {playerStatus.status === "in_dialogue" && (
         <DialoguePanel
+          sessionId={sessionId}
           actorName={playerStatus.actorName}
           actorRole={playerStatus.actorRole}
           history={playerStatus.dialogueHistory}
@@ -544,6 +546,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
 // ─── INLINE SUB-COMPONENTS ────────────────────────────────────
 
 function DialoguePanel({
+  sessionId,
   actorName,
   actorRole,
   history,
@@ -551,6 +554,7 @@ function DialoguePanel({
   maxTurns,
   onSubmit,
 }: {
+  sessionId: string | null
   actorName: string
   actorRole: string
   history: DialogueTurn[]
@@ -560,6 +564,21 @@ function DialoguePanel({
 }) {
   const [draft, setDraft] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const { voiceOn, available, toggle, speak } = useActorVoice(sessionId)
+
+  // Speak each character turn once as it arrives (including the opening line)
+  const spokenCountRef = useRef(0)
+  useEffect(() => {
+    if (history.length <= spokenCountRef.current) {
+      spokenCountRef.current = history.length
+      return
+    }
+    const latest = history[history.length - 1]
+    spokenCountRef.current = history.length
+    if (latest.role === "character") {
+      speak(actorName, latest.content)
+    }
+  }, [history, actorName, speak])
 
   async function submit() {
     const text = draft.trim()
@@ -576,6 +595,18 @@ function DialoguePanel({
         <span className="t-dialogue-actor">{actorName}</span>
         <span className="t-dialogue-role">{actorRole}</span>
         <span className="t-dialogue-turns">{turnCount}/{maxTurns} turns</span>
+        {available && (
+          <button
+            type="button"
+            className="t-dialogue-voice-toggle"
+            onClick={toggle}
+            aria-pressed={voiceOn}
+            aria-label={voiceOn ? "Mute actor voice" : "Unmute actor voice"}
+            title={voiceOn ? "Mute actor voice" : "Unmute actor voice"}
+          >
+            {voiceOn ? "🔊" : "🔇"}
+          </button>
+        )}
       </div>
       <div className="t-dialogue-history">
         {history.map((turn, i) => (

@@ -721,6 +721,11 @@
 .traverse-training-theme .t-dialogue-actor { font-family: var(--t-font-ui); font-size: 0.875rem; font-weight: 600; color: var(--t-text-primary); }
 .traverse-training-theme .t-dialogue-role { font-family: var(--t-font-ui); font-size: 0.8rem; color: var(--t-text-muted); flex: 1; }
 .traverse-training-theme .t-dialogue-turns { font-family: var(--t-font-ui); font-size: 0.75rem; color: var(--t-text-muted); }
+.traverse-training-theme .t-dialogue-voice-toggle {
+  background: none; border: 1px solid var(--t-border-strong); border-radius: 8px;
+  padding: 0.25rem 0.5rem; font-size: 0.875rem; line-height: 1; cursor: pointer;
+}
+.traverse-training-theme .t-dialogue-voice-toggle:hover { background: var(--t-surface-scene); }
 .traverse-training-theme .t-dialogue-history {
   padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;
   max-height: 400px; overflow-y: auto;

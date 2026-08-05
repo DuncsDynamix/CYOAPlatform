@@ -54,6 +54,14 @@ export interface ExperienceContextPack {
   learningObjectives?: string[]
 }
 
+export interface ActorVoiceProfile {
+  /** TTS vendor voice id (e.g. an ElevenLabs voice id) */
+  vendorVoiceId: string
+  pace?: "measured" | "normal" | "rapid"
+  /** Delivery guidance, e.g. "tired, guarded, softens late" */
+  notes?: string
+}
+
 export interface Actor {
   name: string
   role: string
@@ -61,6 +69,8 @@ export interface Actor {
   speech: string
   knowledge: string
   relationshipToProtagonist: string
+  /** Optional voice casting for DIALOGUE audio playback. Absent → per-env default voice, or silent. */
+  voice?: ActorVoiceProfile
 }
 
 export interface GroundTruthSource {
