@@ -25,10 +25,14 @@ export interface EvidenceRecordInput {
   decisions: DecisionReview[]
 }
 
+/** Mirrors the EVALUATIVE pass rule in lib/engine/executor.ts: pass ⇔ no critical criterion failed. */
+export function competencePassed(results: CompetencyResult[]): boolean {
+  const criticals = results.filter((r) => r.weight === "critical")
+  return criticals.length === 0 || criticals.every((r) => r.passed)
+}
+
 export function buildEvidenceRecord(input: EvidenceRecordInput): EvidenceRecord {
-  // Mirrors the EVALUATIVE pass rule in lib/engine/executor.ts
-  const criticals = input.results.filter((r) => r.weight === "critical")
-  const passed = criticals.length === 0 || criticals.every((r) => r.passed)
+  const passed = competencePassed(input.results)
 
   return {
     moduleTitle: input.moduleTitle,

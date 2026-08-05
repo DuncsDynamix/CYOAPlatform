@@ -370,7 +370,7 @@ async function resolveNodeContent(
         experience,
         apiKey
       )
-      await markSessionComplete(session.id, endpointNode.endpointId)
+      await markSessionComplete(session.id, endpointNode.endpointId, summary)
 
       trackEvent("session_completed", {
         sessionId: session.id,

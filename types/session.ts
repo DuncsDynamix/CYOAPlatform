@@ -16,6 +16,9 @@ export interface SessionState {
 
   // Phase 2: cumulative competency assessment results
   competencyProfile: CompetencyResult[]
+
+  /** AI closing reflection, persisted at completion so the session record is complete. */
+  endpointSummary: string | null
 }
 
 // ─── DIALOGUE STATE ───────────────────────────────────────────

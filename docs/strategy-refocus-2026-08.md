@@ -57,6 +57,22 @@ whether a pilot can ship as a branded web link without SCORM (deciding if export
 blocks the pilot or only the scale-up), and whether scenario evidence must attach
 to a formal certification (NWH/SHEA) to be credible or can stand alone.
 
+## The artefact chain (implemented August 2026)
+
+The evidence story is now three layers, all on the session record:
+1. **Evidence Record** (debrief screen, printable) — the verdict: rubric
+   outcomes with quoted evidence.
+2. **Dialogue transcripts** — retained verbatim; EVALUATIVE assesses the
+   learner's actual words.
+3. **Session record** (`GET /api/v1/engine/record?sessionId=`) — the case
+   file: every scene, decision and conversation in visit order, plus the
+   assessment and closing summary. Machine-readable JSON first — the future
+   learner-profile context ("this learner previously…") derives from it.
+
+Identity binding (records → named employees) lands with the auth story.
+Org-level retention policy becomes a real feature at the same point (a
+per-employee performance record is HR personal data).
+
 ## Parked — with re-entry triggers
 
 | Parked item | Re-enter when |

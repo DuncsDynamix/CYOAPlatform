@@ -211,6 +211,7 @@ export function createTestSession(
     pacingInstruction: "",
     dialogue: null,
     competencyProfile: [],
+    endpointSummary: null,
   }
 
   return {
@@ -243,6 +244,7 @@ export function createTestSessionWithChoices(choicesMade: number): ExperienceSes
       pacingInstruction: "",
       dialogue: null,
       competencyProfile: [],
+      endpointSummary: null,
     },
     choiceCount: choicesMade,
   })

@@ -27,6 +27,7 @@ const validState: SessionState = {
       weight: "major",
     },
   ],
+  endpointSummary: null,
 }
 
 describe("parseSessionState", () => {

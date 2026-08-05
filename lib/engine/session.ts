@@ -12,6 +12,7 @@ const DEFAULT_STATE: SessionState = {
   pacingInstruction: "",
   dialogue: null,
   competencyProfile: [],
+  endpointSummary: null,
 }
 
 /** Narrative history is capped so long sessions can't grow the row unboundedly. */
@@ -55,6 +56,7 @@ const SessionStateSchema = z.object({
   pacingInstruction: z.string().catch(""),
   dialogue: DialogueStateSchema.nullable().catch(null),
   competencyProfile: z.array(CompetencyResultSchema).catch([]),
+  endpointSummary: z.string().nullable().catch(null),
 })
 
 export function parseSessionState(raw: unknown): SessionState {
@@ -273,12 +275,14 @@ export async function appendNarrativeHistory(
 
 export async function markSessionComplete(
   sessionId: string,
-  endpointId: string
+  endpointId: string,
+  endpointSummary?: string
 ): Promise<void> {
   await commitSessionMutation(sessionId, (draft) => {
     draft.status = "completed"
     draft.endpointReached = endpointId
     draft.completedAt = new Date()
+    if (endpointSummary) draft.state.endpointSummary = endpointSummary
   })
 }
 
