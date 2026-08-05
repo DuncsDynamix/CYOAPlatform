@@ -116,3 +116,7 @@ export async function GET(req: NextRequest) {
     },
   })
 }
+
+// Generation calls run 10-30s+; serverless platforms kill functions at their
+// default timeout without this. 60s fits every plan tier including Vercel Hobby.
+export const maxDuration = 60
