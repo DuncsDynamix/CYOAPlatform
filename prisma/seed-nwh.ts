@@ -12,6 +12,7 @@ const db = new PrismaClient()
 
 const AUTHOR_ID = "00000000-0000-0000-0000-000000000001"
 const EXPERIENCE_ID = "00000000-0000-0000-0000-000000000040"
+const ORG_ID = "00000000-0000-0000-0000-000000000051" // Gold Tap Training (seed-goldtap.ts)
 
 // ─── NODE GRAPH — National Water Hygiene Certification ──────────────────────
 //
@@ -123,7 +124,7 @@ Contaminating the water supply does not just affect drinking water — it affect
     type: "CHECKPOINT",
     label: "Module 1 complete",
     visible: false,
-    marksCompletionOf: "Module 1 — The Importance of Water",
+    marksCompletionOf: "Explain why water is a uniquely precious resource and why hygiene is every operative's personal responsibility",
     unlocks: [],
     snapshotsState: false,
     nextNodeId: "n-m2a",
@@ -185,7 +186,7 @@ Failure to report places public health at risk and may be a disciplinary matter.
     type: "CHECKPOINT",
     label: "Module 2 complete",
     visible: false,
-    marksCompletionOf: "Module 2 — Water as a Carrier of Disease",
+    marksCompletionOf: "Recognise how water carries disease and why operatives are a critical barrier against contamination",
     unlocks: [],
     snapshotsState: false,
     nextNodeId: "n-m3a",
@@ -288,7 +289,7 @@ These are not theoretical risks. Water contamination incidents have resulted in 
     type: "CHECKPOINT",
     label: "Module 3 complete",
     visible: false,
-    marksCompletionOf: "Module 3 — Potential Contamination and Its Consequences",
+    marksCompletionOf: "Identify restricted operations, health exclusion rules, and the consequences of contamination",
     unlocks: [],
     snapshotsState: false,
     nextNodeId: "n-m4a",
@@ -426,7 +427,7 @@ After completing these operations, the asset must be **flushed, chlorinated and 
     type: "CHECKPOINT",
     label: "Module 4 complete",
     visible: false,
-    marksCompletionOf: "Module 4 — Preventing Contamination",
+    marksCompletionOf: "Apply the prevention requirements: clothing, storage, approved products and contamination response",
     unlocks: [],
     snapshotsState: false,
     nextNodeId: "n-quiz-intro",
@@ -1084,6 +1085,12 @@ const contextPack: ExperienceContextPack = {
   },
   groundTruth: [],
   scripts: [],
+  learningObjectives: [
+    "Explain why water is a uniquely precious resource and why hygiene is every operative's personal responsibility",
+    "Recognise how water carries disease and why operatives are a critical barrier against contamination",
+    "Identify restricted operations, health exclusion rules, and the consequences of contamination",
+    "Apply the prevention requirements: clothing, storage, approved products and contamination response",
+  ],
 }
 
 // ─── SHAPE ───────────────────────────────────────────────────────────────────
@@ -1118,12 +1125,20 @@ const shape: ShapeDefinition = {
     "n-q16", "n-q17", "n-q18", "n-q19", "n-q20",
     "n-q21", "n-q22", "n-q23", "n-q24", "n-q25",
   ],
+  displaySteps: 43,
 }
 
 // ─── SEED ────────────────────────────────────────────────────────────────────
 
 async function main() {
   console.log("Seeding National Water Hygiene certification experience...")
+
+  const org = await db.org.findUnique({ where: { id: ORG_ID } })
+  if (!org) {
+    throw new Error(
+      "Gold Tap org not found — run `npx tsx prisma/seed-goldtap.ts` first (it owns the org, users and tiers)."
+    )
+  }
 
   await db.experience.upsert({
     where: { id: EXPERIENCE_ID },
@@ -1134,6 +1149,12 @@ async function main() {
       type: "l_and_d",
       renderingTheme: "training",
       authorId: AUTHOR_ID,
+      orgId: ORG_ID,
+      description:
+        "The complete National Water Hygiene syllabus, module by module: why water matters, how it carries disease, what contamination costs, and how to prevent it — followed by the 25-question certification test. Pass mark 20 of 25; your NWH card is issued through the EUSR scheme.",
+      genre: "training",
+      status: "published",
+      publishedAt: new Date(),
       useCasePack: USE_CASE_PACKS["l_and_d"] as object,
       contextPack: contextPack as object,
       nodes: nodes as object[],
@@ -1141,8 +1162,15 @@ async function main() {
     },
     update: {
       title: "National Water Hygiene — Certification Training",
+      slug: "national-water-hygiene-certification",
       type: "l_and_d",
       renderingTheme: "training",
+      orgId: ORG_ID,
+      description:
+        "The complete National Water Hygiene syllabus, module by module: why water matters, how it carries disease, what contamination costs, and how to prevent it — followed by the 25-question certification test. Pass mark 20 of 25; your NWH card is issued through the EUSR scheme.",
+      genre: "training",
+      status: "published",
+      publishedAt: new Date(),
       useCasePack: USE_CASE_PACKS["l_and_d"] as object,
       contextPack: contextPack as object,
       nodes: nodes as object[],
