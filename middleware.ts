@@ -10,7 +10,7 @@ export const PUBLIC_PATHS = [
   "/api/auth",
 ]
 
-export const AUTHED_PATHS = ["/dashboard", "/experience"]
+export const AUTHED_PATHS = ["/dashboard", "/experience", "/bindery"]
 
 // TraverseTraining routes — require auth + operator or org membership
 export const TRAINING_PATHS = ["/scenario"]

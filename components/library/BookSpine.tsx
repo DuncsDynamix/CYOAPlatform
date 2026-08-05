@@ -4,14 +4,15 @@ interface BookSpineProps {
   title: string
   author: string
   genre: string | null | undefined
+  variant?: number
 }
 
 const MAX_SPINE_CHARS = 26
 
 /** Shelf rendering of a book — same seed as its cover. Decorative only;
  *  the wrapping link carries the accessible name. */
-export function BookSpine({ title, author, genre }: BookSpineProps) {
-  const design = spineDesign(title, genre)
+export function BookSpine({ title, author, genre, variant = 0 }: BookSpineProps) {
+  const design = spineDesign(title, genre, variant)
   const label = title.length > MAX_SPINE_CHARS ? `${title.slice(0, MAX_SPINE_CHARS - 1)}…` : title
 
   return (

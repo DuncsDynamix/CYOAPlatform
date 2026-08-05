@@ -29,10 +29,10 @@ function luminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
-export function coverDesign(title: string, genre: string | null | undefined): CoverDesign {
+export function coverDesign(title: string, genre: string | null | undefined, variant = 0): CoverDesign {
   const hallId = normalizeGenre(genre)
   const hall = getHall(hallId)
-  const seed = hashSeed(`${title}::${hallId}`)
+  const seed = hashSeed(`${title}::${hallId}${variant > 0 ? `::v${variant}` : ""}`)
 
   const background = hall.spinePalette[seed % hall.spinePalette.length]
   const layout = ((seed >>> 3) % 6) as CoverDesign["layout"]
@@ -66,9 +66,9 @@ export interface SpineDesign {
 }
 
 /** Spine rendering of the same seed as the cover — one book, one design. */
-export function spineDesign(title: string, genre: string | null | undefined): SpineDesign {
-  const cover = coverDesign(title, genre)
-  const seed = hashSeed(`${title}::${cover.hall}`)
+export function spineDesign(title: string, genre: string | null | undefined, variant = 0): SpineDesign {
+  const cover = coverDesign(title, genre, variant)
+  const seed = hashSeed(`${title}::${cover.hall}${variant > 0 ? `::v${variant}` : ""}`)
 
   const widthStep = ((seed >>> 11) % 4) as SpineDesign["widthStep"]
   const heightStep = ((seed >>> 13) % 3) as SpineDesign["heightStep"]

@@ -117,9 +117,22 @@ All engine routes are versioned under `app/api/v1/`:
 - `GET /api/v1/engine/node?sessionId=` — Advance from current node to its `nextNodeId`
 - `GET /api/v1/engine/stream` — Streaming variant (separate concern)
 - `/api/v1/experience/...` — Experience CRUD
+- `POST /api/v1/bindery/outline` — AI-drafts a chapter outline proposal for a Bindery draft (Sonnet, Zod-validated, retry-once)
+- `POST /api/v1/bindery/draft-chapter` — AI-drafts one chapter's nodes; `nodeId` scopes to a single page; `mode: "sample"` returns a one-off prose sample (never stored)
 - `/api/v1/analytics/...`, `/api/v1/account/...`, `/api/v1/stories/...`
 
 Old paths (`/api/engine/...`) redirect to v1 via `next.config.js` 308 redirects.
+
+### The Bindery (in-fiction authoring)
+
+`/bindery` (auth-gated via middleware `AUTHED_PATHS`) is TraverseStories' reader-facing authoring path: a drawer of drafts plus five sheets (title/genre → premise → cover → pages → bind & shelve). A Bindery draft is an ordinary `Experience` (`status: "draft"`) the Studio can open at any time; chapters are `segments`. Key modules:
+
+- `lib/library/bindery-packs.ts` — the use-case seam: vocabulary ("written by you" / "told by the engine"), sheet titles, templates, prompt framing. `cyoa_story` is the only pack; a Training bindery is a new pack, not a component rewrite.
+- `lib/library/bindery.ts` — pure logic: outline model + Zod proposal schemas (labels/refs validated pre-materialisation), `proposalToNodes`, `derivePlan`, `looseStitches` (in-fiction validation copy; severities `blocking`/`adrift`).
+- `lib/engine/bindery-prompts.ts` + `lib/engine/bindery-draft.ts` — drafting prompts and model calls (queue-wrapped, BYOK, `stripJsonFence` + Zod + one retry; drafted labels humanised, em-dashes stripped).
+- `components/library/bindery/` — Desk shell, Drawer, five sheets, ChapterPlan/PageCard/ChoiceCard, read-only BindingMap.
+
+**Gotchas:** the engine strings FIXED/GENERATED/CHOICE/ENDPOINT must never render in Bindery UI (tests pin this, along with a no-em-dash regex). Any Bindery `shape` write must preserve the structural fields (`loadBearingChoices`, `convergencePoints`, `mandatoryNodeIds`, `endpoints`, `pacingModel`) — `lib/engine/arc.ts` reads them (it now has defensive guards, but don't rely on them). Story-page visibility is `canViewStory` in `lib/library/story-access.ts` (published public; draft/preview author/org-editors only) — deliberately stricter than `canAccessExperience`, whose preview-is-public carve-out serves other surfaces; do not "simplify" the page back to the shared helper.
 
 ### Auth
 

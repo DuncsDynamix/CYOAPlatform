@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { hashSeed, coverDesign, decorativePageNumber, turnToPageNumber } from "@/lib/library/covers"
+import { hashSeed, coverDesign, spineDesign, decorativePageNumber, turnToPageNumber } from "@/lib/library/covers"
 import { getHall } from "@/lib/library/halls"
 
 describe("hashSeed", () => {
@@ -33,6 +33,13 @@ describe("coverDesign", () => {
       const d = coverDesign(`Book ${i}`, "horror")
       expect(["#F5F0E8", getHall("horror").ink]).toContain(d.foreground)
     }
+  })
+
+  it("variant 0 is byte-identical to the legacy two-arg call and variants differ", () => {
+    expect(coverDesign("The Hollow Crown", "fantasy", 0)).toEqual(coverDesign("The Hollow Crown", "fantasy"))
+    const variants = new Set([0, 1, 2, 3].map((v) => coverDesign("The Hollow Crown", "fantasy", v).background + coverDesign("The Hollow Crown", "fantasy", v).layout))
+    expect(variants.size).toBeGreaterThan(1)
+    expect(spineDesign("The Hollow Crown", "fantasy", 2).background).toBe(coverDesign("The Hollow Crown", "fantasy", 2).background)
   })
 })
 

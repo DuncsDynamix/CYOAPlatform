@@ -6,7 +6,7 @@ import { getHall } from "@/lib/library/halls"
 describe("HallRoom", () => {
   it("names the room and shelves its books", () => {
     render(<HallRoom hall={getHall("fantasy")} stories={[
-      { id: "1", title: "The Hollow Crown", slug: "the-hollow-crown", description: null, genre: "fantasy", coverImageUrl: null, authorName: null, totalCompletions: 0, publishedAt: null },
+      { id: "1", title: "The Hollow Crown", slug: "the-hollow-crown", description: null, genre: "fantasy", coverImageUrl: null, authorName: null, totalCompletions: 0, publishedAt: null, coverVariant: 0 },
     ]} />)
     expect(screen.getByRole("heading", { name: /the candlelit archive/i })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /the hollow crown/i })).toBeInTheDocument()

@@ -37,6 +37,7 @@ interface BookViewProps {
   description?: string | null
   endingsCount: number
   timesRead?: number
+  coverVariant?: number
 }
 
 /** Reads the engine's { error, retryable } envelope off a failed response — mirrors TrainingPlayer. */
@@ -49,7 +50,7 @@ async function readFailure(res: Response, fallback: string): Promise<{ message: 
   }
 }
 
-export function BookView({ slug, title, author, genre, coverImageUrl, description, endingsCount, timesRead }: BookViewProps) {
+export function BookView({ slug, title, author, genre, coverImageUrl, description, endingsCount, timesRead, coverVariant = 0 }: BookViewProps) {
   const [status, setStatus] = useState<BookStatus>({ phase: "cover" })
   // A ref (not state) so choose() can update it and have dispatchContent see the
   // fresh value in the very same tick — state would still read stale via the
@@ -382,7 +383,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
     return (
       <Stage book="cover">
         <div className="lib-cover">
-          <BookCover title={title} author={author} genre={genre} coverImageUrl={coverImageUrl} />
+          <BookCover title={title} author={author} genre={genre} coverImageUrl={coverImageUrl} variant={coverVariant} />
         </div>
         <div className="lib-cover-meta">
           <h1>{title}</h1>
@@ -442,7 +443,7 @@ export function BookView({ slug, title, author, genre, coverImageUrl, descriptio
   if (status.phase === "opening") {
     return (
       <div className="lib-stage">
-        <Opening sessionId={status.sessionId} genre={genre} title={title} author={author} coverImageUrl={coverImageUrl} onReady={handleOpeningReady} />
+        <Opening sessionId={status.sessionId} genre={genre} title={title} author={author} coverImageUrl={coverImageUrl} coverVariant={coverVariant} onReady={handleOpeningReady} />
       </div>
     )
   }

@@ -8,7 +8,7 @@ export function Shelf({ stories }: { stories: LibraryStory[] }) {
   return (
     <ul className="lib-shelf">
       {stories.map((story) => {
-        const d = spineDesign(story.title, story.genre)
+        const d = spineDesign(story.title, story.genre, story.coverVariant)
         const vars = {
           "--spine-width": d.widthStep,
           "--spine-height": d.heightStep,
@@ -22,7 +22,7 @@ export function Shelf({ stories }: { stories: LibraryStory[] }) {
               style={vars}
               aria-label={`${story.title} by ${story.authorName ?? "Anonymous"}`}
             >
-              <BookSpine title={story.title} author={story.authorName ?? "Anonymous"} genre={story.genre} />
+              <BookSpine title={story.title} author={story.authorName ?? "Anonymous"} genre={story.genre} variant={story.coverVariant} />
             </Link>
           </li>
         )

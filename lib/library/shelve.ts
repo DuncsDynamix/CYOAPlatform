@@ -10,6 +10,7 @@ export interface LibraryStory {
   authorName: string | null
   totalCompletions: number
   publishedAt: string | null
+  coverVariant: number
 }
 
 /** Every book finds a shelf — unknown or missing genres go to the Common Room. */
