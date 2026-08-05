@@ -24,9 +24,17 @@ Plus usage: Anthropic tokens per playthrough and the ElevenLabs tier.
 ## 1. Supabase project (auth + database)
 
 1. Create the project (free org or Pro org, per above). Region: London.
+   If offered "enable automatic RLS", say yes — new tables then arrive
+   default-denied instead of open, which removes the re-run-after-migration
+   footgun below. The RLS script is still required for its `users` policy.
 2. Note from **Settings → API**: the Project URL and the `anon` public key.
-3. Note from **Settings → Database** BOTH connection strings:
-   - **Direct** (port 5432) — for migrations and seeds from your laptop.
+3. From the **Connect** button (top bar of the project dashboard), note TWO
+   connection strings — replace the `[YOUR-PASSWORD]` placeholder in each,
+   URL-encoding any special characters (`@`→`%40`, `#`→`%23`):
+   - **Session pooler** (port 5432 on the `pooler.supabase.com` host) — for
+     migrations and seeds from your laptop. (The "Direct" string is
+     IPv6-only without a paid add-on; the session pooler is the free
+     IPv4-compatible equivalent and is safe for migrations.)
    - **Transaction pooler** (port 6543) — for the Vercel runtime. Append
      `?pgbouncer=true&connection_limit=1` (Prisma on serverless needs this).
 
