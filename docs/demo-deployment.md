@@ -90,6 +90,7 @@ Repeat for yourself so you can drive the demo from your own login.
 | Variable | Value |
 |----------|-------|
 | `DATABASE_URL` | the **pooler** string (6543, `?pgbouncer=true&connection_limit=1`) |
+| `DIRECT_URL` | the **session pooler** string (5432, no params). The Prisma schema declares `directUrl` and the client refuses to start if the env var is missing — even though only migrations actually use it |
 | `NEXT_PUBLIC_SUPABASE_URL` | project URL from step 1 |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key from step 1 |
 | `ANTHROPIC_API_KEY` | your key — set a monthly spend cap in the Anthropic console first |
