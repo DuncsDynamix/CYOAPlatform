@@ -8,7 +8,7 @@ import { TrainingChoicePanel } from "./TrainingChoicePanel"
 import { FeedbackPanel } from "./FeedbackPanel"
 import { DebriefScreen } from "./DebriefScreen"
 import { LoadingModule } from "./LoadingModule"
-import type { TrainingPlayerStatus, LearningObjective, DecisionReview, CompetencyProfile } from "@/types/engine"
+import type { TrainingPlayerStatus, LearningObjective, DecisionReview, CompetencyProfile, CourseNote } from "@/types/engine"
 import type { ChoiceOption, ExperienceContextPack, FixedNode, GeneratedNode } from "@/types/experience"
 import type { ResolvedContent } from "@/types/engine"
 import type { Node } from "@/types/experience"
@@ -74,6 +74,10 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
   const [feedbackVisible, setFeedbackVisible] = useState(false)
   const [dialogueHistory, setDialogueHistory] = useState<DialogueTurn[]>([])
   const [competencyResults, setCompetencyResults] = useState<CompetencyResult[]>([])
+  const [courseNotes, setCourseNotes] = useState<CourseNote[]>([])
+
+  const addCourseNote = (note: CourseNote) =>
+    setCourseNotes((prev) => (prev.some((n) => n.nodeId === note.nodeId) ? prev : [...prev, note]))
 
   // Abort in-flight requests on unmount so late responses can't set state
   const abortRef = useRef<AbortController | null>(null)
@@ -98,6 +102,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
     setFeedbackVisible(false)
     setDialogueHistory([])
     setCompetencyResults([])
+    setCourseNotes([])
 
     try {
       const res = await fetch("/api/v1/engine/start", {
@@ -200,6 +205,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
 
     if (content.type === "prose") {
       const layout = (node as FixedNode | GeneratedNode).layout
+      addCourseNote({ nodeId: node.id, label: node.label, kind: "prose", content: content.content })
       setPlayerStatus({
         status: "reading_scenario",
         content: content.content,
@@ -209,6 +215,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
     }
 
     if (content.type === "slide_deck") {
+      addCourseNote({ nodeId: node.id, label: node.label, kind: "slides", slides: content.slides })
       setPlayerStatus({
         status: "viewing_slides",
         slides: content.slides,
@@ -237,6 +244,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
     }
 
     if (content.type === "observed_dialogue") {
+      addCourseNote({ nodeId: node.id, label: node.label, kind: "observed", exchanges: content.exchanges })
       setPlayerStatus({
         status: "observing_dialogue",
         exchanges: content.exchanges,
@@ -509,6 +517,8 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
         totalSteps={totalSteps}
         currentStep={currentStep}
         objectives={objectives}
+        courseNotes={courseNotes}
+        notesEnabled
       >
         <SlideDeckPanel
           slides={playerStatus.slides}
@@ -539,6 +549,12 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
 
   const isAdvancing = playerStatus.status === "advancing"
   const isReviewing = playerStatus.status === "reviewing_decision"
+  // Closed-book rule: notes are reference material for reading and
+  // conversations, never for decision, feedback, or assessment screens.
+  const notesEnabled =
+    playerStatus.status === "reading_scenario" ||
+    playerStatus.status === "in_dialogue" ||
+    playerStatus.status === "observing_dialogue"
 
   return (
     <TrainingShell
@@ -547,6 +563,8 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
       totalSteps={totalSteps}
       currentStep={currentStep}
       objectives={objectives}
+      courseNotes={courseNotes}
+      notesEnabled={notesEnabled}
     >
       {/* Prose / advancing state */}
       {(playerStatus.status === "reading_scenario" || isAdvancing) && (

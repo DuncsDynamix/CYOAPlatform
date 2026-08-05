@@ -134,6 +134,15 @@ export interface CompetencyProfile {
   totalSignals: number
 }
 
+/**
+ * A content block the learner has already seen this session, collected for
+ * the course notes drawer (open-book reference outside assessment screens).
+ */
+export type CourseNote =
+  | { nodeId: string; label: string; kind: "prose"; content: string }
+  | { nodeId: string; label: string; kind: "slides"; slides: Slide[] }
+  | { nodeId: string; label: string; kind: "observed"; exchanges: { speaker: string; line: string }[] }
+
 export type TrainingPlayerStatus =
   | { status: "loading_module" }
   | { status: "reading_scenario"; content: string; layout?: NodeLayout; sceneContext?: SceneContext }

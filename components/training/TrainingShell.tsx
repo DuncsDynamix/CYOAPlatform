@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import type { LearningObjective } from "@/types/engine"
+import type { LearningObjective, CourseNote } from "@/types/engine"
 import type { BrandTheme } from "@/lib/branding"
 import { ObjectivesDrawer } from "./ObjectivesDrawer"
+import { CourseNotesDrawer } from "./CourseNotesDrawer"
 
 interface TrainingShellProps {
   moduleTitle: string
@@ -12,11 +13,15 @@ interface TrainingShellProps {
   totalSteps: number
   currentStep: number
   objectives: LearningObjective[]
+  courseNotes?: CourseNote[]
+  /** Closed-book rule: the player enables notes only outside assessment screens. */
+  notesEnabled?: boolean
   children: React.ReactNode
 }
 
-export function TrainingShell({ moduleTitle, organisationName, brand, totalSteps, currentStep, objectives, children }: TrainingShellProps) {
+export function TrainingShell({ moduleTitle, organisationName, brand, totalSteps, currentStep, objectives, courseNotes, notesEnabled, children }: TrainingShellProps) {
   const [objectivesOpen, setObjectivesOpen] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
   const pct = totalSteps > 0 ? Math.min(100, Math.round((currentStep / totalSteps) * 100)) : 0
   const brandStyle = brand
     ? ({
@@ -40,6 +45,15 @@ export function TrainingShell({ moduleTitle, organisationName, brand, totalSteps
           <span className="t-shell-org">{orgName}</span>
         )}
         <span className="t-shell-title">{moduleTitle}</span>
+        {notesEnabled && courseNotes && (
+          <button
+            className="t-shell-obj-btn"
+            onClick={() => setNotesOpen(true)}
+            aria-label="View course notes"
+          >
+            Notes
+          </button>
+        )}
         <button
           className="t-shell-obj-btn"
           onClick={() => setObjectivesOpen(true)}
@@ -77,6 +91,13 @@ export function TrainingShell({ moduleTitle, organisationName, brand, totalSteps
         isOpen={objectivesOpen}
         onClose={() => setObjectivesOpen(false)}
       />
+      {notesEnabled && courseNotes && (
+        <CourseNotesDrawer
+          notes={courseNotes}
+          isOpen={notesOpen}
+          onClose={() => setNotesOpen(false)}
+        />
+      )}
     </div>
   )
 }
