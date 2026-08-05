@@ -9,6 +9,7 @@
 
 import { PrismaClient } from "@prisma/client"
 import { copyFile, mkdir } from "fs/promises"
+import { existsSync } from "fs"
 import path from "path"
 import type { Node, ExperienceContextPack, ShapeDefinition } from "../types/experience"
 import { USE_CASE_PACKS } from "../lib/engine/usecases"
@@ -17,6 +18,7 @@ const db = new PrismaClient()
 
 const AUTHOR_ID = "00000000-0000-0000-0000-000000000001"
 const EXPERIENCE_ID = "00000000-0000-0000-0000-000000000042"
+const ORG_ID = "00000000-0000-0000-0000-000000000051" // Gold Tap Training (seed-goldtap.ts)
 
 const MEDIA_SRC = path.join(__dirname, "..", "thamesWater", "media", "ppt", "media")
 const SEED_UPLOADS = path.join(__dirname, "..", "public", "uploads", "seed")
@@ -120,7 +122,7 @@ const nodes: Node[] = [
     type: "CHECKPOINT",
     label: "Module 1 complete",
     visible: false,
-    marksCompletionOf: "Module 1 — The Importance of Water",
+    marksCompletionOf: "Explain why water is a uniquely precious resource and why hygiene is every operative's personal responsibility",
     unlocks: [],
     snapshotsState: false,
     nextNodeId: "sd-m2",
@@ -166,7 +168,7 @@ const nodes: Node[] = [
     type: "CHECKPOINT",
     label: "Module 2 complete",
     visible: false,
-    marksCompletionOf: "Module 2 — Water as a Carrier of Disease",
+    marksCompletionOf: "Recognise how water carries disease and why operatives are a critical barrier against contamination",
     unlocks: [],
     snapshotsState: false,
     nextNodeId: "sd-m3",
@@ -220,7 +222,7 @@ const nodes: Node[] = [
     type: "CHECKPOINT",
     label: "Module 3 complete",
     visible: false,
-    marksCompletionOf: "Module 3 — Potential Contamination and Its Consequences",
+    marksCompletionOf: "Identify restricted operations, health exclusion rules, and the consequences of contamination",
     unlocks: [],
     snapshotsState: false,
     nextNodeId: "sd-m4",
@@ -304,7 +306,7 @@ const nodes: Node[] = [
     type: "CHECKPOINT",
     label: "Module 4 complete",
     visible: false,
-    marksCompletionOf: "Module 4 — Preventing Contamination",
+    marksCompletionOf: "Apply the prevention requirements: clothing, storage, approved products and contamination response",
     unlocks: [],
     snapshotsState: false,
     nextNodeId: "sd-quiz-intro",
@@ -663,6 +665,12 @@ const contextPack: ExperienceContextPack = {
   },
   groundTruth: [],
   scripts: [],
+  learningObjectives: [
+    "Explain why water is a uniquely precious resource and why hygiene is every operative's personal responsibility",
+    "Recognise how water carries disease and why operatives are a critical barrier against contamination",
+    "Identify restricted operations, health exclusion rules, and the consequences of contamination",
+    "Apply the prevention requirements: clothing, storage, approved products and contamination response",
+  ],
 }
 
 // ─── SHAPE ───────────────────────────────────────────────────────────────────
@@ -693,6 +701,7 @@ const shape: ShapeDefinition = {
     "n-q16", "n-q17", "n-q18", "n-q19", "n-q20",
     "n-q21", "n-q22", "n-q23", "n-q24", "n-q25",
   ],
+  displaySteps: 31,
 }
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────
@@ -700,11 +709,21 @@ const shape: ShapeDefinition = {
 async function main() {
   console.log("Seeding NWH slides variant (ID ...0042)…")
 
-  await mkdir(SEED_UPLOADS, { recursive: true })
-  for (const img of SLIDE_IMAGES) {
-    await copyFile(path.join(MEDIA_SRC, img.src), path.join(SEED_UPLOADS, img.dest))
+  if (existsSync(MEDIA_SRC)) {
+    await mkdir(SEED_UPLOADS, { recursive: true })
+    for (const img of SLIDE_IMAGES) {
+      await copyFile(path.join(MEDIA_SRC, img.src), path.join(SEED_UPLOADS, img.dest))
+    }
+    console.log(`  ✓ ${SLIDE_IMAGES.length} slide images copied to public/uploads/seed/`)
+  } else {
+    const missing = SLIDE_IMAGES.filter((img) => !existsSync(path.join(SEED_UPLOADS, img.dest)))
+    if (missing.length > 0) {
+      throw new Error(
+        `Slide images missing from public/uploads/seed/ (${missing.length}) and PPTX media source not present — restore the git-tracked images.`
+      )
+    }
+    console.log("  ✓ Slide images already present in public/uploads/seed/ (git-tracked)")
   }
-  console.log(`  ✓ ${SLIDE_IMAGES.length} slide images copied to public/uploads/seed/`)
 
   await db.user.upsert({
     where: { id: AUTHOR_ID },
@@ -712,24 +731,44 @@ async function main() {
     create: { id: AUTHOR_ID, email: "dev@pageengine.local", name: "Dev Author" },
   })
 
+  const org = await db.org.findUnique({ where: { id: ORG_ID } })
+  if (!org) {
+    throw new Error(
+      "Gold Tap org not found — run `npx tsx prisma/seed-goldtap.ts` first (it owns the org, users and tiers)."
+    )
+  }
+
   await db.experience.upsert({
     where: { id: EXPERIENCE_ID },
     create: {
       id: EXPERIENCE_ID,
-      title: "National Water Hygiene — Slide-Deck Variant",
+      title: "National Water Hygiene — Certification Training (Slides)",
       slug: "national-water-hygiene-slides",
       type: "l_and_d",
       renderingTheme: "training",
       authorId: AUTHOR_ID,
+      orgId: ORG_ID,
+      description:
+        "The NWH syllabus as an illustrated classroom course: four modules of slide decks with the original course imagery, followed by the 25-question certification test. Pass mark 20 of 25; your NWH card is issued through the EUSR scheme.",
+      genre: "training",
+      status: "published",
+      publishedAt: new Date(),
       useCasePack: USE_CASE_PACKS["l_and_d"] as object,
       contextPack: contextPack as object,
       nodes: nodes as object[],
       shape: shape as object,
     },
     update: {
-      title: "National Water Hygiene — Slide-Deck Variant",
+      title: "National Water Hygiene — Certification Training (Slides)",
+      slug: "national-water-hygiene-slides",
       type: "l_and_d",
       renderingTheme: "training",
+      orgId: ORG_ID,
+      description:
+        "The NWH syllabus as an illustrated classroom course: four modules of slide decks with the original course imagery, followed by the 25-question certification test. Pass mark 20 of 25; your NWH card is issued through the EUSR scheme.",
+      genre: "training",
+      status: "published",
+      publishedAt: new Date(),
       useCasePack: USE_CASE_PACKS["l_and_d"] as object,
       contextPack: contextPack as object,
       nodes: nodes as object[],
@@ -740,7 +779,7 @@ async function main() {
   const deckNodes  = nodes.filter((n) => n.type === "SLIDE_DECK").length
   const choiceNodes = nodes.filter((n) => n.type === "CHOICE").length
   console.log(`  ✓ Experience seeded: ${EXPERIENCE_ID}`)
-  console.log(`    Title:   National Water Hygiene — Slide-Deck Variant`)
+  console.log(`    Title:   National Water Hygiene — Certification Training (Slides)`)
   console.log(`    Nodes:   ${nodes.length} (${deckNodes} SLIDE_DECK, 4 CHECKPOINT, ${choiceNodes} CHOICE, 1 ENDPOINT)`)
   console.log(`    Slides:  ${nodes.filter((n) => n.type === "SLIDE_DECK").reduce((s, n) => s + (n as any).slides.length, 0)} total across all decks`)
   console.log("")
