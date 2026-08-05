@@ -13,6 +13,7 @@ import type { ChoiceOption, ExperienceContextPack, FixedNode, GeneratedNode } fr
 import type { ResolvedContent } from "@/types/engine"
 import type { Node } from "@/types/experience"
 import type { DialogueTurn, CompetencyResult } from "@/types/session"
+import { buildEvidenceRecord } from "@/lib/training/evidence"
 import { SlideDeckPanel } from "@/components/traverse-training/SlideDeckPanel"
 import { LayoutRenderer } from "@/components/traverse-training/LayoutRenderer"
 import { useActorVoice } from "./useActorVoice"
@@ -59,6 +60,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
   const [totalSteps, setTotalSteps] = useState(0)
   const [feedbackVisible, setFeedbackVisible] = useState(false)
   const [dialogueHistory, setDialogueHistory] = useState<DialogueTurn[]>([])
+  const [competencyResults, setCompetencyResults] = useState<CompetencyResult[]>([])
 
   // Abort in-flight requests on unmount so late responses can't set state
   const abortRef = useRef<AbortController | null>(null)
@@ -82,6 +84,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
     setCurrentStep(0)
     setFeedbackVisible(false)
     setDialogueHistory([])
+    setCompetencyResults([])
 
     try {
       const res = await fetch("/api/v1/engine/start", {
@@ -151,6 +154,14 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
         aiSummary: content.summary,
         decisionHistory,
         score: content.outcomeCard.score,
+        evidence: buildEvidenceRecord({
+          moduleTitle,
+          outcomeLabel: content.outcomeCard.outcomeLabel,
+          aiSummary: content.summary,
+          completedAt: new Date().toISOString(),
+          results: competencyResults,
+          decisions: decisionHistory,
+        }),
       })
       return
     }
@@ -216,6 +227,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
     }
 
     if (content.type === "evaluative") {
+      setCompetencyResults((prev) => [...prev, ...content.results])
       setPlayerStatus({
         status: "evaluative_result",
         passed: content.passed,
@@ -414,6 +426,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
           competencies={buildCompetencyProfile(playerStatus.decisionHistory)}
           moduleTitle={moduleTitle}
           score={playerStatus.score}
+          evidence={playerStatus.evidence}
           onRestart={startSession}
           onExit={() => { window.location.href = "/" }}
         />

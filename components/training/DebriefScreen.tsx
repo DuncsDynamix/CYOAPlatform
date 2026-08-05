@@ -1,4 +1,6 @@
 import type { DecisionReview, CompetencyProfile, OutcomeCardData } from "@/types/engine"
+import type { EvidenceRecord } from "@/lib/training/evidence"
+import { EvidenceReport } from "@/components/traverse-training/EvidenceReport"
 
 interface DebriefScreenProps {
   outcomeLabel: string
@@ -8,6 +10,7 @@ interface DebriefScreenProps {
   competencies: CompetencyProfile[]
   moduleTitle: string
   score?: OutcomeCardData["score"]
+  evidence?: EvidenceRecord
   onRestart: () => void
   onExit: () => void
 }
@@ -24,7 +27,7 @@ function toneColour(tone?: "positive" | "developmental" | "neutral"): string {
   return "var(--t-text-on-dark-muted)"
 }
 
-export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHistory, competencies, moduleTitle, score, onRestart, onExit }: DebriefScreenProps) {
+export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHistory, competencies, moduleTitle, score, evidence, onRestart, onExit }: DebriefScreenProps) {
   return (
     <div className="t-debrief">
       <div className="t-debrief-inner">
@@ -62,6 +65,9 @@ export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHi
             <p className="t-debrief-summary-text">{aiSummary}</p>
           </div>
         )}
+
+        {/* Evidence record — the filable artefact */}
+        {evidence && <EvidenceReport record={evidence} />}
 
         {/* Decision history */}
         {decisionHistory.length > 0 && (

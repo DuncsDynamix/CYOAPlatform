@@ -1,5 +1,6 @@
 import type { Node, ChoiceOption, Slide, NodeLayout } from "./experience"
 import type { ExperienceSession, DialogueTurn, CompetencyResult } from "./session"
+import type { EvidenceRecord } from "@/lib/training/evidence"
 
 // ─── RESOLVED CONTENT ─────────────────────────────────────────
 // What the engine returns after resolving a node
@@ -139,7 +140,7 @@ export type TrainingPlayerStatus =
   | { status: "at_decision"; options: import("./experience").ChoiceOption[]; responseType: "closed" | "open"; prompt?: string; openPrompt?: string; sceneContext?: SceneContext }
   | { status: "reviewing_decision"; feedback: string; feedbackTone: "positive" | "developmental" | "neutral"; competencySignal?: string; choiceLabel: string; onContinue: () => void }
   | { status: "advancing" }
-  | { status: "debrief"; outcomeLabel: string; closingLine: string; aiSummary: string; decisionHistory: DecisionReview[]; score?: OutcomeCardData["score"] }
+  | { status: "debrief"; outcomeLabel: string; closingLine: string; aiSummary: string; decisionHistory: DecisionReview[]; score?: OutcomeCardData["score"]; evidence?: EvidenceRecord }
   | { status: "error"; message: string; retryable?: boolean; retry?: () => void }
   | {
       status: "in_dialogue"
