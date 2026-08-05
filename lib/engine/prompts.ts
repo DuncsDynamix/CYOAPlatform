@@ -86,6 +86,46 @@ export const WRITING_STYLE_RULES = `WRITING STYLE — HARD RULES:
 - Break prose into short paragraphs of two to four sentences, separated by blank lines. Never return one solid block of text.`
 
 /**
+ * Renders the most recent scene scaffolds as shared situational grounding for
+ * dialogue and observed-dialogue generation. Framing only (CB-002): labels,
+ * beats and established facts — never the full prose.
+ */
+export function buildSceneContext(session: ExperienceSession, limit = 3): string {
+  const entries = (session.narrativeHistory as NarrativeHistoryEntry[]).slice(-limit)
+
+  if (entries.length === 0) {
+    return "(This is the opening scene — no prior scenes have happened yet.)"
+  }
+
+  return entries
+    .map((e) => {
+      const lines = [
+        `[${e.scaffold.nodeLabel}]`,
+        `What happened: ${e.scaffold.beatAchieved}`,
+      ]
+      if (e.scaffold.keyFactsEstablished.length > 0) {
+        lines.push(`Facts established: ${e.scaffold.keyFactsEstablished.join("; ")}`)
+      }
+      if (e.scaffold.choiceMade) {
+        lines.push(`Decision made: ${e.scaffold.choiceMade.label} — ${e.scaffold.choiceMade.consequence}`)
+      }
+      return lines.join("\n")
+    })
+    .join("\n\n")
+}
+
+/**
+ * Appended to dialogue-actor system prompts so conversations engage with the
+ * participant's situation instead of tasking them. Exists because a
+ * context-blind actor defaults to information-gathering errands ("go and
+ * check whether...") the participant cannot perform mid-conversation.
+ */
+export const DIALOGUE_ENGAGEMENT_RULES = `RULES OF ENGAGEMENT:
+- The participant is in the situation described above and already knows those established facts. Never ask them to go and find out something the scenes have already established.
+- Do not assign the participant errands or physical tasks to perform during this conversation. Drive toward decisions, reactions and commitments that can be made within the conversation itself.
+- React to what the participant proposes and pressure-test their judgment from your character's own interests.`
+
+/**
  * Builds the user-turn generation prompt with arc awareness,
  * resolved ground truth, and active scripts.
  */

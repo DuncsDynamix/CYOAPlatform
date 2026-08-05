@@ -139,4 +139,60 @@ describe("POST /api/v1/engine/dialogue — conclude", () => {
     const res = await POST(makeRequest({ sessionId: SESSION_ID }))
     expect(res.status).toBe(400)
   })
+
+  it("persists the transcript to narrative history when concluding", async () => {
+    const { session } = wire(dialogueNode())
+    session.state.dialogue = {
+      turns: [
+        { role: "character", content: "Just flush it.", timestamp: "t1" },
+        { role: "participant", content: "Not before sampling.", timestamp: "t2" },
+      ],
+      breakthroughAchieved: false,
+      turnCount: 1,
+    } as never
+
+    await POST(makeRequest({ sessionId: SESSION_ID, conclude: true }))
+
+    const mutation = mockCommit.mock.calls[0][1]
+    const draft = {
+      state: { dialogue: session.state.dialogue },
+      narrativeHistory: [],
+    }
+    mutation(draft as never)
+
+    expect(draft.state.dialogue).toBeNull()
+    expect(draft.narrativeHistory).toHaveLength(1)
+    const entry = draft.narrativeHistory[0] as { nodeId: string; transcript?: unknown[]; scaffold: { nodeLabel: string } }
+    expect(entry.nodeId).toBe("d1")
+    expect(entry.transcript).toHaveLength(2)
+  })
+
+  it("persists the transcript including the final turns on normal completion", async () => {
+    const { session } = wire(dialogueNode({ maxTurns: 2 }))
+    session.state.dialogue = {
+      turns: [{ role: "character", content: "Talk to me.", timestamp: "t0" }],
+      breakthroughAchieved: false,
+      turnCount: 1,
+    } as never
+    vi.mocked(generateDialogueResponse).mockResolvedValue("Fine. Quality can have it.")
+    vi.mocked(assessDialogueBreakthrough).mockResolvedValue(true)
+
+    const res = await POST(makeRequest({ sessionId: SESSION_ID, participantText: "Quality own this decision." }))
+    expect(res.status).toBe(200)
+
+    const mutation = mockCommit.mock.calls[0][1]
+    const draft = {
+      state: { dialogue: structuredClone(session.state.dialogue) },
+      narrativeHistory: [],
+    }
+    mutation(draft as never)
+
+    expect(draft.state.dialogue).toBeNull()
+    expect(draft.narrativeHistory).toHaveLength(1)
+    const entry = draft.narrativeHistory[0] as { transcript?: { content: string }[] }
+    // opening line + participant turn + character reply
+    expect(entry.transcript).toHaveLength(3)
+    expect(entry.transcript?.[1].content).toBe("Quality own this decision.")
+    expect(entry.transcript?.[2].content).toBe("Fine. Quality can have it.")
+  })
 })

@@ -76,6 +76,12 @@ export interface NarrativeHistoryEntry {
   generatedAt: string
   /** @deprecated Use scaffold.choiceMade going forward. */
   choiceMade?: string
+  /**
+   * Present only for DIALOGUE nodes: the completed conversation, retained
+   * verbatim as assessment input (EVALUATIVE reads the learner's actual
+   * words) and as audit evidence attached to the session record.
+   */
+  transcript?: DialogueTurn[]
 }
 
 // ─── CHOICE HISTORY ──────────────────────────────────────────

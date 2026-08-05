@@ -9,7 +9,30 @@ import { checkEngineLimit, checkGenerationLimit } from "@/lib/security/ratelimit
 import { trackEvent } from "@/lib/analytics"
 import { engineErrorResponse } from "@/lib/api/errors"
 import type { DialogueNode, ExperienceContextPack } from "@/types/experience"
-import type { DialogueTurn } from "@/types/session"
+import type { DialogueTurn, NarrativeHistoryEntry } from "@/types/session"
+
+/**
+ * A completed conversation persists into narrative history verbatim: the
+ * EVALUATIVE node assesses the learner's actual words, and the transcript is
+ * audit evidence attached to the session record.
+ */
+function transcriptEntry(node: DialogueNode, turns: DialogueTurn[], breakthrough: boolean): NarrativeHistoryEntry {
+  return {
+    nodeId: node.id,
+    content: turns.map((t) => `${t.role === "character" ? node.actorId : "You"}: ${t.content}`).join("\n"),
+    scaffold: {
+      nodeId: node.id,
+      nodeLabel: node.label,
+      beatAchieved: breakthrough
+        ? `The conversation with ${node.actorId} reached its goal.`
+        : `The conversation with ${node.actorId} ended without reaching its goal.`,
+      keyFactsEstablished: [],
+      stateSnapshot: {},
+    },
+    generatedAt: new Date().toISOString(),
+    transcript: turns,
+  }
+}
 
 const DialogueTurnSchema = z
   .object({
@@ -108,7 +131,11 @@ export async function POST(req: NextRequest) {
   if (conclude) {
     const priorBreakthrough = dialogue.breakthroughAchieved
     const updated = await commitSessionMutation(sessionId, (draft) => {
+      const turns = draft.state.dialogue?.turns ?? dialogue.turns
       draft.state.dialogue = null
+      if (turns.length > 0 && !draft.narrativeHistory.some((h) => h.nodeId === currentNode.id)) {
+        draft.narrativeHistory.push(transcriptEntry(currentNode, turns, priorBreakthrough))
+      }
     })
     if (!updated) {
       return NextResponse.json({ error: "Failed to conclude dialogue" }, { status: 500 })
@@ -161,7 +188,7 @@ export async function POST(req: NextRequest) {
   try {
     ;[characterLine, breakthroughAchieved] = await Promise.all([
       generateDialogueResponse(currentNode, actor, turnsForGeneration, session, experience, apiKey),
-      assessDialogueBreakthrough(currentNode, turnsForGeneration, apiKey),
+      assessDialogueBreakthrough(currentNode, turnsForGeneration, apiKey, session),
     ])
   } catch (err) {
     return engineErrorResponse(err, { route: "engine/dialogue", sessionId, experienceId: experience.id })
@@ -188,14 +215,18 @@ export async function POST(req: NextRequest) {
     if (!draft.state.dialogue) return
     newTurnCount = draft.state.dialogue.turnCount + 1
     dialogueComplete = breakthroughAchieved || newTurnCount >= currentNode.maxTurns
+    const fullTurns = [...draft.state.dialogue.turns, participantTurn, characterTurn]
     draft.state.dialogue = dialogueComplete
       ? null
       : {
           ...draft.state.dialogue,
-          turns: [...draft.state.dialogue.turns, participantTurn, characterTurn],
+          turns: fullTurns,
           turnCount: newTurnCount,
           breakthroughAchieved,
         }
+    if (dialogueComplete && !draft.narrativeHistory.some((h) => h.nodeId === currentNode.id)) {
+      draft.narrativeHistory.push(transcriptEntry(currentNode, fullTurns, breakthroughAchieved))
+    }
   })
   if (!updated) {
     return NextResponse.json({ error: "Failed to record turn" }, { status: 500 })

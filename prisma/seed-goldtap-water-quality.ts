@@ -388,7 +388,7 @@ const nodes: Node[] = [
         weight: "minor",
       },
     ],
-    assessesNodeIds: ["n2", "n3a", "n3b", "n4", "n5a", "n5b"],
+    assessesNodeIds: ["n2", "d1", "n3a", "n3b", "n4", "d2", "n5a", "n5b"],
     nextNodeId: "ep1",
   },
 
