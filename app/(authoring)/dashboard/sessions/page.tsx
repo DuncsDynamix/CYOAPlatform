@@ -81,3 +81,7 @@ export default async function SessionsPage() {
     </div>
   )
 }
+
+// DB-backed page: render per request, never at build time — builds must not
+// require a live, migrated database (Vercel builds run before migrations).
+export const dynamic = "force-dynamic"
