@@ -163,6 +163,10 @@ const nodes: Node[] = [
         nextNodeId: "n3a",
         isLoadBearing: true,
         stateChanges: { q1_correct: true, performance_score: 1 },
+        trainingFeedback:
+          "Correct. A turbidity alarm on a supply filter is treated as real until proven otherwise: isolate first, confirm with a manual sample, and escalate immediately. Sensor drift is a possibility you rule out after the barrier is in place, not before.",
+        feedbackTone: "positive",
+        competencySignal: "Water Quality Monitoring",
       },
       {
         id: "q1-b",
@@ -171,6 +175,10 @@ const nodes: Node[] = [
         nextNodeId: "n3b",
         isLoadBearing: true,
         stateChanges: { q1_correct: false, performance_score: 0 },
+        trainingFeedback:
+          "Re-testing before isolating leaves a potentially compromised filter feeding the network while you wait. The precautionary standard is isolate, sample, escalate: protection first, diagnosis second.",
+        feedbackTone: "developmental",
+        competencySignal: "Water Quality Monitoring",
       },
     ],
   },
@@ -252,6 +260,10 @@ const nodes: Node[] = [
         nextNodeId: "n5a",
         isLoadBearing: true,
         stateChanges: { q2_correct: true },
+        trainingFeedback:
+          "Correct. A missed verification in a regulated process goes on record regardless of outcome. A complete WIMS trail protects the water supply, the company, and Marcus himself: the Drinking Water Inspectorate requires unbroken process records.",
+        feedbackTone: "positive",
+        competencySignal: "Regulatory Record Integrity",
       },
       {
         id: "q2-b",
@@ -260,6 +272,10 @@ const nodes: Node[] = [
         nextNodeId: "n5b",
         isLoadBearing: true,
         stateChanges: { q2_correct: false },
+        trainingFeedback:
+          "Filling the gap informally turns one missed check into a falsified record, which exposes Marcus and Thames Water to far greater risk than an honest procedural observation would. Record integrity is not negotiable.",
+        feedbackTone: "developmental",
+        competencySignal: "Regulatory Record Integrity",
       },
     ],
   },
@@ -352,6 +368,10 @@ const nodes: Node[] = [
         nextNodeId: "n7a",
         isLoadBearing: true,
         stateChanges: { q3_correct: true },
+        trainingFeedback:
+          "Correct. An elevated vibration trend plus audible cavitation meets the criteria for precautionary isolation, even inside the tolerance band. A planned intervention costs minutes; a winding failure at peak demand costs the asset and intake capacity.",
+        feedbackTone: "positive",
+        competencySignal: "Asset Management",
       },
       {
         id: "q3-b",
@@ -360,6 +380,10 @@ const nodes: Node[] = [
         nextNodeId: "n7b",
         isLoadBearing: true,
         stateChanges: { q3_correct: false },
+        trainingFeedback:
+          "The reading was inside tolerance, but tolerance bands are not the whole standard: a doubled vibration trend plus cavitation sound met the criteria for precautionary isolation. Watching a deteriorating pump at peak demand risks an emergency failure instead of a planned fix.",
+        feedbackTone: "developmental",
+        competencySignal: "Asset Management",
       },
     ],
   },
@@ -428,6 +452,10 @@ const nodes: Node[] = [
         nextNodeId: "n9a",
         isLoadBearing: true,
         stateChanges: { q4_correct: true },
+        trainingFeedback:
+          "Correct. A discolouration report is a potential water quality incident: log it, sample the nearest distribution point, notify, and initiate the protocol. Most reports turn out benign, and the protocol is how you find the one that is not.",
+        feedbackTone: "positive",
+        competencySignal: "Incident Escalation",
       },
       {
         id: "q4-b",
@@ -436,6 +464,10 @@ const nodes: Node[] = [
         nextNodeId: "n9b",
         isLoadBearing: false,
         stateChanges: { q4_correct: false },
+        trainingFeedback:
+          "Customer services can handle the conversation, but a discolouration report is field operations evidence. Routing it away without a sample or a WIMS entry loses exactly the data a real incident would need.",
+        feedbackTone: "developmental",
+        competencySignal: "Incident Escalation",
       },
       {
         id: "q4-c",
@@ -444,6 +476,10 @@ const nodes: Node[] = [
         nextNodeId: "n9c",
         isLoadBearing: false,
         stateChanges: { q4_correct: false },
+        trainingFeedback:
+          "Reassurance without verification is a guess. If the discolouration were a genuine quality failure, an end-of-shift note would have delayed the response by hours. Log, sample and escalate first; explanations come after the data.",
+        feedbackTone: "developmental",
+        competencySignal: "Incident Escalation",
       },
     ],
   },
