@@ -83,3 +83,5 @@ per-employee performance record is HR personal data).
 | Voice Phase 2–3 (STT input, streaming) | A pilot customer asks for spoken input |
 | Video avatars | An enterprise RFP demands it (buy, don't build) |
 | Self-hosted TTS (Chatterbox) | Deployment exists + per-minute costs matter at scale |
+| Org claims in Supabase JWT (drops the middleware users-table query; un-couples DB host from Supabase, Neon-class hosts return; Edge does zero I/O) | Pilot infrastructure work, or cold-start latency measurably annoys users |
+| ORM swap (Prisma → Drizzle-class) | Only alongside a rewrite happening anyway, or Supabase RLS adopted as the authorisation model — not on its own merits |
