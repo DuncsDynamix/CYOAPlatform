@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client"
 import { copyFile, mkdir } from "fs/promises"
+import { existsSync } from "fs"
 import path from "path"
 import type {
   Node,
@@ -15,6 +16,7 @@ const db = new PrismaClient()
 
 const AUTHOR_ID = "00000000-0000-0000-0000-000000000001"
 const EXPERIENCE_ID = "00000000-0000-0000-0000-000000000020"
+const ORG_ID = "00000000-0000-0000-0000-000000000051" // Gold Tap Training (seed-goldtap.ts)
 
 // Images from the source PPTX media folder → copied to public/uploads/seed/ at seed time
 const MEDIA_SRC = path.join(__dirname, "..", "thamesWater", "media", "ppt", "media")
@@ -309,7 +311,7 @@ const nodes: Node[] = [
     type: "CHECKPOINT",
     label: "Act One complete — morning shift assessed",
     visible: false,
-    marksCompletionOf: "act-one-morning",
+    marksCompletionOf: "Respond to water quality alarms decisively and protect the integrity of process records",
     unlocks: [],
     nextNodeId: "n6",
   },
@@ -378,7 +380,7 @@ const nodes: Node[] = [
         "over-dramatise the preventive action — it was routine good practice",
       ],
     },
-    nextNodeId: "q4",
+    nextNodeId: "cp2",
   },
 
   // Q3 risk path
@@ -398,6 +400,16 @@ const nodes: Node[] = [
         "imply the learner will be dismissed",
       ],
     },
+    nextNodeId: "cp2",
+  },
+
+  {
+    id: "cp2",
+    type: "CHECKPOINT",
+    label: "Afternoon shift — asset risk assessed",
+    visible: false,
+    marksCompletionOf: "Manage asset risk under peak demand: recognise warning signs and act before failure",
+    unlocks: [],
     nextNodeId: "q4",
   },
 
@@ -659,6 +671,10 @@ const contextPack: ExperienceContextPack = {
         "The endpoint summary must reference specific decisions from the learner's session history, not generic feedback. If they got Q1 right but Q3 wrong, name those specifically. The debrief should feel like it is talking about this specific shift, not a template.",
     },
   ],
+  learningObjectives: [
+    "Respond to water quality alarms decisively and protect the integrity of process records",
+    "Manage asset risk under peak demand: recognise warning signs and act before failure",
+  ],
 }
 
 // ─── SHAPE ───────────────────────────────────────────────────────────────────
@@ -700,12 +716,13 @@ const shape: ShapeDefinition = {
   convergencePoints: [2, 4],
   pacingModel: "competency_build",
   mandatoryNodeIds: ["sd1", "n1"],
+  displaySteps: 13,
 }
 
 // ─── SEGMENTS ────────────────────────────────────────────────────────────────
 
 const MORNING_NODE_IDS = ["sd1", "n1", "n2", "q1", "n3a", "n3b", "n4", "q2", "n5a", "n5b", "cp1"]
-const AFTERNOON_NODE_IDS = ["n6", "q3", "n7a", "n7b", "q4", "n9a", "n9b", "n9c", "ep1", "ep2", "ep3"]
+const AFTERNOON_NODE_IDS = ["n6", "q3", "n7a", "n7b", "cp2", "q4", "n9a", "n9b", "n9c", "ep1", "ep2", "ep3"]
 
 const segments: Segment[] = [
   {
@@ -729,17 +746,30 @@ const segments: Segment[] = [
 async function main() {
   console.log("Seeding Thames Water training experience…")
 
-  // Copy slide images into public/uploads/seed/ so they are served by Next.js
-  await mkdir(SEED_UPLOADS, { recursive: true })
-  for (const img of SLIDE_IMAGES) {
-    await copyFile(path.join(MEDIA_SRC, img.src), path.join(SEED_UPLOADS, img.dest))
+  // Copy slide images into public/uploads/seed/ so they are served by Next.js.
+  // The PPTX media source exists only on the original authoring machine; the
+  // copied images are git-tracked, so elsewhere they must already be present.
+  if (existsSync(MEDIA_SRC)) {
+    await mkdir(SEED_UPLOADS, { recursive: true })
+    for (const img of SLIDE_IMAGES) {
+      await copyFile(path.join(MEDIA_SRC, img.src), path.join(SEED_UPLOADS, img.dest))
+    }
+    console.log(`  ✓ ${SLIDE_IMAGES.length} slide images copied to public/uploads/seed/`)
+  } else {
+    const missing = SLIDE_IMAGES.filter((img) => !existsSync(path.join(SEED_UPLOADS, img.dest)))
+    if (missing.length > 0) {
+      throw new Error(
+        `Slide images missing from public/uploads/seed/ (${missing.length}) and PPTX media source not present — restore the git-tracked images.`
+      )
+    }
+    console.log("  ✓ Slide images already present in public/uploads/seed/ (git-tracked)")
   }
-  console.log(`  ✓ ${SLIDE_IMAGES.length} slide images copied to public/uploads/seed/`)
 
-  const existing = await db.experience.findUnique({ where: { id: EXPERIENCE_ID } })
-  if (existing) {
-    console.log("✓ Already seeded. Run with a clean DB to re-seed.")
-    return
+  const org = await db.org.findUnique({ where: { id: ORG_ID } })
+  if (!org) {
+    throw new Error(
+      "Gold Tap org not found — run `npx tsx prisma/seed-goldtap.ts` first (it owns the org, users and tiers)."
+    )
   }
 
   const useCasePack = USE_CASE_PACKS.l_and_d
@@ -759,6 +789,14 @@ async function main() {
   await db.experience.upsert({
     where: { id: EXPERIENCE_ID },
     update: {
+      title: "A Day at Lee Valley: Field Operations Judgement",
+      slug: "thames-water-lee-valley-field-ops",
+      description:
+        "Four decisions. One shift. Work through a day as a Thames Water field technician and see how your operational judgement holds up against the regulatory standards that protect drinking water for 800,000 people.",
+      genre: "training",
+      type: "l_and_d",
+      renderingTheme: "training",
+      orgId: ORG_ID,
       nodes: nodes as object[],
       segments: segments as object[],
       useCasePack: USE_CASE_PACKS.l_and_d as object,
@@ -770,6 +808,7 @@ async function main() {
     create: {
       id: EXPERIENCE_ID,
       authorId: AUTHOR_ID,
+      orgId: ORG_ID,
       title: "A Day at Lee Valley: Field Operations Judgement",
       slug: "thames-water-lee-valley-field-ops",
       description:
@@ -778,7 +817,7 @@ async function main() {
       status: "published",
       publishedAt: new Date(),
       type: "l_and_d",
-      renderingTheme: "professional",
+      renderingTheme: "training",
       useCasePack: USE_CASE_PACKS.l_and_d as object,
       contextPack: contextPack as object,
       shape: shape as object,
