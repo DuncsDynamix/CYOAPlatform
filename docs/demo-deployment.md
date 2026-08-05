@@ -69,9 +69,14 @@ Repeat for yourself so you can drive the demo from your own login.
 
 ## 4. Vercel project
 
-1. vercel.com → New Project → import `DuncsDynamix/CYOAPlatform` from GitHub.
-   Framework auto-detects (Next.js). Default build command is fine — the
-   production build is verified passing.
+1. vercel.com → New Project → import `DuncsDynamix/CYOAPlatform` from GitHub
+   (connect the repo — push-to-deploy on `main`, preview URLs per branch,
+   one-click rollback to any previous deployment). Framework auto-detects
+   (Next.js). Set the build command to `prisma generate && next build` —
+   Vercel's node_modules cache can occasionally skip Prisma client
+   generation on rebuilds; this guards against it. If you later want the
+   live demo insulated from day-to-day pushes, create a `demo` branch and
+   set it as the project's production branch, promoting via merge.
 2. Environment variables (Production):
 
 | Variable | Value |
