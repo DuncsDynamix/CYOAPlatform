@@ -318,8 +318,8 @@ async function main() {
       description:
         "First Friday shift at The Gilded Lion. A regular who's had too many, a queue three deep, and a decision that is legally yours to make. Exercises CHOICE, GENERATED, DIALOGUE and EVALUATIVE nodes.",
       genre: "training",
-      status: "published",
-      publishedAt: new Date(),
+      // Off-brand experiment (alcohol service) — kept as a draft, not on the Gold Tap shelf
+      status: "draft",
       type: "l_and_d",
       renderingTheme: "training",
       useCasePack: useCasePack as object,
