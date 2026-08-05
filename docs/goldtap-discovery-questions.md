@@ -83,9 +83,14 @@ not re-derive them. ★ = the questions that matter most.
 
 ## 7. The demo moment (do it in the meeting, not after)
 
-Play the Hartley & Voss ransomware tabletop first (incident pressure translates
-straight to water incidents), then the Fernbrook safeguarding scenario (shows the
-pattern travels to any duty-of-care sector). Voice on. Then ask only two questions:
+Lead with **"Discoloured: A Water Quality Event"** (`/scenario/goldtap-water-quality-event`)
+— it runs under Gold Tap branding, in his industry's exact vocabulary: a
+discolouration cluster after a contractor repair, sampling-before-flushing, the
+duty manager phone call, the DWI notification decision, and the doorstep with a
+frightened parent. The utility is fictional (Medway Water) so no real client is
+depicted failing — offer to reskin per client. Then, if time, the Fernbrook
+safeguarding scenario to show the same pattern travelling to any duty-of-care
+sector. Voice on. Then ask only two questions:
 
 - ★ Which of your clients did you think of while playing that — and which *situation*?
 - What would have to change before you'd show it to them under the Gold Tap name?

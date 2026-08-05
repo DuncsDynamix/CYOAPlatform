@@ -4,7 +4,7 @@ const { resolveBrand, DEFAULT_BRAND } = await import("@/lib/branding")
 
 describe("resolveBrand", () => {
   it("returns the configured brand for a known org slug", () => {
-    const brand = resolveBrand("gold-tap")
+    const brand = resolveBrand("gold-tap-training")
     expect(brand.name).toBe("Gold Tap Training")
     expect(brand.accent).toMatch(/^#/)
   })

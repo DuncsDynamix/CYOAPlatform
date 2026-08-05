@@ -18,7 +18,7 @@ export const DEFAULT_BRAND: BrandTheme = {
 }
 
 const BRANDS: Record<string, BrandTheme> = {
-  "gold-tap": {
+  "gold-tap-training": {
     name: "Gold Tap Training",
     accent: "#8A6D1D",
     accentHover: "#6F5717",
