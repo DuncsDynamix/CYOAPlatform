@@ -125,7 +125,7 @@ export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHi
             Restart scenario
           </button>
           <button className="t-btn-primary" onClick={onExit}>
-            Return to modules
+            Return to library
           </button>
         </div>
       </div>

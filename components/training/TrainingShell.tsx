@@ -23,6 +23,11 @@ export function TrainingShell({ moduleTitle, organisationName, brand, totalSteps
         "--t-accent": brand.accent,
         "--t-accent-hover": brand.accentHover,
         "--t-accent-light": brand.accentLight,
+        // The tt- components (SlideDeckPanel, LayoutRenderer) read the --c-
+        // token family; without these the brand override never reaches them.
+        "--c-accent": brand.accent,
+        "--c-accent-hover": brand.accentHover,
+        "--c-accent-lt": brand.accentLight,
       } as React.CSSProperties)
     : undefined
   const orgName = brand?.name ?? organisationName

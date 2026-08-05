@@ -434,6 +434,9 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
           "--t-accent": brand.accent,
           "--t-accent-hover": brand.accentHover,
           "--t-accent-light": brand.accentLight,
+          "--c-accent": brand.accent,
+          "--c-accent-hover": brand.accentHover,
+          "--c-accent-lt": brand.accentLight,
         } as React.CSSProperties}
       >
         <CoverScreen
@@ -492,7 +495,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
           score={playerStatus.score}
           evidence={playerStatus.evidence}
           onRestart={startSession}
-          onExit={() => { window.location.href = "/" }}
+          onExit={() => { window.location.href = "/scenario" }}
         />
       </div>
     )
