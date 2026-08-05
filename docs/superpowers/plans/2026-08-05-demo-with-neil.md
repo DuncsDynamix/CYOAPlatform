@@ -29,7 +29,7 @@
 - Consumes: `CompetencyResult` from `@/types/session` (`{ nodeId, rubricCriterionId, criterionLabel, passed, evidence, weight }`), `DecisionReview` from `@/types/engine` (`{ nodeId, sceneLabel, choiceLabel, feedbackTone?, competencySignal? }`).
 - Produces: `EvidenceRecord` type and `buildEvidenceRecord(input: EvidenceRecordInput): EvidenceRecord` — Tasks 2 and 3 import both from `@/lib/training/evidence`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // tests/training/evidence.test.ts
@@ -91,12 +91,12 @@ describe("buildEvidenceRecord", () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/training/evidence.test.ts`
 Expected: FAIL — "Failed to resolve import @/lib/training/evidence"
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```typescript
 // lib/training/evidence.ts
@@ -144,12 +144,12 @@ export function buildEvidenceRecord(input: EvidenceRecordInput): EvidenceRecord 
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run tests/training/evidence.test.ts`
 Expected: PASS (4 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/training/evidence.ts tests/training/evidence.test.ts
@@ -171,7 +171,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Consumes: `EvidenceRecord` from `@/lib/training/evidence` (Task 1).
 - Produces: `<EvidenceReport record={EvidenceRecord} />` — Task 3 imports it from `@/components/traverse-training/EvidenceReport`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 // tests/components/evidence-report.test.tsx
@@ -247,13 +247,13 @@ describe("EvidenceReport", () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/components/evidence-report.test.tsx`
 Expected: FAIL — cannot resolve `@/components/traverse-training/EvidenceReport`
 Note: if `@testing-library/user-event` is not installed, use `fireEvent.click` from `@testing-library/react` instead — check `package.json` first and keep the same assertion.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```tsx
 // components/traverse-training/EvidenceReport.tsx
@@ -337,7 +337,7 @@ export function EvidenceReport({ record }: { record: EvidenceRecord }) {
 }
 ```
 
-- [ ] **Step 4: Append styles (visual + print) to `app/globals-traverse-training.css`**
+- [x] **Step 4: Append styles (visual + print) to `app/globals-traverse-training.css`**
 
 ```css
 /* ─── EVIDENCE RECORD (tt-evidence) ─────────────────────────── */
@@ -398,12 +398,12 @@ export function EvidenceReport({ record }: { record: EvidenceRecord }) {
 }
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `npx vitest run tests/components/evidence-report.test.tsx`
 Expected: PASS (5 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add components/traverse-training/EvidenceReport.tsx app/globals-traverse-training.css tests/components/evidence-report.test.tsx
@@ -426,7 +426,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Consumes: `buildEvidenceRecord` / `EvidenceRecord` (Task 1), `EvidenceReport` (Task 2).
 - Produces: `DebriefScreen` accepts `evidence?: EvidenceRecord` — no downstream consumers in this plan.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 // tests/components/debrief-evidence.test.tsx
@@ -478,12 +478,12 @@ describe("DebriefScreen with evidence", () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/components/debrief-evidence.test.tsx`
 Expected: FAIL — TS/prop error: `evidence` is not a known prop of DebriefScreen (first test fails to find criterion text)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 3a. `types/engine.ts` — find the `TrainingPlayerStatus` debrief variant (`status: "debrief"`) and add:
 
@@ -550,12 +550,12 @@ Pass it through where `DebriefScreen` is instantiated (line ~410): add `evidence
 
 Imports: `import { buildEvidenceRecord } from "@/lib/training/evidence"` and add `CompetencyResult` to the existing `@/types/session` type import.
 
-- [ ] **Step 4: Run tests + type-check**
+- [x] **Step 4: Run tests + type-check**
 
 Run: `npx vitest run tests/components/debrief-evidence.test.tsx && npx tsc --noEmit`
 Expected: PASS (2 tests), tsc clean
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add types/engine.ts components/training/TrainingPlayer.tsx components/training/DebriefScreen.tsx tests/components/debrief-evidence.test.tsx
@@ -578,7 +578,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Consumes: Prisma `db` from `@/lib/db/prisma` (server component only).
 - Produces: `BrandTheme` type and `resolveBrand(orgSlug: string | null | undefined): BrandTheme`; `TrainingPlayer` gains optional prop `brand?: BrandTheme`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // tests/branding/brand-resolution.test.ts
@@ -604,12 +604,12 @@ describe("resolveBrand", () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/branding/brand-resolution.test.ts`
 Expected: FAIL — cannot resolve `@/lib/branding`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```typescript
 // lib/branding.ts
@@ -659,12 +659,12 @@ export function resolveBrand(orgSlug: string | null | undefined): BrandTheme {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run tests/branding/brand-resolution.test.ts`
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Wire server-side and apply**
+- [x] **Step 5: Wire server-side and apply**
 
 5a. `app/(traverse-training)/scenario/[id]/page.tsx` — replace the file body:
 
@@ -708,12 +708,12 @@ import `type { BrandTheme }` and `DEFAULT_BRAND` from `@/lib/branding`; destruct
 
 (`TrainingShell` already renders `organisationName` in its header — no shell change needed.)
 
-- [ ] **Step 6: Verify**
+- [x] **Step 6: Verify**
 
 Run: `npx tsc --noEmit && npx vitest run tests/branding tests/components`
 Expected: clean, all pass. Manual: `http://localhost:6060/scenario/fernbrook-safeguarding` header reads "Fernbrook Care" with green accent; `hartley-voss-ransomware` reads "Hartley & Voss" in slate.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add lib/branding.ts "app/(traverse-training)/scenario/[id]/page.tsx" components/training/TrainingPlayer.tsx tests/branding/brand-resolution.test.ts
@@ -736,7 +736,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Consumes: existing `useActorVoice(sessionId)` return `{ voiceOn, available, toggle, speak }`.
 - Produces: return shape gains `speaking: boolean`.
 
-- [ ] **Step 1: Add failing tests to `tests/components/use-actor-voice.test.tsx`**
+- [x] **Step 1: Add failing tests to `tests/components/use-actor-voice.test.tsx`**
 
 ```tsx
   it("reports speaking while a line plays and stops on ended", async () => {
@@ -760,21 +760,21 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   })
 ```
 
-- [ ] **Step 2: Run to verify both fail**
+- [x] **Step 2: Run to verify both fail**
 
 Run: `npx vitest run tests/components/use-actor-voice.test.tsx`
 Expected: FAIL — `speaking` is undefined
 
-- [ ] **Step 3: Implement in `useActorVoice.ts`**
+- [x] **Step 3: Implement in `useActorVoice.ts`**
 
 Add `const [speakingState, setSpeakingState] = useState(false)`; in `speak` set `setSpeakingState(true)` after `el.play()` is initiated and in `el.onended` set false; in `stop()` set false; return `speaking: speakingState` from the hook. (`stop()` is already called by `toggle` when muting and before replacing playback, so mute and replacement are covered by the one change in `stop`.)
 
-- [ ] **Step 4: Run to verify pass (all 8 hook tests)**
+- [x] **Step 4: Run to verify pass (all 8 hook tests)**
 
 Run: `npx vitest run tests/components/use-actor-voice.test.tsx`
 Expected: PASS (8 tests)
 
-- [ ] **Step 5: Show it in DialoguePanel + CSS**
+- [x] **Step 5: Show it in DialoguePanel + CSS**
 
 In `TrainingPlayer.tsx` DialoguePanel, destructure `speaking` from the hook and render next to the actor name in the header:
 
@@ -799,13 +799,13 @@ Append to `app/globals-traverse-training.css`:
 }
 ```
 
-- [ ] **Step 6: Final verification of the whole plan**
+- [x] **Step 6: Final verification of the whole plan**
 
 Run: `npx tsc --noEmit && npx vitest run`
 Expected: clean, entire suite passes.
 Manual demo pass: play `fernbrook-safeguarding` end-to-end on `localhost:6060` — branded header, pulsing dot while Margaret speaks (needs `ELEVENLABS_API_KEY`), Evidence Record at debrief with evidence quotes, print preview shows the record alone.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add components/training/useActorVoice.ts components/training/TrainingPlayer.tsx app/globals-traverse-training.css tests/components/use-actor-voice.test.tsx
