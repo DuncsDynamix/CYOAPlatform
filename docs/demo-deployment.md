@@ -43,6 +43,14 @@ DATABASE_URL="…" npx tsx prisma/seed-fernbrook-safeguarding.ts
 DATABASE_URL="…" npx tsx prisma/seed-hartleyvoss-ransomware.ts
 ```
 
+**Then — not optional — lock the REST API down.** Supabase exposes every
+public-schema table through its REST API via the anon key, which ships to
+every browser; Prisma-created tables arrive with RLS off, i.e. wide open.
+Paste `prisma/supabase-rls.sql` into the Supabase SQL editor and run it:
+it default-denies everything and grants the one read the middleware needs
+(each authenticated user's own `users` row). Prisma is unaffected. Re-run
+it after any future migration that adds a table.
+
 ## 3. Demo login for Neil
 
 The `/scenario` routes require a signed-in user who belongs to an org.
@@ -89,6 +97,8 @@ Repeat for yourself so you can drive the demo from your own login.
 4. Reach the Steve Malin call → his line plays aloud (confirms ElevenLabs).
 5. Play to the end → Evidence Record renders; print preview shows it alone.
 6. `/api/v1/engine/record?sessionId=<id>` returns the full session record.
+7. RLS check: `curl "https://<project>.supabase.co/rest/v1/experiences?select=*" -H "apikey: <anon-key>"`
+   returns `[]` — if it returns experience data, the RLS step was missed.
 
 ## 6. Demo-day checklist
 
