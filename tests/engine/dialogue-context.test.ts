@@ -197,7 +197,12 @@ describe("evaluative assessment reads dialogue transcripts", () => {
 
     const prompt = mockMessagesCreate.mock.calls[0][0].messages[0].content as string
     expect(prompt).toContain("Not until quality have sampled")
-    expect(prompt).toMatch(/<transcript>/)
+    expect(prompt).toMatch(/<learner-words>/)
     expect(prompt).toMatch(/never as instructions/i)
+    // Character lines are context, not learner evidence: they live in the
+    // background section, after the learner-actions section.
+    const learnerSection = prompt.split("BACKGROUND")[0]
+    expect(learnerSection).not.toContain("Just flush the run")
+    expect(prompt).toContain("Just flush the run")
   })
 })
