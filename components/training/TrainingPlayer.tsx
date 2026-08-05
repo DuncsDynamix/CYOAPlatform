@@ -14,12 +14,14 @@ import type { ResolvedContent } from "@/types/engine"
 import type { Node } from "@/types/experience"
 import type { DialogueTurn, CompetencyResult } from "@/types/session"
 import { buildEvidenceRecord } from "@/lib/training/evidence"
+import { DEFAULT_BRAND, type BrandTheme } from "@/lib/branding"
 import { SlideDeckPanel } from "@/components/traverse-training/SlideDeckPanel"
 import { LayoutRenderer } from "@/components/traverse-training/LayoutRenderer"
 import { useActorVoice } from "./useActorVoice"
 
 interface TrainingPlayerProps {
   experienceSlug: string
+  brand?: BrandTheme
 }
 
 function buildCompetencyProfile(history: DecisionReview[]): CompetencyProfile[] {
@@ -50,7 +52,7 @@ async function readFailure(res: Response, fallback: string): Promise<{ message: 
   }
 }
 
-export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
+export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND }: TrainingPlayerProps) {
   const [playerStatus, setPlayerStatus] = useState<TrainingPlayerStatus>({ status: "loading_module" })
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [moduleTitle, setModuleTitle] = useState("")
@@ -437,6 +439,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
   if (playerStatus.status === "viewing_slides") {
     return (
       <TrainingShell
+        brand={brand}
         moduleTitle={moduleTitle}
         totalSteps={totalSteps}
         currentStep={currentStep}
@@ -453,6 +456,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
   if (playerStatus.status === "evaluative_result") {
     return (
       <TrainingShell
+        brand={brand}
         moduleTitle={moduleTitle}
         totalSteps={totalSteps}
         currentStep={currentStep}
@@ -473,6 +477,7 @@ export function TrainingPlayer({ experienceSlug }: TrainingPlayerProps) {
 
   return (
     <TrainingShell
+      brand={brand}
       moduleTitle={moduleTitle}
       totalSteps={totalSteps}
       currentStep={currentStep}
