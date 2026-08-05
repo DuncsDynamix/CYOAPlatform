@@ -28,6 +28,7 @@ const db = new PrismaClient()
 
 const AUTHOR_ID = "00000000-0000-0000-0000-000000000001"
 const EXPERIENCE_ID = "00000000-0000-0000-0000-000000000041"
+const ORG_ID = "00000000-0000-0000-0000-000000000051" // Gold Tap Training (seed-goldtap.ts)
 
 // ─── CONTEXT PACK ────────────────────────────────────────────────────────────
 
@@ -59,6 +60,11 @@ const contextPack: ExperienceContextPack = {
         "Pipework and civil engineering basics. No formal understanding of NWH, Cryptosporidium risk, or the public health consequences of water contamination.",
       relationshipToProtagonist:
         "Peer. Started on the same site at the same time. You've both been through the same induction; Jamie clearly wasn't paying full attention.",
+      voice: {
+        vendorVoiceId: "JBFqnCBsd6RMkjVDRZzb", // "George" — British male, warm gravel
+        pace: "normal",
+        notes: "Informal, blunt, construction-site register; warms and gets curious once convinced",
+      },
     },
     {
       name: "Pat Doherty",
@@ -71,6 +77,11 @@ const contextPack: ExperienceContextPack = {
         "Complete knowledge of NWH scheme, EUSR requirements, restricted operations, health exclusion criteria, contamination prevention and response, Cryptosporidium risk, DWI notification procedures. Over 20 years in the industry.",
       relationshipToProtagonist:
         "Your site supervisor. Running your gate checks and scenario assessments. Professional, not unfriendly — she wants you to pass.",
+      voice: {
+        vendorVoiceId: "Xb7hH8MSUJpSbSDYk0k2", // "Alice" — British female, clear and professional
+        pace: "measured",
+        notes: "Matter-of-fact and precise; corrections always come with the reason",
+      },
     },
   ],
   style: {
@@ -115,6 +126,12 @@ const contextPack: ExperienceContextPack = {
       instruction:
         "All scenario content must be grounded in real NWH procedures. If the learner makes an incorrect choice, the feedback or generated content must clearly identify what they should have done and why, referencing the specific NWH rule. Do not be vague about consequences.",
     },
+  ],
+  learningObjectives: [
+    "Explain why water is a uniquely precious resource and why hygiene is every operative's personal responsibility",
+    "Recognise how water carries disease and why operatives are a critical barrier against contamination",
+    "Identify restricted operations, health exclusion rules, and the consequences of contamination",
+    "Apply the prevention requirements: clothing, storage, approved products and contamination response",
   ],
 }
 
@@ -189,7 +206,7 @@ Contaminating the water supply doesn't just affect tap water — it affects ever
     type: "CHECKPOINT",
     label: "Module 1 complete",
     visible: false,
-    marksCompletionOf: "Module 1 — The Importance of Water",
+    marksCompletionOf: "Explain why water is a uniquely precious resource and why hygiene is every operative's personal responsibility",
     unlocks: [],
     snapshotsState: false,
     nextNodeId: "n-m2-briefing",
@@ -303,7 +320,7 @@ Reporting this is not optional. It also protects you: if a contamination inciden
     type: "CHECKPOINT",
     label: "Module 2 complete",
     visible: false,
-    marksCompletionOf: "Module 2 — Water as a Carrier of Disease",
+    marksCompletionOf: "Recognise how water carries disease and why operatives are a critical barrier against contamination",
     unlocks: [],
     snapshotsState: false,
     nextNodeId: "n-m3-facts",
@@ -485,7 +502,7 @@ If you discover or suspect a contamination risk: **stop work immediately, report
     type: "CHECKPOINT",
     label: "Module 3 complete",
     visible: false,
-    marksCompletionOf: "Module 3 — Potential Contamination and Its Consequences",
+    marksCompletionOf: "Identify restricted operations, health exclusion rules, and the consequences of contamination",
     unlocks: [],
     snapshotsState: false,
     nextNodeId: "n-m4-facts",
@@ -603,7 +620,7 @@ Only products approved under **Regulation 31** (England) or **Regulation 33** (S
         weight: "major",
       },
     ],
-    assessesNodeIds: ["n-m4-summary"],
+    assessesNodeIds: ["d-m4", "n-m4-summary"],
     nextNodeId: "cp-m4",
   },
 
@@ -612,7 +629,7 @@ Only products approved under **Regulation 31** (England) or **Regulation 33** (S
     type: "CHECKPOINT",
     label: "Module 4 complete",
     visible: false,
-    marksCompletionOf: "Module 4 — Preventing Contamination",
+    marksCompletionOf: "Apply the prevention requirements: clothing, storage, approved products and contamination response",
     unlocks: [],
     snapshotsState: false,
     nextNodeId: "n-quiz-intro",
@@ -1285,12 +1302,20 @@ const shape: ShapeDefinition = {
     "n-q16", "n-q17", "n-q18", "n-q19", "n-q20",
     "n-q21", "n-q22", "n-q23", "n-q24", "n-q25",
   ],
+  displaySteps: 42,
 }
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
 async function main() {
   console.log("Seeding NWH Interactive certification experience...")
+
+  const org = await db.org.findUnique({ where: { id: ORG_ID } })
+  if (!org) {
+    throw new Error(
+      "Gold Tap org not found — run `npx tsx prisma/seed-goldtap.ts` first (it owns the org, users and tiers)."
+    )
+  }
 
   await db.experience.upsert({
     where: { id: EXPERIENCE_ID },
@@ -1301,6 +1326,12 @@ async function main() {
       type: "l_and_d",
       renderingTheme: "training",
       authorId: AUTHOR_ID,
+      orgId: ORG_ID,
+      description:
+        "The NWH syllabus taught the way the job actually tests it: site conversations, judgment calls, and assessed scenarios — a gate check with your supervisor, a contamination find you have to handle correctly — then the same 25-question certification test. Pass mark 20 of 25.",
+      genre: "training",
+      status: "published",
+      publishedAt: new Date(),
       useCasePack: USE_CASE_PACKS["l_and_d"] as object,
       contextPack: contextPack as object,
       nodes: nodes as object[],
@@ -1308,8 +1339,15 @@ async function main() {
     },
     update: {
       title: "National Water Hygiene — Interactive Certification Training",
+      slug: "national-water-hygiene-interactive",
       type: "l_and_d",
       renderingTheme: "training",
+      orgId: ORG_ID,
+      description:
+        "The NWH syllabus taught the way the job actually tests it: site conversations, judgment calls, and assessed scenarios — a gate check with your supervisor, a contamination find you have to handle correctly — then the same 25-question certification test. Pass mark 20 of 25.",
+      genre: "training",
+      status: "published",
+      publishedAt: new Date(),
       useCasePack: USE_CASE_PACKS["l_and_d"] as object,
       contextPack: contextPack as object,
       nodes: nodes as object[],
