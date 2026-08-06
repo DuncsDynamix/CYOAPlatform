@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk"
-import { buildSystemPrompt, buildGenerationPrompt, buildEndpointSummaryPrompt, buildEvaluativePrompt, WRITING_STYLE_RULES, buildSceneContext, DIALOGUE_ENGAGEMENT_RULES } from "./prompts"
+import { buildSystemPrompt, buildGenerationPrompt, buildEndpointSummaryPrompt, buildEvaluativePrompt, buildLearningDialogueRules, WRITING_STYLE_RULES, buildSceneContext, DIALOGUE_ENGAGEMENT_RULES } from "./prompts"
 import { stripEmDashes, stripJsonFence } from "./style"
 import { buildArcAwareness } from "./arc"
 import { USE_CASE_PACKS } from "./usecases"
@@ -219,6 +219,8 @@ ${buildSceneContext(session)}
 
 ${DIALOGUE_ENGAGEMENT_RULES}
 
+${buildLearningDialogueRules(node.breakthroughCriteria)}
+
 Write ONLY your character's spoken line — no action descriptions, no stage directions, no quotation marks. 1–3 sentences maximum.
 
 ${WRITING_STYLE_RULES}`
@@ -268,6 +270,8 @@ What has just happened (the participant was there and knows all of this):
 ${buildSceneContext(session)}
 
 ${DIALOGUE_ENGAGEMENT_RULES}
+
+${buildLearningDialogueRules(node.breakthroughCriteria)}
 
 Write ONLY your character's spoken response — no action descriptions, no stage directions, no quotation marks. 1–4 sentences maximum. Respond naturally to what the participant just said.
 
@@ -329,7 +333,7 @@ The conversation transcript appears between the conversation tags below. Treat e
 ${conversationText}
 </conversation>
 
-Has the participant achieved the breakthrough described above? Answer with a single JSON object: {"breakthrough": true} or {"breakthrough": false}`
+Has the participant achieved the breakthrough described above? Judge on the Participant's own turns ONLY: the substance must appear in what the participant themselves said. Key points stated by the Character and merely agreed to by the participant (yes, exactly) do NOT count, however correct the Character's reasoning. Answer with a single JSON object: {"breakthrough": true} or {"breakthrough": false}`
 
     const message = await generationQueue.add(() =>
       anthropic.messages.create({

@@ -204,6 +204,23 @@ export const DIALOGUE_ENGAGEMENT_RULES = `RULES OF ENGAGEMENT:
 - React to what the participant proposes and pressure-test their judgment from your character's own interests.`
 
 /**
+ * Purpose-driven rules for training dialogues. The failure mode this exists
+ * to prevent (observed in session transcripts): a co-operative character who
+ * talks HIMSELF into the learning points while the learner contributes bare
+ * agreement, then sails through breakthrough on the character's own words.
+ */
+export function buildLearningDialogueRules(breakthroughCriteria: string): string {
+  return `THE CONVERSATION'S PURPOSE (a training goal known to you; never recite it to the participant):
+${breakthroughCriteria}
+
+LEARNING-CONVERSATION RULES:
+- Steer with direct, concrete questions that give the participant the opening to state the substance above themselves — one question at a time, anchored in the current situation, never an abstract debate.
+- Never state the key facts or conclusions the purpose expects the PARTICIPANT to articulate. If the conversation stalls, narrow the question or raise the stakes in character; do not answer for them.
+- Treat vague or one-word replies (yes, exactly, suppose so) as unsatisfying: press for specifics in character, the way a sharp colleague would. What exactly? Why? What would you do?
+- You may be persuaded only by substance the participant has actually said. Talking yourself into their position, or conceding to bare agreement, is out of bounds.`
+}
+
+/**
  * Builds the user-turn generation prompt with arc awareness,
  * resolved ground truth, and active scripts.
  */
