@@ -1,4 +1,5 @@
 import Markdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 interface ImageLeftProps {
   title?: string
@@ -18,7 +19,7 @@ export function ImageLeft({ title, body, mediaUrl, caption }: ImageLeftProps) {
       )}
       <div className="tt-slide-text-col">
         {title && <h2 className="tt-slide-title">{title}</h2>}
-        {body && <div className="tt-slide-body"><Markdown>{body}</Markdown></div>}
+        {body && <div className="tt-slide-body"><Markdown remarkPlugins={[remarkGfm]}>{body}</Markdown></div>}
       </div>
     </div>
   )

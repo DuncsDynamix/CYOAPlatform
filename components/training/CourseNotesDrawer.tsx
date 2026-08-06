@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import Markdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import type { CourseNote } from "@/types/engine"
 
 interface CourseNotesDrawerProps {
@@ -66,7 +67,7 @@ export function CourseNotesDrawer({ notes, isOpen, onClose }: CourseNotesDrawerP
                 <h3 className="t-note-label">{n.label}</h3>
                 {n.kind === "prose" && (
                   <div className="t-note-body">
-                    <Markdown>{n.content}</Markdown>
+                    <Markdown remarkPlugins={[remarkGfm]}>{n.content}</Markdown>
                   </div>
                 )}
                 {n.kind === "slides" &&
@@ -75,7 +76,7 @@ export function CourseNotesDrawer({ notes, isOpen, onClose }: CourseNotesDrawerP
                       {s.title && <h4 className="t-note-slide-title">{s.title}</h4>}
                       {s.body && (
                         <div className="t-note-body">
-                          <Markdown>{s.body}</Markdown>
+                          <Markdown remarkPlugins={[remarkGfm]}>{s.body}</Markdown>
                         </div>
                       )}
                     </div>

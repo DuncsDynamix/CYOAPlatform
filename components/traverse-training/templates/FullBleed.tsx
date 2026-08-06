@@ -6,6 +6,7 @@ interface FullBleedProps {
 }
 
 import Markdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 export function FullBleed({ title, body, mediaUrl, caption }: FullBleedProps) {
   return (
@@ -15,7 +16,7 @@ export function FullBleed({ title, body, mediaUrl, caption }: FullBleedProps) {
     >
       <div className="tt-slide-full-bleed-overlay">
         {title && <h2 className="tt-slide-full-bleed-title">{title}</h2>}
-        {body && <div className="tt-slide-full-bleed-body"><Markdown>{body}</Markdown></div>}
+        {body && <div className="tt-slide-full-bleed-body"><Markdown remarkPlugins={[remarkGfm]}>{body}</Markdown></div>}
         {caption && <p className="tt-slide-caption tt-slide-caption--inv">{caption}</p>}
       </div>
     </div>

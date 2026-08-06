@@ -6,13 +6,14 @@ interface ImageRightProps {
 }
 
 import Markdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 export function ImageRight({ title, body, mediaUrl, caption }: ImageRightProps) {
   return (
     <div className="tt-slide tt-slide--image-right">
       <div className="tt-slide-text-col">
         {title && <h2 className="tt-slide-title">{title}</h2>}
-        {body && <div className="tt-slide-body"><Markdown>{body}</Markdown></div>}
+        {body && <div className="tt-slide-body"><Markdown remarkPlugins={[remarkGfm]}>{body}</Markdown></div>}
       </div>
       {mediaUrl && (
         <div className="tt-slide-media-col">
