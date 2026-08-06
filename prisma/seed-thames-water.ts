@@ -865,7 +865,7 @@ async function main() {
   console.log("  ✓ Experience seeded")
   console.log("    Title: A Day at Lee Valley: Field Operations Judgement")
   console.log("    Type:  l_and_d (Thames Water field operations)")
-  console.log("    Nodes: 22 (1 SLIDE_DECK, 4 CHOICE, 10 GENERATED, 1 FIXED, 1 CHECKPOINT, 3 ENDPOINT)")
+  console.log("    Nodes: 23 (1 SLIDE_DECK, 4 CHOICE, 10 GENERATED, 1 FIXED, 2 CHECKPOINT, 3 ENDPOINT)")
   console.log("    Competencies assessed:")
   console.log("      Q1 — Water Quality Monitoring (turbidity alarm response)")
   console.log("      Q2 — Regulatory Record Integrity (WIMS / colleague's missed log)")
