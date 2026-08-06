@@ -20,6 +20,8 @@ import { CoverScreen } from "./CoverScreen"
 import { SlideDeckPanel } from "@/components/traverse-training/SlideDeckPanel"
 import { LayoutRenderer } from "@/components/traverse-training/LayoutRenderer"
 import { useActorVoice } from "./useActorVoice"
+import { DemoNodeBadge } from "./DemoNodeBadge"
+import { isDemoMode } from "@/lib/demo"
 
 interface TrainingPlayerProps {
   experienceSlug: string
@@ -75,9 +77,13 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
   const [dialogueHistory, setDialogueHistory] = useState<DialogueTurn[]>([])
   const [competencyResults, setCompetencyResults] = useState<CompetencyResult[]>([])
   const [courseNotes, setCourseNotes] = useState<CourseNote[]>([])
+  const [currentNodeKey, setCurrentNodeKey] = useState<string | null>(null)
 
   const addCourseNote = (note: CourseNote) =>
     setCourseNotes((prev) => (prev.some((n) => n.nodeId === note.nodeId) ? prev : [...prev, note]))
+
+  // Demo-mode explainer badge for the node currently on screen (null when off)
+  const demoBadge = isDemoMode() && currentNodeKey ? <DemoNodeBadge copyKey={currentNodeKey} /> : null
 
   // Abort in-flight requests on unmount so late responses can't set state
   const abortRef = useRef<AbortController | null>(null)
@@ -150,6 +156,15 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
   }, [started, startSession])
 
   function arriveAtNode(sid: string, node: Node, content: ResolvedContent) {
+    // Demo badge key: node type, with the open-choice variant distinguished.
+    // Checkpoints are skipped so the previous screen's key survives auto-advance.
+    if (node.type !== "CHECKPOINT") {
+      setCurrentNodeKey(
+        node.type === "CHOICE" && (node as Extract<Node, { type: "CHOICE" }>).responseType === "open"
+          ? "CHOICE_OPEN"
+          : node.type
+      )
+    }
     if (node.type === "CHECKPOINT") {
       // Mark objective complete then auto-advance
       const label = node.marksCompletionOf
@@ -504,6 +519,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
           evidence={playerStatus.evidence}
           onRestart={startSession}
           onExit={() => { window.location.href = "/scenario" }}
+          demoBadge={isDemoMode() ? <DemoNodeBadge copyKey="ENDPOINT" /> : undefined}
         />
       </div>
     )
@@ -520,6 +536,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
         courseNotes={courseNotes}
         notesEnabled
       >
+        {demoBadge}
         <SlideDeckPanel
           slides={playerStatus.slides}
           onContinue={playerStatus.onContinue}
@@ -537,6 +554,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
         currentStep={currentStep}
         objectives={objectives}
       >
+        {demoBadge}
         <EvaluativeResultPanel
           passed={playerStatus.passed}
           results={playerStatus.results}
@@ -566,6 +584,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
       courseNotes={courseNotes}
       notesEnabled={notesEnabled}
     >
+      {!isAdvancing && demoBadge}
       {/* Prose / advancing state */}
       {(playerStatus.status === "reading_scenario" || isAdvancing) && (
         playerStatus.status === "reading_scenario" && playerStatus.layout && playerStatus.layout.template !== "text-only"

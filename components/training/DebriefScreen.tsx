@@ -13,6 +13,8 @@ interface DebriefScreenProps {
   evidence?: EvidenceRecord
   onRestart: () => void
   onExit: () => void
+  /** Demo-mode explainer badge slot (rendered above the header when present). */
+  demoBadge?: React.ReactNode
 }
 
 function toneIcon(tone?: "positive" | "developmental" | "neutral"): string {
@@ -27,10 +29,11 @@ function toneColour(tone?: "positive" | "developmental" | "neutral"): string {
   return "var(--t-text-on-dark-muted)"
 }
 
-export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHistory, competencies, moduleTitle, score, evidence, onRestart, onExit }: DebriefScreenProps) {
+export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHistory, competencies, moduleTitle, score, evidence, onRestart, onExit, demoBadge }: DebriefScreenProps) {
   return (
     <div className="t-debrief">
       <div className="t-debrief-inner">
+        {demoBadge}
         {/* Header */}
         <div>
           <div className="t-debrief-label">Scenario complete</div>
