@@ -4,6 +4,7 @@ import { getExperienceById } from "@/lib/db/queries/experience"
 import { requireAuth, canAccessSession } from "@/lib/auth"
 import { checkEngineLimit } from "@/lib/security/ratelimit"
 import { buildSessionRecord } from "@/lib/training/record"
+import { getSessionTokenUsage } from "@/lib/training/token-usage"
 
 /**
  * GET /api/v1/engine/record?sessionId=
@@ -39,5 +40,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Experience not found" }, { status: 404 })
   }
 
-  return NextResponse.json(buildSessionRecord(session, experience))
+  return NextResponse.json({
+    ...buildSessionRecord(session, experience),
+    tokenUsage: await getSessionTokenUsage(sessionId),
+  })
 }
