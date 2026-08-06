@@ -90,8 +90,10 @@ export interface EventProperties {
   }
   generation_metric: {
     sessionId: string
-    nodeId: string
-    durationMs: number
+    /** Which engine call produced this: prose, scaffold, summary, dialogue_response, evaluative, router… */
+    kind?: string
+    nodeId?: string
+    durationMs?: number
     inputTokens: number
     outputTokens: number
     model: string

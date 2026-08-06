@@ -21,6 +21,42 @@ function getAnthropicClient(apiKey?: string): Anthropic {
   })
 }
 
+type GenerationKind =
+  | "prose"
+  | "scaffold"
+  | "summary"
+  | "dialogue_opener"
+  | "dialogue_response"
+  | "breakthrough"
+  | "observed_dialogue"
+  | "evaluative"
+  | "router"
+
+/**
+ * Uniform per-call token accounting: every Anthropic call the engine makes for
+ * a session reports its exact API-billed tokens here — the basis of the
+ * per-session usage summary on the session record endpoint.
+ */
+export function trackGeneration(
+  kind: GenerationKind,
+  message: Anthropic.Message,
+  meta: { sessionId: string; nodeId?: string; orgId?: string; durationMs?: number; model: string }
+): void {
+  // Accounting must never break the request path — tolerate absent usage
+  // (defensive; also keeps SDK mocks in tests lightweight).
+  trackEvent("generation_metric", {
+    kind,
+    sessionId: meta.sessionId,
+    nodeId: meta.nodeId,
+    orgId: meta.orgId,
+    durationMs: meta.durationMs,
+    inputTokens: message.usage?.input_tokens ?? 0,
+    outputTokens: message.usage?.output_tokens ?? 0,
+    model: meta.model,
+    fromCache: false,
+  })
+}
+
 export async function generateNode(
   node: GeneratedNode,
   session: ExperienceSession,
@@ -54,15 +90,12 @@ export async function generateNode(
   const duration = Date.now() - startTime
   const content = stripEmDashes(message.content[0].type === "text" ? message.content[0].text : "")
 
-  trackEvent("generation_metric", {
+  trackGeneration("prose", message, {
     sessionId: session.id,
     nodeId: node.id,
     orgId: experience.orgId ?? undefined,
     durationMs: duration,
-    inputTokens: message.usage.input_tokens,
-    outputTokens: message.usage.output_tokens,
     model: MODEL,
-    fromCache: false,
   })
 
   return content
@@ -123,14 +156,11 @@ Do not include choiceMade — that is added separately when the reader makes the
     // Strip markdown fences if the model wraps the JSON despite being asked not to
     const raw = stripJsonFence(rawText)
 
-    trackEvent("generation_metric", {
+    trackGeneration("scaffold", message, {
       sessionId: session.id,
       nodeId: node.id,
       durationMs: duration,
-      inputTokens: message.usage.input_tokens,
-      outputTokens: message.usage.output_tokens,
       model: SCAFFOLD_MODEL,
-      fromCache: false,
     })
 
     const parsed = JSON.parse(raw) as { beatAchieved: string; keyFactsEstablished: string[] }
@@ -188,6 +218,8 @@ ${WRITING_STYLE_RULES}`
 
   if (!message) throw new Error("Generation queue returned undefined")
 
+  trackGeneration("summary", message, { sessionId: session.id, nodeId: node.id, model: MODEL })
+
   return stripEmDashes(message.content[0].type === "text" ? message.content[0].text : "")
 }
 
@@ -241,6 +273,9 @@ Write your opening line now.`
   )
 
   if (!message) throw new Error("Generation queue returned undefined")
+
+  trackGeneration("dialogue_opener", message, { sessionId: session.id, nodeId: node.id, model: MODEL })
+
   return stripEmDashes(message.content[0].type === "text" ? message.content[0].text.trim() : "")
 }
 
@@ -302,6 +337,9 @@ ${WRITING_STYLE_RULES}`
   )
 
   if (!message) throw new Error("Generation queue returned undefined")
+
+  trackGeneration("dialogue_response", message, { sessionId: session.id, nodeId: node.id, model: MODEL })
+
   return stripEmDashes(message.content[0].type === "text" ? message.content[0].text.trim() : "")
 }
 
@@ -345,6 +383,11 @@ Has the participant achieved the breakthrough described above? Judge on the Part
     )
 
     if (!message) return false
+
+    if (session) {
+      trackGeneration("breakthrough", message, { sessionId: session.id, nodeId: node.id, model: SCAFFOLD_MODEL })
+    }
+
     const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
     const raw = stripJsonFence(rawText)
     const parsed = JSON.parse(raw) as { breakthrough: boolean }
@@ -414,6 +457,8 @@ Alternate speakers starting with ${actorA.name}. Return exactly ${node.turns} ob
     )
 
     if (!message) return fallback
+
+    trackGeneration("observed_dialogue", message, { sessionId: session.id, nodeId: node.id, model: MODEL })
 
     const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
     const raw = stripJsonFence(rawText)
@@ -485,6 +530,8 @@ export async function generateEvaluativeAssessment(
     )
 
     if (!message) return fallback
+
+    trackGeneration("evaluative", message, { sessionId: session.id, nodeId: node.id, model: SCAFFOLD_MODEL })
 
     const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
     // Strip markdown fences if the model wraps the JSON despite being asked not to
