@@ -540,6 +540,7 @@ const contextPack: ExperienceContextPack = {
         "Generated scenes honestly reflect accumulated decisions: sampling-first preserves evidence that later scenes rely on; flush-first leaves gaps that later scenes expose; prompt notification changes the street's temperature; the doorstep conversation echoes into the closing file. Good and bad decisions must both visibly compound.",
     },
   ],
+  useCaseCategory: "crisis_exercise",
   learningObjectives: [
     "Recognise a complaint cluster after network work as a possible water quality event",
     "Protect evidence: sample at consumer taps before flushing where contamination is suspected",
@@ -591,6 +592,8 @@ async function main() {
   await db.experience.upsert({
     where: { id: EXPERIENCE_ID },
     update: {
+      description:
+        "Three brown-water complaints, one weekend repair, a nursing home on the run: manage the event end to end.",
       nodes: nodes as object[],
       segments: [],
       useCasePack: USE_CASE_PACKS.l_and_d as object,
@@ -606,7 +609,7 @@ async function main() {
       title: "Discoloured: A Water Quality Event",
       slug: "goldtap-water-quality-event",
       description:
-        "Monday, 07:20. Three brown-water complaints, one street, one weekend contractor repair — and a nursing home on the run. A decision-level water quality exercise: read the cluster, protect the evidence, hold the line with your own manager, and face the doorstep. The details change every run; the judgment doesn't.",
+        "Three brown-water complaints, one weekend repair, a nursing home on the run: manage the event end to end.",
       genre: "training",
       status: "published",
       publishedAt: new Date(),

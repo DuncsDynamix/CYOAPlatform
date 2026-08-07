@@ -707,6 +707,7 @@ const contextPack: ExperienceContextPack = {
         "The endpoint summary must reference specific decisions from the learner's session history, not generic feedback. If they got Q1 right but Q3 wrong, name those specifically. The debrief should feel like it is talking about this specific shift, not a template.",
     },
   ],
+  useCaseCategory: "assessed_training",
   learningObjectives: [
     "Respond to water quality alarms decisively and protect the integrity of process records",
     "Manage asset risk under peak demand: recognise warning signs and act before failure",
@@ -828,7 +829,7 @@ async function main() {
       title: "A Day at Lee Valley: Field Operations Judgement",
       slug: "thames-water-lee-valley-field-ops",
       description:
-        "Four decisions. One shift. Work through a day as a Thames Water field technician and see how your operational judgement holds up against the regulatory standards that protect drinking water for 800,000 people.",
+        "A shift as a field technician: four judgment calls scored against the standards that protect drinking water.",
       genre: "training",
       type: "l_and_d",
       renderingTheme: "training",
@@ -848,7 +849,7 @@ async function main() {
       title: "A Day at Lee Valley: Field Operations Judgement",
       slug: "thames-water-lee-valley-field-ops",
       description:
-        "Four decisions. One shift. Work through a day as a Thames Water field technician and see how your operational judgement holds up against the regulatory standards that protect drinking water for 800,000 people.",
+        "A shift as a field technician: four judgment calls scored against the standards that protect drinking water.",
       genre: "training",
       status: "published",
       publishedAt: new Date(),

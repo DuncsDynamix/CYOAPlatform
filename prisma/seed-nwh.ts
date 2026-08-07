@@ -1085,6 +1085,7 @@ const contextPack: ExperienceContextPack = {
   },
   groundTruth: [],
   scripts: [],
+  useCaseCategory: "course_replication",
   learningObjectives: [
     "Explain why water is a uniquely precious resource and why hygiene is every operative's personal responsibility",
     "Recognise how water carries disease and why operatives are a critical barrier against contamination",
@@ -1151,7 +1152,7 @@ async function main() {
       authorId: AUTHOR_ID,
       orgId: ORG_ID,
       description:
-        "The complete National Water Hygiene syllabus, module by module: why water matters, how it carries disease, what contamination costs, and how to prevent it — followed by the 25-question certification test. Pass mark 20 of 25; your NWH card is issued through the EUSR scheme.",
+        "The complete National Water Hygiene syllabus and its 25-question certification test, delivered digitally.",
       genre: "training",
       status: "published",
       publishedAt: new Date(),
@@ -1167,7 +1168,7 @@ async function main() {
       renderingTheme: "training",
       orgId: ORG_ID,
       description:
-        "The complete National Water Hygiene syllabus, module by module: why water matters, how it carries disease, what contamination costs, and how to prevent it — followed by the 25-question certification test. Pass mark 20 of 25; your NWH card is issued through the EUSR scheme.",
+        "The complete National Water Hygiene syllabus and its 25-question certification test, delivered digitally.",
       genre: "training",
       status: "published",
       publishedAt: new Date(),

@@ -127,6 +127,7 @@ const contextPack: ExperienceContextPack = {
         "All scenario content must be grounded in real NWH procedures. If the learner makes an incorrect choice, the feedback or generated content must clearly identify what they should have done and why, referencing the specific NWH rule. Do not be vague about consequences.",
     },
   ],
+  useCaseCategory: "assessed_training",
   learningObjectives: [
     "Explain why water is a uniquely precious resource and why hygiene is every operative's personal responsibility",
     "Recognise how water carries disease and why operatives are a critical barrier against contamination",
@@ -1328,7 +1329,7 @@ async function main() {
       authorId: AUTHOR_ID,
       orgId: ORG_ID,
       description:
-        "The NWH syllabus taught the way the job actually tests it: site conversations, judgment calls, and assessed scenarios — a gate check with your supervisor, a contamination find you have to handle correctly — then the same 25-question certification test. Pass mark 20 of 25.",
+        "The NWH syllabus taught through site conversations and assessed scenarios, ending in the same certification test.",
       genre: "training",
       status: "published",
       publishedAt: new Date(),
@@ -1344,7 +1345,7 @@ async function main() {
       renderingTheme: "training",
       orgId: ORG_ID,
       description:
-        "The NWH syllabus taught the way the job actually tests it: site conversations, judgment calls, and assessed scenarios — a gate check with your supervisor, a contamination find you have to handle correctly — then the same 25-question certification test. Pass mark 20 of 25.",
+        "The NWH syllabus taught through site conversations and assessed scenarios, ending in the same certification test.",
       genre: "training",
       status: "published",
       publishedAt: new Date(),

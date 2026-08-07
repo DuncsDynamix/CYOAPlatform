@@ -665,6 +665,7 @@ const contextPack: ExperienceContextPack = {
   },
   groundTruth: [],
   scripts: [],
+  useCaseCategory: "course_replication",
   learningObjectives: [
     "Explain why water is a uniquely precious resource and why hygiene is every operative's personal responsibility",
     "Recognise how water carries disease and why operatives are a critical barrier against contamination",
@@ -749,7 +750,7 @@ async function main() {
       authorId: AUTHOR_ID,
       orgId: ORG_ID,
       description:
-        "The NWH syllabus as an illustrated classroom course: four modules of slide decks with the original course imagery, followed by the 25-question certification test. Pass mark 20 of 25; your NWH card is issued through the EUSR scheme.",
+        "The classroom slide course, module by module with the original imagery, followed by the certification test.",
       genre: "training",
       status: "published",
       publishedAt: new Date(),
@@ -765,7 +766,7 @@ async function main() {
       renderingTheme: "training",
       orgId: ORG_ID,
       description:
-        "The NWH syllabus as an illustrated classroom course: four modules of slide decks with the original course imagery, followed by the 25-question certification test. Pass mark 20 of 25; your NWH card is issued through the EUSR scheme.",
+        "The classroom slide course, module by module with the original imagery, followed by the certification test.",
       genre: "training",
       status: "published",
       publishedAt: new Date(),
