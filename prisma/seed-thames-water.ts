@@ -155,6 +155,8 @@ const nodes: Node[] = [
     type: "CHOICE",
     label: "Q1 — Turbidity alert response",
     responseType: "closed",
+    prompt:
+      "The turbidity alarm is still sounding on Filter Bank 3, and the reading is holding. What do you do?",
     options: [
       {
         id: "q1-a",
@@ -252,6 +254,8 @@ const nodes: Node[] = [
     type: "CHOICE",
     label: "Q2 — Colleague's missed dosing log",
     responseType: "closed",
+    prompt:
+      "Marcus is standing in front of you, waiting to hear what you will do about the missed verification. What do you do?",
     options: [
       {
         id: "q2-a",
@@ -360,6 +364,8 @@ const nodes: Node[] = [
     type: "CHOICE",
     label: "Q3 — Pump cavitation response",
     responseType: "closed",
+    prompt:
+      "Pump 2: vibration at 4.8 mm/s and double yesterday's reading, cavitation audible, peak demand running across all four pumps. What do you do?",
     options: [
       {
         id: "q3-a",
@@ -444,6 +450,8 @@ const nodes: Node[] = [
     type: "CHOICE",
     label: "Q4 — Customer discolouration report",
     responseType: "closed",
+    prompt:
+      "As you close out the pump-room log, the control room patches through a customer call: a resident on Fairview Road, downstream of the works, is reporting brown water from her kitchen tap. She is still on the line. How do you respond?",
     options: [
       {
         id: "q4-a",
