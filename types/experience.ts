@@ -28,6 +28,13 @@ export interface ExperienceUseCasePack {
 
 // ─── EXPERIENCE CONTEXT PACK (author-owned) ──────────────────
 
+/** The paying use cases a training course can exemplify (docs/strategy-refocus-2026-08.md). */
+export type UseCaseCategory =
+  | "course_replication"
+  | "assessed_training"
+  | "crisis_exercise"
+  | "practice_rehearsal"
+
 export interface ExperienceContextPack {
   world: {
     description: string
@@ -52,6 +59,8 @@ export interface ExperienceContextPack {
   scripts: ContextScript[]
   // Training-specific (optional — stored here to avoid schema change)
   learningObjectives?: string[]
+  /** Which demo/sales use case this course exemplifies (library shelf sections). */
+  useCaseCategory?: UseCaseCategory
 }
 
 export interface ActorVoiceProfile {
