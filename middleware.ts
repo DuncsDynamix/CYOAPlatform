@@ -15,6 +15,11 @@ export const AUTHED_PATHS = ["/dashboard", "/experience", "/bindery"]
 // TraverseTraining routes — require auth + operator or org membership
 export const TRAINING_PATHS = ["/scenario"]
 
+/** Pure function — builds the login URL, preserving the requested path as ?next=. */
+export function loginRedirectPath(pathname: string): string {
+  return `/login?next=${encodeURIComponent(pathname)}`
+}
+
 /** Pure function — determines whether a user profile has TraverseTraining access. */
 export function hasTrainingAccess(
   profile: { isOperator: boolean | null; orgId: string | null } | null
@@ -71,14 +76,14 @@ export async function middleware(req: NextRequest) {
   // Protect authoring tool routes
   if (AUTHED_PATHS.some((p) => pathname.startsWith(p))) {
     if (!user) {
-      return NextResponse.redirect(new URL("/login", req.url))
+      return NextResponse.redirect(new URL(loginRedirectPath(pathname), req.url))
     }
   }
 
   // Protect TraverseTraining routes — require auth + operator or org membership
   if (TRAINING_PATHS.some((p) => pathname.startsWith(p))) {
     if (!user) {
-      return NextResponse.redirect(new URL("/login", req.url))
+      return NextResponse.redirect(new URL(loginRedirectPath(pathname), req.url))
     }
 
     // Fetch user record to check org/operator status
@@ -90,7 +95,7 @@ export async function middleware(req: NextRequest) {
 
     const hasAccess = profile?.isOperator || profile?.orgId
     if (!hasAccess) {
-      return NextResponse.redirect(new URL("/login", req.url))
+      return NextResponse.redirect(new URL(loginRedirectPath(pathname), req.url))
     }
   }
 

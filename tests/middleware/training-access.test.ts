@@ -1,5 +1,23 @@
 import { describe, it, expect } from "vitest"
-import { hasTrainingAccess, TRAINING_PATHS, PUBLIC_PATHS, AUTHED_PATHS } from "../../middleware"
+import {
+  hasTrainingAccess,
+  loginRedirectPath,
+  TRAINING_PATHS,
+  PUBLIC_PATHS,
+  AUTHED_PATHS,
+} from "../../middleware"
+
+describe("loginRedirectPath — preserves the requested destination", () => {
+  it("carries the original pathname as ?next=", () => {
+    expect(loginRedirectPath("/scenario")).toBe("/login?next=%2Fscenario")
+  })
+
+  it("encodes deeper paths", () => {
+    expect(loginRedirectPath("/scenario/00000000-0000-0000-0000-000000000020")).toBe(
+      "/login?next=%2Fscenario%2F00000000-0000-0000-0000-000000000020"
+    )
+  })
+})
 
 describe("hasTrainingAccess — pure access control logic", () => {
   it("denies access when profile is null", () => {

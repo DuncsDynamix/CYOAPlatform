@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { resolveNextPath } from "@/lib/auth/next-path"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -25,7 +26,9 @@ export default function LoginPage() {
       return
     }
 
-    router.push("/")
+    // Read ?next= at submit time (not useSearchParams — no Suspense boundary needed)
+    const next = resolveNextPath(new URLSearchParams(window.location.search).get("next"))
+    router.push(next)
     router.refresh()
   }
 
