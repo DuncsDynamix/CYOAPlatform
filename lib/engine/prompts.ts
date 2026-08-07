@@ -258,6 +258,15 @@ export function buildGenerationPrompt(
         return lines.join("\n")
       }).join("\n\n")
 
+  // Continuity anchor: the actual closing words of the most recent scene.
+  // Scaffolds carry facts but not voice or the exact moment the last scene
+  // stopped at — without this tail, consecutive scenes stitch loosely.
+  const lastEntry = entries[entries.length - 1]
+  const closingTail = lastEntry?.content ? lastEntry.content.trim().slice(-280) : ""
+  const continuityBlock = closingTail
+    ? `\nTHE PREVIOUS SCENE'S CLOSING WORDS (your scene must continue naturally and immediately from this exact moment — do not repeat it, do not skip time unless the beat instruction says to):\n…${closingTail}\n`
+    : ""
+
   const constraints = [
     `- Length: ${node.constraints.lengthMin}-${node.constraints.lengthMax} words`,
     `- End the scene at: ${node.constraints.mustEndAt}`,
@@ -272,7 +281,7 @@ export function buildGenerationPrompt(
   return `
 STORY SO FAR (STRUCTURED SUMMARY):
 ${scaffoldContext}
-
+${continuityBlock}
 ${resolvedGroundTruth ? `GROUND TRUTH — facts you must treat as authoritative:\n${resolvedGroundTruth}` : ""}
 
 CURRENT ARC POSITION:

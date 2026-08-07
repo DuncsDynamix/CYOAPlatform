@@ -115,11 +115,17 @@ export async function arriveAtNode(
     isMandatory: (experience.shape.mandatoryNodeIds ?? []).includes(nodeId),
   })
 
-  // Fire-and-forget: pre-generate all GENERATED children.
-  // Per-child failures are tracked inside; this catch covers anything outside the loop.
-  generateChildrenInParallel(node, nodes, session, experience, apiKey).catch((err) => {
-    console.warn(`[pre-generation] batch failed for session ${sessionId}:`, err instanceof Error ? err.message : err)
-  })
+  // Fire-and-forget: pre-generate all GENERATED children — from a FRESH read
+  // of the session, so children see the scaffold this very arrival appended.
+  // (Generating them against the stale pre-arrival session was the cause of
+  // "the next scene doesn't follow from the previous one".)
+  getSession(sessionId)
+    .then((freshSession) =>
+      generateChildrenInParallel(node, nodes, freshSession ?? session, experience, apiKey)
+    )
+    .catch((err) => {
+      console.warn(`[pre-generation] batch failed for session ${sessionId}:`, err instanceof Error ? err.message : err)
+    })
 
   return { node, content, session }
 }
@@ -216,7 +222,8 @@ async function generateAndCacheNode(
   node: GeneratedNode,
   session: ExperienceSession,
   experience: Experience,
-  apiKey?: string
+  apiKey?: string,
+  opts?: { lowPriority?: boolean }
 ): Promise<GenerationResult> {
   const key = `${session.id}:${node.id}`
 
@@ -224,11 +231,11 @@ async function generateAndCacheNode(
   if (inFlight) return inFlight
 
   const promise = (async (): Promise<GenerationResult> => {
-    const content = await generateNode(node, session, experience, apiKey)
+    const content = await generateNode(node, session, experience, apiKey, opts)
     // Scaffold is generated at pre-generation time too — it's a cheap Haiku
     // call and the reading window pays for it, so it's ready by the time
     // any consumer needs it for narrativeHistory.
-    const scaffold = await generateScaffold(content, node, session, apiKey)
+    const scaffold = await generateScaffold(content, node, session, apiKey, opts)
 
     await Promise.all([
       writeToCache(session.id, node.id, content),
@@ -524,7 +531,7 @@ async function generateChildrenInParallel(
         // Note: no narrativeHistory append here — this branch is unvisited.
         // Only resolveNodeContent (on arrival) records history, so unchosen
         // branches never pollute the narrative memory used by later prompts.
-        await generateAndCacheNode(childNode, session, experience, apiKey)
+        await generateAndCacheNode(childNode, session, experience, apiKey, { lowPriority: true })
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
         console.warn(`[pre-generation] node ${childNode.id} failed for session ${session.id}: ${message}`)

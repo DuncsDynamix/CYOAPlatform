@@ -61,7 +61,8 @@ export async function generateNode(
   node: GeneratedNode,
   session: ExperienceSession,
   experience: Experience,
-  apiKey?: string
+  apiKey?: string,
+  opts?: { lowPriority?: boolean }
 ): Promise<string> {
   const anthropic = getAnthropicClient(apiKey)
   const arcAwareness = buildArcAwareness(node, session, experience)
@@ -75,14 +76,18 @@ export async function generateNode(
 
   const startTime = Date.now()
 
-  const message = await generationQueue.add(() =>
-    anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 800,
-      thinking: { type: "disabled" },
-      system: systemPrompt,
-      messages: [{ role: "user", content: prompt }],
-    })
+  const message = await generationQueue.add(
+    () =>
+      anthropic.messages.create({
+        model: MODEL,
+        max_tokens: 800,
+        thinking: { type: "disabled" },
+        system: systemPrompt,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    // Pre-generation is speculative: it must never delay an on-demand call
+    // a reader is actively waiting on.
+    { priority: opts?.lowPriority ? -1 : 0 }
   )
 
   if (!message) throw new Error("Generation queue returned undefined")
@@ -110,7 +115,8 @@ export async function generateScaffold(
   prose: string,
   node: GeneratedNode,
   session: ExperienceSession,
-  apiKey?: string
+  apiKey?: string,
+  opts?: { lowPriority?: boolean }
 ): Promise<NarrativeScaffold> {
   const fallback: NarrativeScaffold = {
     nodeId: node.id,
@@ -139,14 +145,16 @@ Return a JSON object with exactly these fields:
 
 Do not include choiceMade — that is added separately when the reader makes their choice.`
 
-    const message = await generationQueue.add(() =>
+    const message = await generationQueue.add(
+      () =>
       anthropic.messages.create({
         model: SCAFFOLD_MODEL,
         max_tokens: 300,
         system:
           "You are a story state tracker. Extract structured information from the provided narrative prose. Respond only with valid JSON matching the schema provided. No markdown fences, no explanation — just the JSON object.",
         messages: [{ role: "user", content: userPrompt }],
-      })
+      }),
+      { priority: opts?.lowPriority ? -1 : 0 }
     )
 
     if (!message) return fallback
