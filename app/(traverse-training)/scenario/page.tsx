@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 import { createServerClient } from "@supabase/ssr"
 import { db } from "@/lib/db/prisma"
 import { resolveBrand } from "@/lib/branding"
+import { groupCoursesByCategory } from "@/lib/training/use-case-categories"
 import type { ExperienceContextPack, ShapeDefinition } from "@/types/experience"
 
 // DB-backed page: render per request, never at build time
@@ -76,30 +77,36 @@ export default async function TrainingLibraryPage() {
         {courses.length === 0 ? (
           <p className="t-lib-empty">No courses have been published for your organisation yet.</p>
         ) : (
-          <div className="t-lib-grid">
-            {courses.map((c) => {
-              const cp = c.contextPack as ExperienceContextPack | null
-              const objectives = cp?.learningObjectives ?? []
-              return (
-                <Link key={c.slug} href={`/scenario/${c.slug}`} className="t-lib-card">
-                  <h2 className="t-lib-card-title">{c.title}</h2>
-                  {c.description && <p className="t-lib-card-desc">{c.description}</p>}
-                  <div className="t-lib-card-meta">
-                    <span>About {minutesFor(c.shape as ShapeDefinition | null)} minutes</span>
-                    {objectives.length > 0 && (
-                      <>
-                        <span aria-hidden="true">·</span>
-                        <span>
-                          {objectives.length} learning objective{objectives.length === 1 ? "" : "s"}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <span className="t-lib-card-cta">Open course</span>
-                </Link>
-              )
-            })}
-          </div>
+          groupCoursesByCategory(courses).map(({ category, courses: sectionCourses }) => (
+            <section key={category.id} className="t-lib-section">
+              <h2 className="t-lib-section-title">{category.title}</h2>
+              <p className="t-lib-section-blurb">{category.blurb}</p>
+              <div className="t-lib-grid">
+                {sectionCourses.map((c) => {
+                  const cp = c.contextPack as ExperienceContextPack | null
+                  const objectives = cp?.learningObjectives ?? []
+                  return (
+                    <Link key={c.slug} href={`/scenario/${c.slug}`} className="t-lib-card">
+                      <h3 className="t-lib-card-title">{c.title}</h3>
+                      {c.description && <p className="t-lib-card-desc">{c.description}</p>}
+                      <div className="t-lib-card-meta">
+                        <span>About {minutesFor(c.shape as ShapeDefinition | null)} minutes</span>
+                        {objectives.length > 0 && (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span>
+                              {objectives.length} learning objective{objectives.length === 1 ? "" : "s"}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <span className="t-lib-card-cta">Open course</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </section>
+          ))
         )}
       </div>
     </div>

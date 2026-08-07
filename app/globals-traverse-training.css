@@ -836,6 +836,15 @@
   max-width: 960px; margin: 0 auto; display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem;
 }
+.traverse-training-theme .t-lib-section { margin-bottom: 2.5rem; }
+.traverse-training-theme .t-lib-section-title {
+  font-size: 1.25rem; font-weight: 700; margin: 0 0 0.25rem;
+  padding-top: 1rem; border-top: 3px solid var(--t-accent);
+  color: var(--t-text-primary);
+}
+.traverse-training-theme .t-lib-section-blurb {
+  font-size: 0.9rem; color: var(--t-text-muted); margin: 0 0 1.1rem; max-width: 46rem;
+}
 .traverse-training-theme .t-lib-card {
   display: flex; flex-direction: column; gap: 0.625rem;
   background: #fff; border: 1px solid var(--t-border-strong); border-radius: 12px;
@@ -849,7 +858,7 @@
 .traverse-training-theme .t-lib-card-title { font-size: 1.1rem; font-weight: 700; margin: 0; line-height: 1.3; }
 .traverse-training-theme .t-lib-card-desc {
   font-size: 0.85rem; line-height: 1.5; color: var(--t-text-muted); margin: 0; flex: 1;
-  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 .traverse-training-theme .t-lib-card-meta {
   display: flex; gap: 0.5rem; font-size: 0.75rem; color: var(--t-text-muted);
