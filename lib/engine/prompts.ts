@@ -67,8 +67,23 @@ ${contextPack.style.styleNotes}
 
 ${WRITING_STYLE_RULES}
 
+${voiceRulesFor(useCasePack)}
+
 Write ONLY the narrative prose. No titles, no headings, no labels.
   `.trim()
+}
+
+/**
+ * Per-use-case prose stance. Fiction packs get narrative craft; training gets
+ * a matter-of-fact voice — its scenes exist to set up a judgement call, and
+ * literary decoration (aphorisms, refrains, atmospheric flourishes) reads as
+ * the wrong register in workplace training. Education gets neither: the
+ * shared anti-tic rules alone.
+ */
+function voiceRulesFor(useCasePack: ExperienceUseCasePack): string {
+  if (useCasePack.id === "cyoa_story" || useCasePack.id === "publisher_ip") return FICTION_CRAFT_RULES
+  if (useCasePack.id === "l_and_d") return TRAINING_PROSE_RULES
+  return ""
 }
 
 /**
@@ -82,9 +97,27 @@ export const WRITING_STYLE_RULES = `WRITING STYLE — HARD RULES:
 - Never use em-dashes (—) or double hyphens. Restructure into separate sentences, or use a comma or colon.
 - Avoid stock constructions that read as machine-written: "not X, but Y"; "the way X does Y"; endings that rename what was just said; "something about..."; three-item parallel lists used more than once per page.
 - Vary sentence length. Let some sentences be short and plain. Do not give every paragraph the same rhythm.
-- Prefer concrete nouns and active verbs. At most one simile per page.
-- Show, don't summarize: never tell the reader what they understand or feel about what just happened.
+- Prefer concrete nouns and active verbs.
 - Break prose into short paragraphs of two to four sentences, separated by blank lines. Never return one solid block of text.`
+
+/**
+ * Fiction-only craft rules, appended for the story-shaped packs (cyoa_story,
+ * publisher_ip) and the Bindery's sample page. Kept out of the shared block
+ * so training prose is not pushed toward literary technique.
+ */
+export const FICTION_CRAFT_RULES = `NARRATIVE CRAFT:
+- At most one simile per page.
+- Show, don't summarize: never tell the reader what they understand or feel about what just happened.`
+
+/**
+ * Training-only voice rules (l_and_d). The counterweight to the model's
+ * default literary register: scenes exist to deliver the situation a learner
+ * must judge, not to be admired as prose.
+ */
+export const TRAINING_PROSE_RULES = `TRAINING PROSE — VOICE:
+- Prose is functional first: every sentence either delivers information the learner needs for the coming decision, or grounds the situation in one plain, brief beat.
+- No aphorisms, no poetic refrains, no atmospheric flourishes. Include sensory or scene detail only when it carries decision-relevant information.
+- Write like a well-run briefing: plain, precise, specific about readings, procedures, names and times. The learner is here to make a judgement call, not to read a novel.`
 
 /**
  * Builds the EVALUATIVE assessment prompt. The structural point: the learner

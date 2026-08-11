@@ -46,9 +46,9 @@ export const USE_CASE_PACKS: Record<string, ExperienceUseCasePack> = {
       readerRelationship:
         "The reader is a professional practitioner in training. They should feel the weight of real consequences without real risk. Choices must map to demonstrable competencies.",
       outputPhilosophy:
-        "Scenarios must feel authentic to the workplace. Use realistic dialogue, organisational politics, time pressure, and incomplete information. The learner should practise decision-making, not just absorb information.",
+        "Scenarios must feel authentic to the workplace. Use realistic dialogue, organisational politics, time pressure, and incomplete information. The learner should practise decision-making, not just absorb information. Prose is functional first: it exists to set up a judgement call, not to be admired.",
       qualityStandards:
-        "Every scenario must test at least one competency from the framework. Feedback should be specific and constructive. Good and bad outcomes must feel proportionate and realistic — no cartoon villains, no miraculous saves.",
+        "Every scenario must test at least one competency from the framework. Feedback should be specific and constructive. Good and bad outcomes must feel proportionate and realistic — no cartoon villains, no miraculous saves. Prose stays matter-of-fact: no aphorisms, no poetic refrains, no decorative atmosphere; sensory detail only when it carries decision-relevant information.",
       failureModes: [
         "Creates an unrealistic workplace scenario",
         "Makes the 'right answer' obvious without requiring judgement",
@@ -56,6 +56,7 @@ export const USE_CASE_PACKS: Record<string, ExperienceUseCasePack> = {
         "Fails to connect the scenario to the competency framework",
         "Uses corporate jargon without grounding it in real behaviour",
         "Makes failure punitive rather than educational",
+        "Decorates the scene with literary flourishes: aphorisms, refrains, or atmospheric detail that carries no decision-relevant information",
       ],
     },
     nodeDefaults: {

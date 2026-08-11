@@ -63,6 +63,45 @@ describe("buildSystemPrompt — anti-AI writing rules", () => {
   })
 })
 
+describe("buildSystemPrompt — voice per use case", () => {
+  it("gives fiction packs the narrative craft rules", () => {
+    for (const pack of [USE_CASE_PACKS.cyoa_story, USE_CASE_PACKS.publisher_ip]) {
+      const prompt = buildSystemPrompt(pack, createTestContextPack())
+      expect(prompt).toContain("At most one simile")
+      expect(prompt).toContain("Show, don't summarize")
+    }
+  })
+
+  it("keeps the shared anti-tic rules for training prose", () => {
+    const prompt = buildSystemPrompt(USE_CASE_PACKS.l_and_d, createTestContextPack())
+    expect(prompt).toContain("WRITING STYLE — HARD RULES")
+    expect(prompt).toContain("Never use em-dashes")
+  })
+
+  it("does not give training prose the fiction craft rules", () => {
+    const prompt = buildSystemPrompt(USE_CASE_PACKS.l_and_d, createTestContextPack())
+    expect(prompt).not.toContain("At most one simile")
+    expect(prompt).not.toContain("Show, don't summarize")
+  })
+
+  it("gives training prose the matter-of-fact voice rules", () => {
+    const prompt = buildSystemPrompt(USE_CASE_PACKS.l_and_d, createTestContextPack())
+    expect(prompt).toContain("TRAINING PROSE")
+    expect(prompt).toContain("functional first")
+  })
+})
+
+describe("l_and_d pack — matter-of-fact voice", () => {
+  it("declares prose functional-first in its output philosophy", () => {
+    expect(USE_CASE_PACKS.l_and_d.engineBehaviour.outputPhilosophy).toMatch(/functional first/i)
+  })
+
+  it("lists literary decoration as a failure mode", () => {
+    const modes = USE_CASE_PACKS.l_and_d.engineBehaviour.failureModes.join(" ")
+    expect(modes).toMatch(/aphorism|flourish|refrain/i)
+  })
+})
+
 describe("stripJsonFence", () => {
   it("strips a ```json ... ``` fence", () => {
     const wrapped = '```json\n{"a": 1}\n```'

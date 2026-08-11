@@ -8,7 +8,7 @@
 import type { BinderyPack, BinderyTemplate } from "@/lib/library/bindery-packs"
 import type { BookOutline } from "@/lib/library/bindery"
 import type { ExperienceContextPack } from "@/types/experience"
-import { WRITING_STYLE_RULES } from "@/lib/engine/prompts"
+import { WRITING_STYLE_RULES, FICTION_CRAFT_RULES } from "@/lib/engine/prompts"
 
 const REF_CONVENTIONS =
   "Each node's `next` must be the `label` of another node in THIS chapter, or " +
@@ -189,6 +189,8 @@ export function buildSamplePrompt(args: {
 ${contextSummary(contextPack)}
 
 ${WRITING_STYLE_RULES}
+
+${FICTION_CRAFT_RULES}
 
 Write ONLY the narrative prose. No titles, no headings, no labels.`
 
