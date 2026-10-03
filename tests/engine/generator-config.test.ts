@@ -4,14 +4,13 @@ import type { NarrativeHistoryEntry } from "@/types/session"
 
 // ─── MOCK SETUP ───────────────────────────────────────────────
 
-const mockMessagesCreate = vi.fn()
-const mockAnthropicCtor = vi.fn().mockImplementation(() => ({
-  messages: { create: mockMessagesCreate },
-}))
+const { create: mockMessagesCreate, ctor: mockAnthropicCtor } = vi.hoisted(() => {
+  const create = vi.fn()
+  const ctor = vi.fn().mockImplementation(() => ({ messages: { create }, beta: { messages: { create } } }))
+  return { create, ctor }
+})
 
-vi.mock("@anthropic-ai/sdk", () => ({
-  default: mockAnthropicCtor,
-}))
+vi.mock("@anthropic-ai/sdk", () => ({ default: mockAnthropicCtor }))
 
 vi.mock("@/lib/engine/queue", () => ({
   generationQueue: {
@@ -47,7 +46,7 @@ function historyEntry(n: number): NarrativeHistoryEntry {
 beforeEach(() => {
   vi.clearAllMocks()
   mockMessagesCreate.mockResolvedValue({
-    content: [{ type: "text", text: "A fitting end." }],
+    stop_reason: "end_turn", content: [{ type: "text", text: "A fitting end." }],
     usage: { input_tokens: 10, output_tokens: 10 },
   })
 })

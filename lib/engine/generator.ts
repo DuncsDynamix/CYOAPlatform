@@ -1,61 +1,13 @@
-import Anthropic from "@anthropic-ai/sdk"
 import { buildSystemPrompt, buildGenerationPrompt, buildEndpointSummaryPrompt, buildEvaluativePrompt, buildLearningDialogueRules, WRITING_STYLE_RULES, buildSceneContext, DIALOGUE_ENGAGEMENT_RULES } from "./prompts"
 import { stripEmDashes, stripJsonFence } from "./style"
 import { buildArcAwareness } from "./arc"
 import { USE_CASE_PACKS } from "./usecases"
-import { generationQueue } from "./queue"
+import { callModel } from "./llm"
 import { trackEvent } from "@/lib/analytics"
 import type { GeneratedNode, EndpointNode, Experience, ExperienceContextPack, GroundTruthSource, Actor, DialogueNode, EvaluativeNode, ObservedDialogueNode } from "@/types/experience"
 import type { ExperienceSession, NarrativeHistoryEntry, ChoiceHistoryEntry, NarrativeScaffold, DialogueTurn, CompetencyResult } from "@/types/session"
 
-const MODEL = "claude-sonnet-5"
-const SCAFFOLD_MODEL = "claude-haiku-4-5-20251001"
-
-// 30s timeout + 2 SDK-managed retries (exponential backoff on 429/5xx) so a
-// hung or rate-limited API call can never block a request indefinitely.
-function getAnthropicClient(apiKey?: string): Anthropic {
-  return new Anthropic({
-    apiKey: apiKey ?? process.env.ANTHROPIC_API_KEY,
-    timeout: 30_000,
-    maxRetries: 2,
-  })
-}
-
-type GenerationKind =
-  | "prose"
-  | "scaffold"
-  | "summary"
-  | "dialogue_opener"
-  | "dialogue_response"
-  | "breakthrough"
-  | "observed_dialogue"
-  | "evaluative"
-  | "router"
-
-/**
- * Uniform per-call token accounting: every Anthropic call the engine makes for
- * a session reports its exact API-billed tokens here — the basis of the
- * per-session usage summary on the session record endpoint.
- */
-export function trackGeneration(
-  kind: GenerationKind,
-  message: Anthropic.Message,
-  meta: { sessionId: string; nodeId?: string; orgId?: string; durationMs?: number; model: string }
-): void {
-  // Accounting must never break the request path — tolerate absent usage
-  // (defensive; also keeps SDK mocks in tests lightweight).
-  trackEvent("generation_metric", {
-    kind,
-    sessionId: meta.sessionId,
-    nodeId: meta.nodeId,
-    orgId: meta.orgId,
-    durationMs: meta.durationMs,
-    inputTokens: message.usage?.input_tokens ?? 0,
-    outputTokens: message.usage?.output_tokens ?? 0,
-    model: meta.model,
-    fromCache: false,
-  })
-}
+export { trackGeneration } from "./llm"
 
 export async function generateNode(
   node: GeneratedNode,
@@ -64,7 +16,6 @@ export async function generateNode(
   apiKey?: string,
   opts?: { lowPriority?: boolean }
 ): Promise<string> {
-  const anthropic = getAnthropicClient(apiKey)
   const arcAwareness = buildArcAwareness(node, session, experience)
 
   const useCasePack = USE_CASE_PACKS[experience.type] ?? USE_CASE_PACKS.cyoa_story
@@ -74,36 +25,17 @@ export async function generateNode(
   const systemPrompt = buildSystemPrompt(useCasePack, contextPack)
   const prompt = buildGenerationPrompt(node, session, contextPack, arcAwareness, resolvedGroundTruth)
 
-  const startTime = Date.now()
-
-  const message = await generationQueue.add(
-    () =>
-      anthropic.messages.create({
-        model: MODEL,
-        max_tokens: 800,
-        thinking: { type: "disabled" },
-        system: systemPrompt,
-        messages: [{ role: "user", content: prompt }],
-      }),
+  const { text } = await callModel({
+    kind: "prose",
+    system: systemPrompt,
+    messages: [{ role: "user", content: prompt }],
+    apiKey,
     // Pre-generation is speculative: it must never delay an on-demand call
     // a reader is actively waiting on.
-    { priority: opts?.lowPriority ? -1 : 0 }
-  )
-
-  if (!message) throw new Error("Generation queue returned undefined")
-
-  const duration = Date.now() - startTime
-  const content = stripEmDashes(message.content[0].type === "text" ? message.content[0].text : "")
-
-  trackGeneration("prose", message, {
-    sessionId: session.id,
-    nodeId: node.id,
-    orgId: experience.orgId ?? undefined,
-    durationMs: duration,
-    model: MODEL,
+    lowPriority: opts?.lowPriority,
+    meta: { sessionId: session.id, nodeId: node.id, orgId: experience.orgId ?? undefined },
   })
-
-  return content
+  return stripEmDashes(text)
 }
 
 /**
@@ -127,9 +59,6 @@ export async function generateScaffold(
   }
 
   try {
-    const anthropic = getAnthropicClient(apiKey)
-    const startTime = Date.now()
-
     const userPrompt = `Node: ${node.label}
 Beat instruction (what this scene was meant to achieve): ${node.beatInstruction}
 Current session flags: ${JSON.stringify(session.state.flags)}
@@ -145,31 +74,17 @@ Return a JSON object with exactly these fields:
 
 Do not include choiceMade — that is added separately when the reader makes their choice.`
 
-    const message = await generationQueue.add(
-      () =>
-      anthropic.messages.create({
-        model: SCAFFOLD_MODEL,
-        max_tokens: 300,
-        system:
-          "You are a story state tracker. Extract structured information from the provided narrative prose. Respond only with valid JSON matching the schema provided. No markdown fences, no explanation — just the JSON object.",
-        messages: [{ role: "user", content: userPrompt }],
-      }),
-      { priority: opts?.lowPriority ? -1 : 0 }
-    )
-
-    if (!message) return fallback
-
-    const duration = Date.now() - startTime
-    const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
-    // Strip markdown fences if the model wraps the JSON despite being asked not to
-    const raw = stripJsonFence(rawText)
-
-    trackGeneration("scaffold", message, {
-      sessionId: session.id,
-      nodeId: node.id,
-      durationMs: duration,
-      model: SCAFFOLD_MODEL,
+    const { text } = await callModel({
+      kind: "scaffold",
+      system:
+        "You are a story state tracker. Extract structured information from the provided narrative prose. Respond only with valid JSON matching the schema provided. No markdown fences, no explanation — just the JSON object.",
+      messages: [{ role: "user", content: userPrompt }],
+      apiKey,
+      lowPriority: opts?.lowPriority,
+      meta: { sessionId: session.id, nodeId: node.id },
     })
+    // Strip markdown fences if the model wraps the JSON despite being asked not to
+    const raw = stripJsonFence(text.trim())
 
     const parsed = JSON.parse(raw) as { beatAchieved: string; keyFactsEstablished: string[] }
 
@@ -200,7 +115,6 @@ export async function generateEndpointSummary(
   experience: Experience,
   apiKey?: string
 ): Promise<string> {
-  const anthropic = getAnthropicClient(apiKey)
   const contextPack = experience.contextPack as ExperienceContextPack
 
   // Only the most recent entries — the full history of a long session would
@@ -214,21 +128,15 @@ export async function generateEndpointSummary(
 
 ${WRITING_STYLE_RULES}`
 
-  const message = await generationQueue.add(() =>
-    anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 400,
-      thinking: { type: "disabled" },
-      system: systemPrompt,
-      messages: [{ role: "user", content: prompt }],
-    })
-  )
+  const { text } = await callModel({
+    kind: "summary",
+    system: systemPrompt,
+    messages: [{ role: "user", content: prompt }],
+    apiKey,
+    meta: { sessionId: session.id, nodeId: node.id, orgId: experience.orgId ?? undefined },
+  })
 
-  if (!message) throw new Error("Generation queue returned undefined")
-
-  trackGeneration("summary", message, { sessionId: session.id, nodeId: node.id, model: MODEL })
-
-  return stripEmDashes(message.content[0].type === "text" ? message.content[0].text : "")
+  return stripEmDashes(text)
 }
 
 // ─── DIALOGUE GENERATORS ─────────────────────────────────────
@@ -244,7 +152,6 @@ export async function generateDialogueOpener(
   experience: Experience,
   apiKey?: string
 ): Promise<string> {
-  const anthropic = getAnthropicClient(apiKey)
   const contextPack = experience.contextPack as ExperienceContextPack
 
   const systemPrompt = `You are ${actor.name}, ${actor.role}. ${actor.personality}
@@ -270,21 +177,15 @@ Start the conversation to set up this situation: ${node.breakthroughCriteria}
 
 Write your opening line now.`
 
-  const message = await generationQueue.add(() =>
-    anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 280,
-      thinking: { type: "disabled" },
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
-    })
-  )
+  const { text } = await callModel({
+    kind: "dialogue_opener",
+    system: systemPrompt,
+    messages: [{ role: "user", content: userPrompt }],
+    apiKey,
+    meta: { sessionId: session.id, nodeId: node.id, orgId: experience.orgId ?? undefined },
+  })
 
-  if (!message) throw new Error("Generation queue returned undefined")
-
-  trackGeneration("dialogue_opener", message, { sessionId: session.id, nodeId: node.id, model: MODEL })
-
-  return stripEmDashes(message.content[0].type === "text" ? message.content[0].text.trim() : "")
+  return stripEmDashes(text.trim())
 }
 
 /**
@@ -299,7 +200,6 @@ export async function generateDialogueResponse(
   experience: Experience,
   apiKey?: string
 ): Promise<string> {
-  const anthropic = getAnthropicClient(apiKey)
   const contextPack = experience.contextPack as ExperienceContextPack
 
   const systemPrompt = `You are ${actor.name}, ${actor.role}. ${actor.personality}
@@ -320,7 +220,7 @@ Write ONLY your character's spoken response — no action descriptions, no stage
 
 ${WRITING_STYLE_RULES}`
 
-  const conversationMessages: Anthropic.MessageParam[] = []
+  const conversationMessages: { role: "user" | "assistant"; content: string }[] = []
   for (const turn of turns) {
     if (turn.role === "character") {
       conversationMessages.push({ role: "assistant", content: turn.content })
@@ -334,21 +234,15 @@ ${WRITING_STYLE_RULES}`
     conversationMessages.unshift({ role: "user", content: "[Scene begins]" })
   }
 
-  const message = await generationQueue.add(() =>
-    anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 340,
-      thinking: { type: "disabled" },
-      system: systemPrompt,
-      messages: conversationMessages,
-    })
-  )
+  const { text } = await callModel({
+    kind: "dialogue_response",
+    system: systemPrompt,
+    messages: conversationMessages,
+    apiKey,
+    meta: { sessionId: session.id, nodeId: node.id, orgId: experience.orgId ?? undefined },
+  })
 
-  if (!message) throw new Error("Generation queue returned undefined")
-
-  trackGeneration("dialogue_response", message, { sessionId: session.id, nodeId: node.id, model: MODEL })
-
-  return stripEmDashes(message.content[0].type === "text" ? message.content[0].text.trim() : "")
+  return stripEmDashes(text.trim())
 }
 
 /**
@@ -363,8 +257,6 @@ export async function assessDialogueBreakthrough(
   session?: ExperienceSession
 ): Promise<boolean> {
   try {
-    const anthropic = getAnthropicClient(apiKey)
-
     const conversationText = turns
       .map((t) => `${t.role === "character" ? "Character" : "Participant"}: ${t.content}`)
       .join("\n")
@@ -381,23 +273,15 @@ ${conversationText}
 
 Has the participant achieved the breakthrough described above? Judge on the Participant's own turns ONLY: the substance must appear in what the participant themselves said. Key points stated by the Character and merely agreed to by the participant (yes, exactly) do NOT count, however correct the Character's reasoning. Answer with a single JSON object: {"breakthrough": true} or {"breakthrough": false}`
 
-    const message = await generationQueue.add(() =>
-      anthropic.messages.create({
-        model: SCAFFOLD_MODEL,
-        max_tokens: 30,
-        system: "You are an instructional design assessor. Evaluate whether a learning breakthrough has occurred. Respond only with valid JSON: {\"breakthrough\": true} or {\"breakthrough\": false}",
-        messages: [{ role: "user", content: userPrompt }],
-      })
-    )
+    const { text } = await callModel({
+      kind: "breakthrough",
+      system: "You are an instructional design assessor. Evaluate whether a learning breakthrough has occurred. Respond only with valid JSON: {\"breakthrough\": true} or {\"breakthrough\": false}",
+      messages: [{ role: "user", content: userPrompt }],
+      apiKey,
+      meta: session ? { sessionId: session.id, nodeId: node.id } : undefined,
+    })
 
-    if (!message) return false
-
-    if (session) {
-      trackGeneration("breakthrough", message, { sessionId: session.id, nodeId: node.id, model: SCAFFOLD_MODEL })
-    }
-
-    const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
-    const raw = stripJsonFence(rawText)
+    const raw = stripJsonFence(text.trim())
     const parsed = JSON.parse(raw) as { breakthrough: boolean }
     return parsed.breakthrough === true
   } catch {
@@ -424,7 +308,6 @@ export async function generateObservedDialogue(
   ]
 
   try {
-    const anthropic = getAnthropicClient(apiKey)
     const contextPack = experience.contextPack as ExperienceContextPack
 
     const systemPrompt = `You are writing a realistic workplace conversation for a training scenario.
@@ -454,22 +337,15 @@ Return a JSON array only — no markdown fences, no explanation:
 
 Alternate speakers starting with ${actorA.name}. Return exactly ${node.turns} objects.`
 
-    const message = await generationQueue.add(() =>
-      anthropic.messages.create({
-        model: MODEL,
-        max_tokens: 1100,
-        thinking: { type: "disabled" },
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-      })
-    )
+    const { text } = await callModel({
+      kind: "observed_dialogue",
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+      apiKey,
+      meta: { sessionId: session.id, nodeId: node.id, orgId: experience.orgId ?? undefined },
+    })
 
-    if (!message) return fallback
-
-    trackGeneration("observed_dialogue", message, { sessionId: session.id, nodeId: node.id, model: MODEL })
-
-    const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
-    const raw = stripJsonFence(rawText)
+    const raw = stripJsonFence(text.trim())
     const parsed = JSON.parse(raw) as { speaker: string; line: string }[]
 
     if (!Array.isArray(parsed) || parsed.length === 0) return fallback
@@ -522,28 +398,20 @@ export async function generateEvaluativeAssessment(
   }
 
   try {
-    const anthropic = getAnthropicClient(apiKey)
-
     // CB-003: scaffold context, structurally split so the learner is judged
     // only on their own words and chosen options — see buildEvaluativePrompt.
     const { system, user } = buildEvaluativePrompt(node, scaffoldEntries)
 
-    const message = await generationQueue.add(() =>
-      anthropic.messages.create({
-        model: SCAFFOLD_MODEL,
-        max_tokens: 600,
-        system,
-        messages: [{ role: "user", content: user }],
-      })
-    )
+    const { text } = await callModel({
+      kind: "evaluative",
+      system,
+      messages: [{ role: "user", content: user }],
+      apiKey,
+      meta: { sessionId: session.id, nodeId: node.id, orgId: experience.orgId ?? undefined },
+    })
 
-    if (!message) return fallback
-
-    trackGeneration("evaluative", message, { sessionId: session.id, nodeId: node.id, model: SCAFFOLD_MODEL })
-
-    const rawText = message.content[0].type === "text" ? message.content[0].text.trim() : ""
     // Strip markdown fences if the model wraps the JSON despite being asked not to
-    const raw = stripJsonFence(rawText)
+    const raw = stripJsonFence(text.trim())
     const parsed = sanitizeAssessment(
       JSON.parse(raw) as {
         results: { rubricCriterionId: string; passed: boolean; evidence: string }[]

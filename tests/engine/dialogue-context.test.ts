@@ -4,13 +4,13 @@ import type { NarrativeHistoryEntry, DialogueTurn } from "@/types/session"
 
 // ─── MOCK SETUP (follows tests/engine/generator.test.ts convention) ─────────
 
-const mockMessagesCreate = vi.fn()
+const { create: mockMessagesCreate, ctor: mockAnthropicCtor } = vi.hoisted(() => {
+  const create = vi.fn()
+  const ctor = vi.fn().mockImplementation(() => ({ messages: { create }, beta: { messages: { create } } }))
+  return { create, ctor }
+})
 
-vi.mock("@anthropic-ai/sdk", () => ({
-  default: vi.fn().mockImplementation(() => ({
-    messages: { create: mockMessagesCreate },
-  })),
-}))
+vi.mock("@anthropic-ai/sdk", () => ({ default: mockAnthropicCtor }))
 
 vi.mock("@/lib/engine/queue", () => ({
   generationQueue: {
@@ -72,7 +72,7 @@ const dialogueNode: DialogueNode = {
 }
 
 function textResponse(text: string) {
-  return { content: [{ type: "text", text }] }
+  return { stop_reason: "end_turn", content: [{ type: "text", text }] }
 }
 
 beforeEach(() => {

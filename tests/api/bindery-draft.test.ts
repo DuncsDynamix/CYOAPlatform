@@ -5,13 +5,13 @@ import type { ChoiceNode, GeneratedNode, Segment } from "@/types/experience"
 
 // ─── MOCK SETUP (follows tests/engine/generator.test.ts convention) ─────────
 
-const mockMessagesCreate = vi.fn()
+const { create: mockMessagesCreate, ctor: mockAnthropicCtor } = vi.hoisted(() => {
+  const create = vi.fn()
+  const ctor = vi.fn().mockImplementation(() => ({ messages: { create }, beta: { messages: { create } } }))
+  return { create, ctor }
+})
 
-vi.mock("@anthropic-ai/sdk", () => ({
-  default: vi.fn().mockImplementation(() => ({
-    messages: { create: mockMessagesCreate },
-  })),
-}))
+vi.mock("@anthropic-ai/sdk", () => ({ default: mockAnthropicCtor }))
 
 vi.mock("@/lib/engine/queue", () => ({
   generationQueue: {
@@ -73,7 +73,7 @@ const testSegments: Segment[] = [
 ]
 
 function textResponse(text: string) {
-  return { content: [{ type: "text", text }], usage: { input_tokens: 100, output_tokens: 50 } }
+  return { stop_reason: "end_turn", content: [{ type: "text", text }], usage: { input_tokens: 100, output_tokens: 50 } }
 }
 
 beforeEach(() => {
@@ -94,8 +94,8 @@ describe("draftOutline", () => {
     expect(outline).toEqual(validOutline)
     expect(mockMessagesCreate).toHaveBeenCalledTimes(1)
     const call = mockMessagesCreate.mock.calls[0][0] as { model: string; thinking: { type: string }; max_tokens: number }
-    expect(call.model).toBe("claude-sonnet-5")
-    expect(call.thinking).toEqual({ type: "disabled" })
+    expect(call.model).toBe("claude-sonnet-5-5")
+    expect(call.thinking).toEqual({ type: "between_tools" })
     expect(call.max_tokens).toBe(1000)
   })
 

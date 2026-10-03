@@ -1,10 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk"
 import type { ChoiceNode } from "@/types/experience"
 import type { ExperienceSession } from "@/types/session"
 import type { Experience } from "@/types/experience"
-import { trackGeneration } from "./generator"
-
-const MODEL = "claude-sonnet-5"
+import { callModel } from "./llm"
 
 /**
  * For open/free-text choices, use Claude to determine which branch to route to
@@ -28,10 +25,6 @@ export async function resolveOpenChoiceRouting(
     return options[0].nextNodeId
   }
 
-  const anthropic = new Anthropic({
-    apiKey: apiKey ?? process.env.ANTHROPIC_API_KEY,
-  })
-
   const optionDescriptions = options
     .map((o, i) => `${i + 1}. [${o.id}] ${o.label}`)
     .join("\n")
@@ -50,19 +43,16 @@ Based on the reader's response, which branch best matches their intent?
 Reply with ONLY the option ID (e.g. "opt-police"), nothing else.
 `.trim()
 
-  const message = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 64,
-    thinking: { type: "disabled" },
+  const { text } = await callModel({
+    kind: "router",
     system:
       "You are a routing assistant for an interactive story engine. Your job is to match a reader's free-text response to the most appropriate story branch. Reply with only the branch ID.",
     messages: [{ role: "user", content: prompt }],
+    apiKey,
+    meta: { sessionId: session.id, nodeId: currentNode.id },
   })
 
-  trackGeneration("router", message, { sessionId: session.id, nodeId: currentNode.id, model: MODEL })
-
-  const chosenId =
-    message.content[0].type === "text" ? message.content[0].text.trim() : options[0].id
+  const chosenId = text.trim()
 
   const matched = options.find((o) => o.id === chosenId)
 

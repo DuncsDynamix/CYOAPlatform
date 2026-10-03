@@ -14,7 +14,10 @@ import { db } from "@/lib/db/prisma"
  * their tokens counted and are listed in unpricedModels.
  */
 export const PRICING_PER_MTOK: Record<string, { input: number; output: number }> = {
-  "claude-sonnet-5": { input: 3, output: 15 },
+  "claude-sonnet-5": { input: 2, output: 10 },
+  "claude-sonnet-5-5": { input: 2, output: 10 },
+  "claude-haiku-4-5": { input: 1, output: 5 },
+  "claude-opus-5-5": { input: 4, output: 20 },
   "claude-haiku-4-5-20251001": { input: 1, output: 5 },
 }
 

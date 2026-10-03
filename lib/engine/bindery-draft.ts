@@ -2,9 +2,8 @@
 // chapter proposals + sample tellings). Routes stay thin — auth, experience
 // lookup, and the fixed 502 error envelope live in the route handlers; this
 // module owns prompt assembly, the model call, and Zod validation.
-import Anthropic from "@anthropic-ai/sdk"
 import { z } from "zod"
-import { generationQueue } from "./queue"
+import { callModel } from "./llm"
 import { stripEmDashes, stripJsonFence } from "./style"
 import { buildOutlinePrompt, buildChapterPrompt, buildSamplePrompt, buildSinglePagePrompt } from "./bindery-prompts"
 import { getBinderyPack } from "@/lib/library/bindery-packs"
@@ -19,21 +18,6 @@ import {
 import { getAllNodes } from "./executor"
 import type { Experience, ExperienceContextPack, FixedNode, GeneratedNode, Node } from "@/types/experience"
 
-const MODEL = "claude-sonnet-5"
-
-// Like the client factory in generator.ts (not exported from there), but with
-// a longer timeout: chapter drafts run to 3000 output tokens and routinely
-// need more than the reader path's 30s. The generator's tight timeout is for
-// small in-session calls a reader is actively waiting on; an author at the
-// desk is told the assistant is working and can wait for a whole chapter.
-function getAnthropicClient(apiKey?: string): Anthropic {
-  return new Anthropic({
-    apiKey: apiKey ?? process.env.ANTHROPIC_API_KEY,
-    timeout: 120_000,
-    maxRetries: 2,
-  })
-}
-
 /**
  * Calls the model for structured JSON output and validates it against `schema`.
  * On a JSON.parse failure or a Zod validation failure, retries exactly once
@@ -42,7 +26,7 @@ function getAnthropicClient(apiKey?: string): Anthropic {
  * fixed 502 "lost the thread" envelope.
  */
 async function callStructured<T>(
-  anthropic: Anthropic,
+  apiKey: string | undefined,
   system: string,
   userPrompt: string,
   maxTokens: number,
@@ -51,20 +35,14 @@ async function callStructured<T>(
   let prompt = userPrompt
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const message = await generationQueue.add(() =>
-      anthropic.messages.create({
-        model: MODEL,
-        max_tokens: maxTokens,
-        thinking: { type: "disabled" },
-        system,
-        messages: [{ role: "user", content: prompt }],
-      })
-    )
-
-    if (!message) throw new Error("Generation queue returned undefined")
-
-    const rawText = message.content[0].type === "text" ? message.content[0].text : ""
-    const raw = stripJsonFence(rawText)
+    const { text } = await callModel({
+      kind: "bindery_json",
+      system,
+      messages: [{ role: "user", content: prompt }],
+      apiKey,
+      maxTokens,
+    })
+    const raw = stripJsonFence(text)
 
     let parsedJson: unknown
     let failureMessage: string | null = null
@@ -97,7 +75,6 @@ export async function draftOutline(
   templateId: string | undefined,
   apiKey?: string
 ): Promise<BookOutline> {
-  const anthropic = getAnthropicClient(apiKey)
   const pack = getBinderyPack(experience.type)
   const template = templateId ? pack.templates.find((t) => t.id === templateId) ?? null : null
   const contextPack = experience.contextPack as ExperienceContextPack
@@ -110,7 +87,7 @@ export async function draftOutline(
     contextPack,
   })
 
-  return callStructured(anthropic, system, user, 1000, OutlineProposalSchema)
+  return callStructured(apiKey, system, user, 1000, OutlineProposalSchema)
 }
 
 type ChapterProposal = z.infer<typeof ChapterProposalSchema>
@@ -206,7 +183,6 @@ export async function draftChapter(
   chapterIndex: number,
   apiKey?: string
 ): Promise<{ nodes: Node[]; pendingRefs: PendingRef[] }> {
-  const anthropic = getAnthropicClient(apiKey)
   const pack = getBinderyPack(experience.type)
   const contextPack = experience.contextPack as ExperienceContextPack
   const outline = outlineFromSegments(experience.segments, experience.shape)
@@ -220,7 +196,7 @@ export async function draftChapter(
     existingChapterTitles: outline.chapters.map((c) => c.title),
   })
 
-  const proposal = await callStructured(anthropic, system, user, 3000, ChapterProposalSchema)
+  const proposal = await callStructured(apiKey, system, user, 3000, ChapterProposalSchema)
   return proposalToNodes(stripProposalEmDashes(humaniseProposalLabels(proposal)))
 }
 
@@ -236,7 +212,6 @@ export async function draftSinglePage(
   nodeId: string,
   apiKey?: string
 ): Promise<{ nodes: Node[]; pendingRefs: PendingRef[] }> {
-  const anthropic = getAnthropicClient(apiKey)
   const contextPack = experience.contextPack as ExperienceContextPack
   const node = getAllNodes(experience).find((n) => n.id === nodeId)
 
@@ -254,7 +229,7 @@ export async function draftSinglePage(
     label: node.label,
   })
 
-  const proposal = await callStructured(anthropic, system, user, 600, SinglePageProposalSchema)
+  const proposal = await callStructured(apiKey, system, user, 600, SinglePageProposalSchema)
   // Drafted page text is author-kept, reader-facing copy — the no-em-dash
   // rule applies here just as it does in draftChapter and sampleTelling.
   const text = stripEmDashes(proposal.text)
@@ -272,7 +247,6 @@ export async function sampleTelling(
   nodeId: string,
   apiKey?: string
 ): Promise<string> {
-  const anthropic = getAnthropicClient(apiKey)
   const contextPack = experience.contextPack as ExperienceContextPack
   const node = getAllNodes(experience).find((n) => n.id === nodeId)
 
@@ -286,18 +260,12 @@ export async function sampleTelling(
     contextPack,
   })
 
-  const message = await generationQueue.add(() =>
-    anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 400,
-      thinking: { type: "disabled" },
-      system,
-      messages: [{ role: "user", content: user }],
-    })
-  )
-
-  if (!message) throw new Error("Generation queue returned undefined")
-  const rawText = message.content[0].type === "text" ? message.content[0].text : ""
+  const { text: rawText } = await callModel({
+    kind: "bindery_sample",
+    system,
+    messages: [{ role: "user", content: user }],
+    apiKey,
+  })
   // Sample tellings are never stored or cached — this is a live preview only.
   return stripEmDashes(rawText)
 }

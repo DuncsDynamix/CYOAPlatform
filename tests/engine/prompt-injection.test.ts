@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import type { ChoiceNode, DialogueNode } from "@/types/experience"
 import type { DialogueTurn } from "@/types/session"
 
-const mockMessagesCreate = vi.fn()
+const { create: mockMessagesCreate, ctor: mockAnthropicCtor } = vi.hoisted(() => {
+  const create = vi.fn()
+  const ctor = vi.fn().mockImplementation(() => ({ messages: { create }, beta: { messages: { create } } }))
+  return { create, ctor }
+})
 
-vi.mock("@anthropic-ai/sdk", () => ({
-  default: vi.fn().mockImplementation(() => ({
-    messages: { create: mockMessagesCreate },
-  })),
-}))
+vi.mock("@anthropic-ai/sdk", () => ({ default: mockAnthropicCtor }))
 
 vi.mock("@/lib/engine/queue", () => ({
   generationQueue: {
@@ -50,7 +50,7 @@ beforeEach(() => {
 describe("prompt injection containment", () => {
   it("wraps free-text choice responses in reader_response tags", async () => {
     mockMessagesCreate.mockResolvedValue({
-      content: [{ type: "text", text: "opt-a" }],
+      stop_reason: "end_turn", content: [{ type: "text", text: "opt-a" }],
     })
 
     await resolveOpenChoiceRouting(
@@ -68,7 +68,7 @@ describe("prompt injection containment", () => {
 
   it("wraps the dialogue transcript in conversation tags for breakthrough assessment", async () => {
     mockMessagesCreate.mockResolvedValue({
-      content: [{ type: "text", text: '{"breakthrough": false}' }],
+      stop_reason: "end_turn", content: [{ type: "text", text: '{"breakthrough": false}' }],
     })
 
     const turns: DialogueTurn[] = [

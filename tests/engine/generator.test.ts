@@ -4,13 +4,13 @@ import type { NarrativeScaffold } from "@/types/session"
 
 // ─── MOCK SETUP ───────────────────────────────────────────────
 
-const mockMessagesCreate = vi.fn()
+const { create: mockMessagesCreate, ctor: mockAnthropicCtor } = vi.hoisted(() => {
+  const create = vi.fn()
+  const ctor = vi.fn().mockImplementation(() => ({ messages: { create }, beta: { messages: { create } } }))
+  return { create, ctor }
+})
 
-vi.mock("@anthropic-ai/sdk", () => ({
-  default: vi.fn().mockImplementation(() => ({
-    messages: { create: mockMessagesCreate },
-  })),
-}))
+vi.mock("@anthropic-ai/sdk", () => ({ default: mockAnthropicCtor }))
 
 vi.mock("@/lib/engine/queue", () => ({
   generationQueue: {
@@ -58,7 +58,7 @@ describe("generateScaffold", () => {
     }
 
     mockMessagesCreate.mockResolvedValueOnce({
-      content: [{ type: "text", text: JSON.stringify(apiResponse) }],
+      stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify(apiResponse) }],
       usage: { input_tokens: 120, output_tokens: 60 },
     })
 
@@ -75,7 +75,7 @@ describe("generateScaffold", () => {
 
   it("failure path: returns fallback scaffold without throwing when API returns non-JSON", async () => {
     mockMessagesCreate.mockResolvedValueOnce({
-      content: [{ type: "text", text: "I cannot do that" }],
+      stop_reason: "end_turn", content: [{ type: "text", text: "I cannot do that" }],
       usage: { input_tokens: 10, output_tokens: 5 },
     })
 
@@ -107,7 +107,7 @@ describe("generateScaffold", () => {
     }
 
     mockMessagesCreate.mockResolvedValueOnce({
-      content: [{ type: "text", text: "```json\n" + JSON.stringify(apiResponse) + "\n```" }],
+      stop_reason: "end_turn", content: [{ type: "text", text: "```json\n" + JSON.stringify(apiResponse) + "\n```" }],
       usage: { input_tokens: 120, output_tokens: 60 },
     })
 
@@ -122,7 +122,7 @@ describe("generateScaffold", () => {
 
   it("never includes reader-facing writing-style rules in its system prompt (structured JSON output, not prose)", async () => {
     mockMessagesCreate.mockResolvedValueOnce({
-      content: [{ type: "text", text: JSON.stringify({ beatAchieved: "x", keyFactsEstablished: [] }) }],
+      stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify({ beatAchieved: "x", keyFactsEstablished: [] }) }],
       usage: { input_tokens: 10, output_tokens: 5 },
     })
 
