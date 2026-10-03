@@ -11,6 +11,7 @@ export {
   selectFirstUnvisitedMandatory,
   selectOutcomeVariant,
 } from "./executor"
+export { resumeSession, RESUMED_ASSESSMENT_FEEDBACK } from "./resume"
 
 export {
   createSession,
