@@ -102,13 +102,13 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
             </button>
           )}
           {retryable && !retry && (
-            <button className="t-btn-primary" onClick={startSession}>
+            <button className="t-btn-primary" onClick={() => startSession()}>
               Try again
             </button>
           )}
           <button
             className={retryable ? "t-btn-secondary" : "t-btn-primary"}
-            onClick={startSession}
+            onClick={() => startSession()}
           >
             Restart scenario
           </button>
@@ -130,7 +130,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
           score={playerStatus.score}
           evidence={playerStatus.evidence}
           onReassess={reassessFromDebrief}
-          onRestart={startSession}
+          onRestart={() => startSession()}
           onExit={() => { window.location.href = "/scenario" }}
           demoBadge={isDemoMode() ? <DemoNodeBadge copyKey="ENDPOINT" /> : undefined}
         />

@@ -6,6 +6,7 @@ import type { ChoiceOption, FixedNode, GeneratedNode, Node } from "@/types/exper
 import type { DialogueTurn, CompetencyResult } from "@/types/session"
 import { buildEvidenceRecord } from "@/lib/training/evidence"
 import { shuffleWith } from "@/lib/training/shuffle"
+import type { ResumeSnapshot } from "@/lib/training/resume"
 
 export function buildCompetencyProfile(history: DecisionReview[]): CompetencyProfile[] {
   const map = new Map<string, CompetencyProfile>()
@@ -39,10 +40,16 @@ export interface UseTrainingSessionOptions {
   experienceSlug: string
   /** True when there is no cover: the session starts on mount. */
   autoStart: boolean
+  /** The learner's unfinished session for this course, offered as Resume on the cover. */
+  resumeSessionId?: string
 }
 
-export function useTrainingSession({ experienceSlug, autoStart }: UseTrainingSessionOptions) {
-  const [started, setStarted] = useState(autoStart)
+type BeginMode = "new" | "resume" | "restart"
+
+export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId }: UseTrainingSessionOptions) {
+  const [startMode, setStartMode] = useState<BeginMode | null>(autoStart ? "new" : null)
+  const started = startMode !== null
+  const [visitedNodeIds, setVisitedNodeIds] = useState<string[]>([])
   const [playerStatus, setPlayerStatus] = useState<TrainingPlayerStatus>({ status: "loading_module" })
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [moduleTitle, setModuleTitle] = useState("")
@@ -84,8 +91,9 @@ export function useTrainingSession({ experienceSlug, autoStart }: UseTrainingSes
     return err instanceof DOMException && err.name === "AbortError"
   }
 
-  const startSession = useCallback(async () => {
+  const startSession = useCallback(async (restart = false) => {
     setPlayerStatus({ status: "loading_module" })
+    setVisitedNodeIds([])
     setDecisionHistory([])
     setCurrentStep(0)
     setFeedbackVisible(false)
@@ -97,7 +105,7 @@ export function useTrainingSession({ experienceSlug, autoStart }: UseTrainingSes
       const res = await fetch("/api/v1/engine/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ experienceSlug }),
+        body: JSON.stringify(restart ? { experienceSlug, restart: true } : { experienceSlug }),
         signal: nextSignal(),
       })
       if (!res.ok) {
@@ -133,9 +141,43 @@ export function useTrainingSession({ experienceSlug, autoStart }: UseTrainingSes
     }
   }, [experienceSlug])
 
+  const resumeExisting = useCallback(async function resume(sid: string): Promise<void> {
+    setPlayerStatus({ status: "loading_module" })
+    try {
+      const res = await fetch(`/api/v1/engine/resume?sessionId=${sid}`, { signal: nextSignal() })
+      if (!res.ok) {
+        // Finished or no longer ours: start fresh rather than strand the learner.
+        await startSession()
+        return
+      }
+      const data = (await res.json()) as { sessionId: string; node: Node; content: ResolvedContent; snapshot: ResumeSnapshot }
+      const snap = data.snapshot
+      setSessionId(data.sessionId)
+      setModuleTitle(snap.moduleTitle)
+      setObjectives(snap.objectives)
+      setDecisionHistory(snap.decisionHistory)
+      setCourseNotes(snap.courseNotes)
+      setCompetencyResults(snap.competencyResults)
+      setTotalSteps(snap.totalSteps)
+      // arriveAtNode counts this arrival as a step and records the node as visited
+      setCurrentStep(Math.max(0, snap.stepsCompleted - 1))
+      setVisitedNodeIds(snap.visitedNodeIds.filter((id) => id !== data.node.id))
+      arriveRef.current?.(data.sessionId, data.node, data.content)
+      if (data.content.type === "dialogue" && snap.dialogueTurns.length > 0) {
+        setDialogueHistory(snap.dialogueTurns)
+        setPlayerStatus((prev) => (prev.status === "in_dialogue" ? { ...prev, dialogueHistory: snap.dialogueTurns } : prev))
+      }
+    } catch (err) {
+      if (isAbort(err)) return
+      setPlayerStatus({ status: "error", message: "Network error. Please try again.", retryable: true, retry: () => resume(sid) })
+    }
+  }, [startSession])
+
   useEffect(() => {
-    if (started) startSession()
-  }, [started, startSession])
+    if (startMode === null) return
+    if (startMode === "resume" && resumeSessionId) resumeExisting(resumeSessionId)
+    else startSession(startMode === "restart")
+  }, [startMode, resumeSessionId, startSession, resumeExisting])
 
   /** Replaces (never appends) results for the nodes in `results`, so re-assessment cannot duplicate. */
   function replaceResultsForNodes(results: CompetencyResult[]) {
@@ -173,6 +215,7 @@ export function useTrainingSession({ experienceSlug, autoStart }: UseTrainingSes
   }
 
   function arriveAtNode(sid: string, node: Node, content: ResolvedContent) {
+    setVisitedNodeIds((prev) => [...prev, node.id])
     // Demo badge key: node type, with the open-choice variant distinguished.
     // Checkpoints are skipped so the previous screen's key survives auto-advance.
     if (node.type !== "CHECKPOINT") {
@@ -483,7 +526,8 @@ export function useTrainingSession({ experienceSlug, autoStart }: UseTrainingSes
 
   return {
     started,
-    begin: () => setStarted(true),
+    begin: (mode: BeginMode = "new") => setStartMode(mode),
+    visitedNodeIds,
     playerStatus,
     sessionId,
     moduleTitle,
