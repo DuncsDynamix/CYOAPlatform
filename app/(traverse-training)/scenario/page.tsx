@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { cookies } from "next/headers"
-import { createServerClient } from "@supabase/ssr"
+import { getPageUser } from "@/lib/auth/page-user"
 import { db } from "@/lib/db/prisma"
 import { resolveBrand } from "@/lib/branding"
 import { groupCoursesByCategory } from "@/lib/training/use-case-categories"
@@ -17,30 +16,13 @@ export const dynamic = "force-dynamic"
  * Route access itself is enforced by middleware (auth + org membership);
  * this page resolves the user again only to know WHICH org's shelf to show.
  */
-async function currentUserId(): Promise<string | null> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    // Local dev without Supabase: the seeded dev author
-    return process.env.NODE_ENV === "production" ? null : "00000000-0000-0000-0000-000000000001"
-  }
-  const store = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    { cookies: { getAll: () => store.getAll(), setAll() {} } }
-  )
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  return user?.id ?? null
-}
-
 function minutesFor(shape: ShapeDefinition | null): number {
   const steps = shape?.displaySteps ?? shape?.totalDepthMax ?? 0
   return Math.max(10, Math.round((steps * 1.5) / 5) * 5)
 }
 
 export default async function TrainingLibraryPage() {
-  const userId = await currentUserId()
+  const userId = (await getPageUser())?.id ?? null
   const user = userId
     ? await db.user.findUnique({
         where: { id: userId },
