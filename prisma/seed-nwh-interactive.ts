@@ -1,4 +1,4 @@
-import type { ExperienceContextPack } from "./legacy-seed-types"
+import type { ContextPack } from "../lib/engine/contract"
 /**
  * seed-nwh-interactive.ts
  *
@@ -18,6 +18,7 @@ import type { ExperienceContextPack } from "./legacy-seed-types"
  * Node types used: FIXED, GENERATED, CHOICE (closed + open), DIALOGUE, EVALUATIVE, CHECKPOINT, ENDPOINT
  */
 
+import { pathToFileURL } from "url"
 import { PrismaClient } from "@prisma/client"
 import { USE_CASE_PACKS } from "@/lib/engine/usecases"
 import type {
@@ -32,23 +33,17 @@ const ORG_ID = "00000000-0000-0000-0000-000000000051" // Gold Tap Training (seed
 
 // ─── CONTEXT PACK ────────────────────────────────────────────────────────────
 
-const contextPack: ExperienceContextPack = {
-  world: {
-    description:
-      "National Water Hygiene (NWH) certification training delivered under the EUSR scheme. The learner is a water industry operative at the start of their career, working on restricted operations sites — potable water infrastructure including pumping stations, treatment works, service reservoirs, and distribution network. The setting is a UK water utility.",
-    rules:
-      "Training content is grounded in the NWH syllabus. All scenarios reflect real operational situations. Health exclusion rules, restricted operation definitions, and contamination response procedures must be represented accurately. The correct procedure always exists and can be found in the training content.",
-    atmosphere:
-      "Professional, grounded, realistic. The water industry is safety-critical and compliance-driven, but it is also a normal working environment. Tone should feel like a competent, well-run site — purposeful, occasionally pressured, always accountable.",
-  },
-  protagonist: {
-    perspective: "you",
-    role: "Water industry operative, new to restricted operations, currently working through NWH certification",
-    knowledge:
-      "Basic water industry awareness. Has completed induction. Has not yet worked on restricted operations without supervision. Seeking NWH certification to work independently.",
-    goal: "Complete the training, make the right calls in each scenario, and pass the 25-question certification test with at least 20 correct.",
-  },
-  actors: [
+const contextPack: ContextPack = {
+  contractVersion: 2,
+  core: {
+    setting: { summary: "National Water Hygiene (NWH) certification training delivered under the EUSR scheme. The learner is a water industry operative at the start of their career, working on restricted operations sites — potable water infrastructure including pumping stations, treatment works, service reservoirs, and distribution network. The setting is a UK water utility.", details: "Training content is grounded in the NWH syllabus. All scenarios reflect real operational situations. Health exclusion rules, restricted operation definitions, and contamination response procedures must be represented accurately. The correct procedure always exists and can be found in the training content." + " " + "Professional, grounded, realistic. The water industry is safety-critical and compliance-driven, but it is also a normal working environment. Tone should feel like a competent, well-run site — purposeful, occasionally pressured, always accountable." },
+    participant: {
+      role: "Water industry operative, new to restricted operations, currently working through NWH certification",
+      perspective: "second",
+      startingKnowledge: "Basic water industry awareness. Has completed induction. Has not yet worked on restricted operations without supervision. Seeking NWH certification to work independently.",
+      goal: "Complete the training, make the right calls in each scenario, and pass the 25-question certification test with at least 20 correct.",
+    },
+    characters: [
     {
       name: "Jamie Ellis",
       role: "Fellow operative, new to the water industry",
@@ -58,7 +53,7 @@ const contextPack: ExperienceContextPack = {
         "Informal, blunt, occasionally dismissive. Construction-site register. Not aggressive, just hasn't learned to take water hygiene seriously yet. Will come around if you give him a real reason to.",
       knowledge:
         "Pipework and civil engineering basics. No formal understanding of NWH, Cryptosporidium risk, or the public health consequences of water contamination.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "Peer. Started on the same site at the same time. You've both been through the same induction; Jamie clearly wasn't paying full attention.",
       voice: {
         vendorVoiceId: "JBFqnCBsd6RMkjVDRZzb", // "George" — British male, warm gravel
@@ -75,7 +70,7 @@ const contextPack: ExperienceContextPack = {
         "Matter-of-fact, precise, uses correct NWH terminology. Gives clear expectations and specific guidance. Never vague. When she corrects, she gives the reason, not just the correction.",
       knowledge:
         "Complete knowledge of NWH scheme, EUSR requirements, restricted operations, health exclusion criteria, contamination prevention and response, Cryptosporidium risk, DWI notification procedures. Over 20 years in the industry.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "Your site supervisor. Running your gate checks and scenario assessments. Professional, not unfriendly — she wants you to pass.",
       voice: {
         vendorVoiceId: "Xb7hH8MSUJpSbSDYk0k2", // "Alice" — British female, clear and professional
@@ -84,42 +79,39 @@ const contextPack: ExperienceContextPack = {
       },
     },
   ],
-  style: {
+    style: {
     tone: "professional",
     language: "en-GB",
     register: "professional",
     targetLength: { min: 90, max: 180 },
-    styleNotes:
+    notes:
       "Second person throughout. Present tense. Grounded and specific — name the site asset, the time of day, the exact situation. Avoid corporate motivational language. When things go well or badly, be specific about the operational and regulatory consequences rather than vague about 'serious problems'.",
   },
-  groundTruth: [
+    references: [
     {
+      id: "nwh-health-exclusion-criteria",
       label: "NWH health exclusion criteria",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Health exclusion illnesses under the NWH scheme: persistent vomiting or diarrhoea, Cryptosporidiosis, jaundice, hepatitis A or E, dysentery, typhoid or paratyphoid (including if a family member is diagnosed). Any gastrointestinal illness after travelling abroad must be reported to a supervisor before working on restricted operations, regardless of severity. The supervisor — not the operative — decides whether a health screen is required.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Health exclusion illnesses under the NWH scheme: persistent vomiting or diarrhoea, Cryptosporidiosis, jaundice, hepatitis A or E, dysentery, typhoid or paratyphoid (including if a family member is diagnosed). Any gastrointestinal illness after travelling abroad must be reported to a supervisor before working on restricted operations, regardless of severity. The supervisor — not the operative — decides whether a health screen is required." },
     },
     {
+      id: "nwh-prevention-requirements",
       label: "NWH prevention requirements",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Prevention requirements: separate clothing sets for sewage work and water supply work; small fittings bagged, labelled and off the van floor; pipes capped and stored off the ground in a secure area; fuel in a separate bunded area away from fittings and pipes; no pets or livestock on restricted operation sites; hand washing before and after restricted operations and after toilet use; only approved products (Regulation 31/England, Regulation 33/Scotland) to contact the water supply.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Prevention requirements: separate clothing sets for sewage work and water supply work; small fittings bagged, labelled and off the van floor; pipes capped and stored off the ground in a secure area; fuel in a separate bunded area away from fittings and pipes; no pets or livestock on restricted operation sites; hand washing before and after restricted operations and after toilet use; only approved products (Regulation 31/England, Regulation 33/Scotland) to contact the water supply." },
     },
     {
+      id: "contamination-response-procedure",
       label: "Contamination response procedure",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "If contamination is suspected or a structural defect is found that could allow external water ingress to a potable asset: (1) stop work immediately; (2) report to supervisor immediately — not at end of shift; (3) asset must not be returned to supply until the situation has been assessed and cleared; (4) if water quality risk is confirmed, DWI must be notified. Operatives are not authorised to make solo decisions about returning assets to supply.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "If contamination is suspected or a structural defect is found that could allow external water ingress to a potable asset: (1) stop work immediately; (2) report to supervisor immediately — not at end of shift; (3) asset must not be returned to supply until the situation has been assessed and cleared; (4) if water quality risk is confirmed, DWI must be notified. Operatives are not authorised to make solo decisions about returning assets to supply." },
     },
   ],
-  scripts: [
-    {
+    rules: [
+{
       label: "Regulatory grounding for scenarios",
       priority: "must",
       trigger: "always",
@@ -127,13 +119,13 @@ const contextPack: ExperienceContextPack = {
         "All scenario content must be grounded in real NWH procedures. If the learner makes an incorrect choice, the feedback or generated content must clearly identify what they should have done and why, referencing the specific NWH rule. Do not be vague about consequences.",
     },
   ],
-  useCaseCategory: "assessed_training",
-  learningObjectives: [
+  },
+  extension: { kind: "training", learningObjectives: [
     "Explain why water is a uniquely precious resource and why hygiene is every operative's personal responsibility",
     "Recognise how water carries disease and why operatives are a critical barrier against contamination",
     "Identify restricted operations, health exclusion rules, and the consequences of contamination",
     "Apply the prevention requirements: clothing, storage, approved products and contamination response",
-  ],
+  ] },
 }
 
 // ─── NODES ───────────────────────────────────────────────────────────────────
@@ -1306,6 +1298,8 @@ const shape: ShapeDefinition = {
   displaySteps: 42,
 }
 
+export const experiences = [{ type: "l_and_d", contextPack, nodes, segments: [] }]
+
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -1376,11 +1370,13 @@ async function main() {
   console.log("Visit: /scenario/00000000-0000-0000-0000-000000000041")
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await db.$disconnect()
-  })
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
+    })
+    .finally(async () => {
+      await db.$disconnect()
+    })
+}

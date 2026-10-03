@@ -1,4 +1,5 @@
-import type { ExperienceContextPack } from "./legacy-seed-types"
+import type { ContextPack } from "../lib/engine/contract"
+import { pathToFileURL } from "url"
 import { PrismaClient } from "@prisma/client"
 import type {
   Node,
@@ -1063,35 +1064,33 @@ Read each question carefully and select the best answer.`,
 
 // ─── CONTEXT PACK ────────────────────────────────────────────────────────────
 
-const contextPack: ExperienceContextPack = {
-  world: {
-    description: "National Water Hygiene (NWH) certification training delivered under the EUSR scheme. Learners are water industry operatives seeking certification to work on restricted operations involving potable water assets.",
-    rules: "Training content is factual and compliance-driven. MCQ questions have one correct answer. All content is based on the NWH syllabus as required by the EUSR scheme.",
-    atmosphere: "Professional, formal, compliance-focused. No narrative embellishment — content is presented directly and factually.",
-  },
-  protagonist: {
-    perspective: "you",
-    role: "Water industry operative seeking NWH certification",
-    knowledge: "General awareness of water industry work. Seeking the knowledge and certification to work on restricted operations.",
-    goal: "Complete the NWH training modules and pass the 25-question test with at least 20 correct answers to receive an NWH card.",
-  },
-  actors: [],
-  style: {
+const contextPack: ContextPack = {
+  contractVersion: 2,
+  core: {
+    setting: { summary: "National Water Hygiene (NWH) certification training delivered under the EUSR scheme. Learners are water industry operatives seeking certification to work on restricted operations involving potable water assets.", details: "Training content is factual and compliance-driven. MCQ questions have one correct answer. All content is based on the NWH syllabus as required by the EUSR scheme." + " " + "Professional, formal, compliance-focused. No narrative embellishment — content is presented directly and factually." },
+    participant: {
+      role: "Water industry operative seeking NWH certification",
+      perspective: "second",
+      startingKnowledge: "General awareness of water industry work. Seeking the knowledge and certification to work on restricted operations.",
+      goal: "Complete the NWH training modules and pass the 25-question test with at least 20 correct answers to receive an NWH card.",
+    },
+    characters: [],
+    style: {
     tone: "formal",
     language: "en-GB",
     register: "professional",
     targetLength: { min: 80, max: 200 },
-    styleNotes: "Professional, clear, compliance-focused. No narrative embellishment. Present content factually. Questions are direct and unambiguous.",
+    notes: "Professional, clear, compliance-focused. No narrative embellishment. Present content factually. Questions are direct and unambiguous.",
   },
-  groundTruth: [],
-  scripts: [],
-  useCaseCategory: "course_replication",
-  learningObjectives: [
+    references: [],
+    rules: [],
+  },
+  extension: { kind: "training", learningObjectives: [
     "Explain why water is a uniquely precious resource and why hygiene is every operative's personal responsibility",
     "Recognise how water carries disease and why operatives are a critical barrier against contamination",
     "Identify restricted operations, health exclusion rules, and the consequences of contamination",
     "Apply the prevention requirements: clothing, storage, approved products and contamination response",
-  ],
+  ] },
 }
 
 // ─── SHAPE ───────────────────────────────────────────────────────────────────
@@ -1128,6 +1127,8 @@ const shape: ShapeDefinition = {
   ],
   displaySteps: 43,
 }
+
+export const experiences = [{ type: "l_and_d", contextPack, nodes: nodes, segments: [] }]
 
 // ─── SEED ────────────────────────────────────────────────────────────────────
 
@@ -1188,11 +1189,13 @@ async function main() {
   console.log("Visit: /scenario/00000000-0000-0000-0000-000000000040")
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await db.$disconnect()
-  })
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
+    })
+    .finally(async () => {
+      await db.$disconnect()
+    })
+}

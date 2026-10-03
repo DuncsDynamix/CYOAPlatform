@@ -1,4 +1,5 @@
-import type { ExperienceContextPack } from "./legacy-seed-types"
+import type { ContextPack } from "../lib/engine/contract"
+import { pathToFileURL } from "url"
 import { PrismaClient } from "@prisma/client"
 import type {
   Node,
@@ -385,25 +386,29 @@ function buildNodes(spec: StorySpec): Node[] {
   ]
 }
 
-function buildContextPack(spec: StorySpec): ExperienceContextPack {
+function buildContextPack(spec: StorySpec): ContextPack {
   return {
-    world: spec.world,
-    actors: [],
-    protagonist: {
-      perspective: "you",
-      role: spec.protagonist.role,
-      knowledge: spec.protagonist.knowledge,
-      goal: spec.protagonist.goal,
+    contractVersion: 2,
+    core: {
+      setting: { summary: spec.world.description, details: spec.world.rules },
+      participant: {
+        role: spec.protagonist.role,
+        perspective: "second",
+        startingKnowledge: spec.protagonist.knowledge,
+        goal: spec.protagonist.goal,
+      },
+      characters: [],
+      style: {
+        tone: spec.world.atmosphere,
+        language: "en-GB",
+        register: "literary",
+        targetLength: { min: 80, max: 250 },
+        notes: "Second person, present or near-present tense. Short, tiny story: no generation, all fixed prose.",
+      },
+      references: [],
+      rules: [],
     },
-    style: {
-      tone: spec.world.atmosphere,
-      language: "en-GB",
-      register: "literary",
-      targetLength: { min: 80, max: 250 },
-      styleNotes: "Second person, present or near-present tense. Short, tiny story: no generation, all fixed prose.",
-    },
-    groundTruth: [],
-    scripts: [],
+    extension: { kind: "story", atmosphere: spec.world.atmosphere },
   }
 }
 
@@ -436,6 +441,20 @@ function buildShape(): ShapeDefinition {
     mandatoryNodeIds: ["n1"],
   }
 }
+
+export const experiences = STORIES.map((spec) => {
+  const nodes = buildNodes(spec)
+  const segments: Segment[] = [
+    {
+      id: "seg-main",
+      label: spec.title,
+      description: "The complete story in a single segment.",
+      order: 0,
+      nodes: [...nodes],
+    },
+  ]
+  return { type: "cyoa_story", contextPack: buildContextPack(spec), nodes, segments }
+})
 
 // ─── SEED ─────────────────────────────────────────────────────
 
@@ -514,9 +533,11 @@ async function main() {
   console.log("Done. Six shelf books seeded.")
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(() => db.$disconnect())
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
+    })
+    .finally(() => db.$disconnect())
+}

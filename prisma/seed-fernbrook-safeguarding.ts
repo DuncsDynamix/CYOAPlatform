@@ -1,4 +1,5 @@
-import type { ExperienceContextPack } from "./legacy-seed-types"
+import type { ContextPack } from "../lib/engine/contract"
+import { pathToFileURL } from "url"
 import { PrismaClient } from "@prisma/client"
 import type {
   Node,
@@ -340,16 +341,17 @@ const nodes: Node[] = [
 
 // ─── CONTEXT PACK ─────────────────────────────────────────────────────────────
 
-const contextPack: ExperienceContextPack = {
-  world: {
-    description:
-      "Fernbrook Care — a domiciliary care provider covering a market town and surrounding villages, 60 care workers, around 300 clients. The learner is a care worker four months into the role, on their regular morning round. The setting is Margaret Ellery's terraced house: her home for fifty years, ordinary, private, hers.",
-    rules:
-      "Fernbrook safeguarding procedure: (1) Any safeguarding concern must be reported to the registered manager (safeguarding lead) the same working day — no exceptions for uncertainty; uncertainty is the lead's job to resolve, not the carer's. (2) Visit records must contain observable facts — what was seen and heard, quoted where possible — never opinion, diagnosis or accusation. (3) Care workers must never confront or question a person a concern relates to. (4) Never promise a client confidentiality about a safeguarding matter; explain honestly who must be told and why. (5) The client's wishes and control are central at every stage (Making Safeguarding Personal); action is taken with the adult, not to them. (6) Financial abuse is a category of abuse under the Care Act 2014, equal in seriousness to physical abuse or neglect.",
-    atmosphere:
-      "Quiet, domestic, real. The stakes are high but nothing here is dramatic — the tension lives in half-finished sentences, unopened post, and the gap between what is noticed and what is said. Warmth and professionalism coexist; the carer genuinely likes Margaret, which is precisely what makes this hard.",
-  },
-  actors: [
+const contextPack: ContextPack = {
+  contractVersion: 2,
+  core: {
+    setting: { summary: "Fernbrook Care — a domiciliary care provider covering a market town and surrounding villages, 60 care workers, around 300 clients. The learner is a care worker four months into the role, on their regular morning round. The setting is Margaret Ellery's terraced house: her home for fifty years, ordinary, private, hers.", details: "Fernbrook safeguarding procedure: (1) Any safeguarding concern must be reported to the registered manager (safeguarding lead) the same working day — no exceptions for uncertainty; uncertainty is the lead's job to resolve, not the carer's. (2) Visit records must contain observable facts — what was seen and heard, quoted where possible — never opinion, diagnosis or accusation. (3) Care workers must never confront or question a person a concern relates to. (4) Never promise a client confidentiality about a safeguarding matter; explain honestly who must be told and why. (5) The client's wishes and control are central at every stage (Making Safeguarding Personal); action is taken with the adult, not to them. (6) Financial abuse is a category of abuse under the Care Act 2014, equal in seriousness to physical abuse or neglect." + " " + "Quiet, domestic, real. The stakes are high but nothing here is dramatic — the tension lives in half-finished sentences, unopened post, and the gap between what is noticed and what is said. Warmth and professionalism coexist; the carer genuinely likes Margaret, which is precisely what makes this hard." },
+    participant: {
+      role: "Domiciliary care worker at Fernbrook Care, four months in role. Margaret's regular morning carer, three visits a week.",
+      perspective: "second",
+      startingKnowledge: "Competent and confident in personal care and daily visit routine. Has completed classroom safeguarding training — knows the categories of abuse and that concerns must be reported — but has never had to act on a live concern, and is about to discover the distance between knowing the procedure and using it.",
+      goal: "Complete Margaret's morning visit well, recognise what the morning is showing you, handle whatever Margaret is ready to say with care, and do the right thing with it before the day ends.",
+    },
+    characters: [
     {
       name: "Margaret Ellery",
       role: "Fernbrook client — 84, lives alone",
@@ -359,7 +361,7 @@ const contextPack: ExperienceContextPack = {
         "Deflects with small talk and busyness — tea, the garden, the neighbours. Half-starts sentences and abandons them. When she does approach the truth, she approaches it sideways and in small steps, testing whether it's safe. Never melodramatic; her distress shows as flatness, not tears.",
       knowledge:
         "She knows Darren has been using her bank card 'to save her the walk', that money has been leaving her account faster than her spending explains, that a red-letter bill arrived for something she thought was paid, and that when she asked Darren about it he was short with her in a way he's never been before. She does not use — or think in — words like abuse. If asked to keep things secret she will seek that promise; whether trust survives the carer declining to give it depends entirely on how honestly and gently they decline.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "Four months of three-mornings-a-week familiarity. She trusts the carer more than she trusts almost anyone else who comes to the house — which is a responsibility, not a convenience. The trust is real but conditional: rush her, corner her, or talk to her like a case, and the door closes politely and completely.",
       // Placeholder casting: ElevenLabs premade voice — swap for a properly cast elderly voice
       voice: {
@@ -377,7 +379,7 @@ const contextPack: ExperienceContextPack = {
         "Plain, specific, structured — she narrates process out loud so the carer always knows what happens next and why. Asks factual questions: what did you see, what were the words used, when. Never speculates about guilt.",
       knowledge:
         "Full command of the Care Act 2014 safeguarding framework, Fernbrook's procedures, the local authority referral route, and Making Safeguarding Personal. She knows what happens after a referral and can describe it concretely.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "The carer's manager and the person the procedure exists to connect them to. Supportive, unshockable, and clear that reporting a concern is doing the job right — not causing trouble.",
       voice: {
         vendorVoiceId: "Xb7hH8MSUJpSbSDYk0k2", // "Alice" — British female, clear and professional
@@ -386,72 +388,61 @@ const contextPack: ExperienceContextPack = {
       },
     },
   ],
-  protagonist: {
-    perspective: "you",
-    role: "Domiciliary care worker at Fernbrook Care, four months in role. Margaret's regular morning carer, three visits a week.",
-    knowledge:
-      "Competent and confident in personal care and daily visit routine. Has completed classroom safeguarding training — knows the categories of abuse and that concerns must be reported — but has never had to act on a live concern, and is about to discover the distance between knowing the procedure and using it.",
-    goal:
-      "Complete Margaret's morning visit well, recognise what the morning is showing you, handle whatever Margaret is ready to say with care, and do the right thing with it before the day ends.",
-  },
-  style: {
+    style: {
     tone:
       "Quiet, warm, closely observed. Domestic realism — the drama lives in small objects and half-sentences, never in raised voices. The emotional register is restraint: what is not said matters as much as what is.",
     language: "en-GB",
     register: "professional",
     targetLength: { min: 120, max: 210 },
-    styleNotes:
+    notes:
       "Second person, present tense. Use the ordinary vocabulary of domiciliary care naturally: rota, care plan, key safe, visit notes, call. Margaret is always a specific person, never 'the client' in narration. Indicators of abuse are shown as concrete objects and moments, never labelled with safeguarding terminology in prose. Dialogue is where the module lives — give conversations room to breathe.",
   },
-  groundTruth: [
+    references: [
     {
+      id: "care-act-2014-safeguarding-duties-and-categories",
       label: "Care Act 2014 — safeguarding duties and categories",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Under the Care Act 2014, safeguarding duties apply to adults who have needs for care and support and are experiencing, or at risk of, abuse or neglect, and are unable to protect themselves because of those needs. Financial or material abuse is an explicit statutory category: it includes theft, fraud, coercion around wills or property, and misuse of an adult's money, bank card, PIN or benefits — including by family members, who are the most common source. The six safeguarding principles are: empowerment, prevention, proportionality, protection, partnership and accountability. Making Safeguarding Personal requires that the adult's own wishes and outcomes lead the response — action is taken with the person, not to them.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Under the Care Act 2014, safeguarding duties apply to adults who have needs for care and support and are experiencing, or at risk of, abuse or neglect, and are unable to protect themselves because of those needs. Financial or material abuse is an explicit statutory category: it includes theft, fraud, coercion around wills or property, and misuse of an adult's money, bank card, PIN or benefits — including by family members, who are the most common source. The six safeguarding principles are: empowerment, prevention, proportionality, protection, partnership and accountability. Making Safeguarding Personal requires that the adult's own wishes and outcomes lead the response — action is taken with the person, not to them." },
     },
     {
+      id: "financial-abuse-recognised-indicators",
       label: "Financial abuse — recognised indicators",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Recognised indicators of financial abuse in domiciliary settings include: unpaid bills, red-letter or final-demand post where finances were previously managed; unexplained shortage of money, food or heating despite adequate income; withdrawal receipts or bank correspondence inconsistent with the person's own activity; a third party newly controlling cards, PINs or bank access; the person's belongings or valuables going missing; a new person in the household with an unexplained rise in spending; anxiety, flatness or evasiveness when money or the third party is mentioned; and reluctance to be alone with, or contradicted in front of, the third party. No single indicator is proof; a cluster observed by someone who knows the person's normal is a reportable concern.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Recognised indicators of financial abuse in domiciliary settings include: unpaid bills, red-letter or final-demand post where finances were previously managed; unexplained shortage of money, food or heating despite adequate income; withdrawal receipts or bank correspondence inconsistent with the person's own activity; a third party newly controlling cards, PINs or bank access; the person's belongings or valuables going missing; a new person in the household with an unexplained rise in spending; anxiety, flatness or evasiveness when money or the third party is mentioned; and reluctance to be alone with, or contradicted in front of, the third party. No single indicator is proof; a cluster observed by someone who knows the person's normal is a reportable concern." },
     },
     {
+      id: "fernbrook-reporting-and-recording-standards",
       label: "Fernbrook reporting and recording standards",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Concerns must be reported to the safeguarding lead the same working day, by phone, followed by a written record in the visit notes. Records must state: what was observed (specific, concrete), what was said (verbatim where possible, in quotation marks), when and where, and who was present. Records must not contain opinion, speculation about perpetrators, or conclusions ('I think Darren is stealing' is not a record; 'three £250 withdrawals on the statement on the sideboard, Margaret said: he does my bank bits now' is). Carers must not investigate, must not question the person a concern relates to, and must not promise secrecy — the honest formula is: 'I can't keep this just between us, but nothing will happen behind your back, and what you want matters at every step.' A disclosure is not required for a report: observed indicators alone meet the threshold.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Concerns must be reported to the safeguarding lead the same working day, by phone, followed by a written record in the visit notes. Records must state: what was observed (specific, concrete), what was said (verbatim where possible, in quotation marks), when and where, and who was present. Records must not contain opinion, speculation about perpetrators, or conclusions ('I think Darren is stealing' is not a record; 'three £250 withdrawals on the statement on the sideboard, Margaret said: he does my bank bits now' is). Carers must not investigate, must not question the person a concern relates to, and must not promise secrecy — the honest formula is: 'I can't keep this just between us, but nothing will happen behind your back, and what you want matters at every step.' A disclosure is not required for a report: observed indicators alone meet the threshold." },
     },
   ],
-  scripts: [
-    {
+    rules: [
+{
       label: "Show indicators, never label them",
       priority: "must",
       trigger: "always",
       instruction:
         "Generated prose must never name or diagnose what the indicators mean — no use of the words abuse, safeguarding, exploitation, financial abuse, or theft in narration. The learner's competence at recognition is the thing being assessed; the text must present evidence, not conclusions. Safeguarding vocabulary may appear only in Priya's dialogue in the final scene.",
     },
-    {
+{
       label: "Margaret's dignity is non-negotiable",
       priority: "must",
       trigger: "always",
       instruction:
         "Margaret is never pitiable, confused, or a victim-shaped object. She is a competent adult in a frightening situation involving someone she loves. Her deflections are strength, not weakness. Any generated content that patronises her, dramatises her distress, or takes her agency away is wrong for this module.",
     },
-    {
+{
       label: "Vary the surface, keep the structure",
       priority: "must",
       trigger: "always",
       instruction:
         "On each session, vary the concrete surface details — which indicators appear and in what form, the small talk, the household specifics — while keeping the underlying situation identical. A learner repeating this module must face the same competency test through different evidence, so that recognition is being assessed rather than recall.",
     },
-    {
+{
       label: "Consequences in safeguarding terms",
       priority: "should",
       trigger: "always",
@@ -459,12 +450,13 @@ const contextPack: ExperienceContextPack = {
         "When showing outcomes of choices, ground consequences in the operational reality of safeguarding: delay means continued risk and lost money that is rarely recovered; confrontation means evidence destroyed and pressure on Margaret at home; correct escalation means the concern reaches people with the powers and duty to act. Avoid abstract framing about 'doing the right thing'.",
     },
   ],
-  learningObjectives: [
+  },
+  extension: { kind: "training", learningObjectives: [
     "Recognise a cluster of financial abuse indicators against knowledge of the client's normal",
     "Hold a disclosure-safe conversation: open questions, no leading, no promise of secrecy",
     "Escalate correctly: same-day report to the safeguarding lead, facts recorded without opinion",
     "Apply Making Safeguarding Personal: keep the adult's wishes and control central to every action",
-  ],
+  ] },
 }
 
 // ─── SHAPE ────────────────────────────────────────────────────────────────────
@@ -490,6 +482,8 @@ const shape: ShapeDefinition = {
   mandatoryNodeIds: ["n1"],
   displaySteps: 9,
 }
+
+export const experiences = [{ type: "l_and_d", contextPack, nodes: nodes, segments: [] }]
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
@@ -581,9 +575,11 @@ async function main() {
   console.log("    http://localhost:6060/scenario/fernbrook-safeguarding")
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(() => db.$disconnect())
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
+    })
+    .finally(() => db.$disconnect())
+}

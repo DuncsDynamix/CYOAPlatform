@@ -1,4 +1,5 @@
-import type { ExperienceContextPack } from "./legacy-seed-types"
+import type { ContextPack } from "../lib/engine/contract"
+import { pathToFileURL } from "url"
 import { PrismaClient } from "@prisma/client"
 import type {
   Node,
@@ -420,16 +421,17 @@ const nodes: Node[] = [
 
 // ─── CONTEXT PACK ─────────────────────────────────────────────────────────────
 
-const contextPack: ExperienceContextPack = {
-  world: {
-    description:
-      "Hartley & Voss — a 150-person structural engineering consultancy in Leeds, founded twenty-two years ago by Elaine Hartley and the now-retired Peter Voss. Respected, profitable, mid-market: big enough to hold sensitive client and staff data, small enough to have no security team — IT and security are the learner and a team of four. The exercise runs from a Friday-afternoon helpdesk ticket to a wash-up meeting two weeks later.",
-    rules:
-      "Hartley & Voss incident response plan (adopted last year, never yet used in anger): (1) Suspected compromise means isolate, don't power off — preserve evidence, start a timeline log immediately. (2) The cyber insurer's 24-hour incident line must be called before any external specialist is engaged; using non-panel responders can prejudice cover. (3) Incident communications move out-of-band immediately — company email is presumed readable by the attacker. (4) Only the CEO or her named deputy speaks externally, and only in statements agreed with the incident team. (5) Any negotiation with or payment to attackers is a board decision taken with legal counsel, informed by NCSC guidance and sanctions screening — never an operational call. (6) The IT & Operations Manager is the designated incident lead until the insurer's IR firm is stood up.",
-    atmosphere:
-      "Escalating operational pressure — clocks everywhere: the 72-hour ransom deadline, the 72-hour ICO window, the Thursday milestone, a journalist's publication schedule. The register is professional adrenaline: phone calls, timestamps, decisions made with incomplete information. Never techno-thriller; the tension is institutional, not cinematic.",
-  },
-  actors: [
+const contextPack: ContextPack = {
+  contractVersion: 2,
+  core: {
+    setting: { summary: "Hartley & Voss — a 150-person structural engineering consultancy in Leeds, founded twenty-two years ago by Elaine Hartley and the now-retired Peter Voss. Respected, profitable, mid-market: big enough to hold sensitive client and staff data, small enough to have no security team — IT and security are the learner and a team of four. The exercise runs from a Friday-afternoon helpdesk ticket to a wash-up meeting two weeks later.", details: "Hartley & Voss incident response plan (adopted last year, never yet used in anger): (1) Suspected compromise means isolate, don't power off — preserve evidence, start a timeline log immediately. (2) The cyber insurer's 24-hour incident line must be called before any external specialist is engaged; using non-panel responders can prejudice cover. (3) Incident communications move out-of-band immediately — company email is presumed readable by the attacker. (4) Only the CEO or her named deputy speaks externally, and only in statements agreed with the incident team. (5) Any negotiation with or payment to attackers is a board decision taken with legal counsel, informed by NCSC guidance and sanctions screening — never an operational call. (6) The IT & Operations Manager is the designated incident lead until the insurer's IR firm is stood up." + " " + "Escalating operational pressure — clocks everywhere: the 72-hour ransom deadline, the 72-hour ICO window, the Thursday milestone, a journalist's publication schedule. The register is professional adrenaline: phone calls, timestamps, decisions made with incomplete information. Never techno-thriller; the tension is institutional, not cinematic." },
+    participant: {
+      role: "IT & Operations Manager at Hartley & Voss — and, per the incident response plan, designated incident lead. A team of four, a helpdesk queue, and until 16:47 on Friday, a normal job.",
+      perspective: "second",
+      startingKnowledge: "Solid operational IT: networks, servers, backups, the estate. Has read the incident response plan and the cyber policy summary. No prior live incident experience — knows the theory of containment, notification windows and insurer conditions, and is about to learn the difference between knowing them and holding them under pressure.",
+      goal: "Lead the response from first ticket to wash-up: contain without destroying evidence, bring the CEO with you rather than losing her to instinct, meet the regulatory clock, hold the line with the press, and get the firm to the other side with its obligations met and its account of itself intact.",
+    },
+    characters: [
     {
       name: "Elaine Hartley",
       role: "CEO and co-founder, Hartley & Voss",
@@ -439,7 +441,7 @@ const contextPack: ExperienceContextPack = {
         "Rapid, direct, interrupts. Asks compound questions and expects structured answers. Softens noticeably when given honesty plus a plan; hardens when managed or soothed. On the phone from a family dinner she is clipped but not unkind.",
       knowledge:
         "Knows the business cold: every client, every milestone, the Medway penalty clauses, the firm's cash position. Knows almost nothing about incident response, insurance panel conditions, or data protection law — and doesn't yet know what she doesn't know. She has read the IR plan once, at a board meeting, a year ago.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "Trusts the learner as the person who keeps the lights on, but has never had to trust them in a crisis. This call is where that trust is set — she will follow a lead who is candid and structured, and she will run ahead of one who wobbles.",
       // Placeholder casting: ElevenLabs premade voice — swap for cast voices per client
       voice: {
@@ -457,7 +459,7 @@ const contextPack: ExperienceContextPack = {
         "Calm, precise, conversational — the pressure is in the content, not the tone. States what they already have, then asks short direct questions and lets silences stretch. Offers small tests: 'so you're not denying data was taken?', 'off the record, are you paying?' Always honest about their deadline and terms.",
       knowledge:
         "Has the leak-site screenshot naming Hartley & Voss, two independent sources confirming systems down since Friday, and general knowledge of how ransomware incidents and their cover-ups play out. Does not know the scope of data taken, the backup position, or the board's stance on payment — and is probing for all three.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "No history. The learner is a source to be tested: Sam's article will be written either way, and whether Hartley & Voss appears in it as 'a firm responding credibly to a criminal attack' or 'a firm that went quiet' depends entirely on this call.",
       voice: {
         vendorVoiceId: "onwK4e9ZLuTAKqWW03F9", // "Daniel" — British male, broadcast register
@@ -466,87 +468,75 @@ const contextPack: ExperienceContextPack = {
       },
     },
   ],
-  protagonist: {
-    perspective: "you",
-    role: "IT & Operations Manager at Hartley & Voss — and, per the incident response plan, designated incident lead. A team of four, a helpdesk queue, and until 16:47 on Friday, a normal job.",
-    knowledge:
-      "Solid operational IT: networks, servers, backups, the estate. Has read the incident response plan and the cyber policy summary. No prior live incident experience — knows the theory of containment, notification windows and insurer conditions, and is about to learn the difference between knowing them and holding them under pressure.",
-    goal:
-      "Lead the response from first ticket to wash-up: contain without destroying evidence, bring the CEO with you rather than losing her to instinct, meet the regulatory clock, hold the line with the press, and get the firm to the other side with its obligations met and its account of itself intact.",
-  },
-  style: {
+    style: {
     tone:
       "Controlled urgency. Timestamped, concrete, procedural — the drama comes from clocks, obligations and imperfect information, never from action-movie flourishes. Costs and consequences are always specific numbers, never vague dooms.",
     language: "en-GB",
     register: "professional",
     targetLength: { min: 130, max: 240 },
-    styleNotes:
+    notes:
       "Second person, present tense. Timestamps and day markers open scenes where natural ('Saturday, 09:40'). Use the real vocabulary of incident response plainly — isolation, timeline log, panel firm, notification, holding statement — without jargon-flexing. Named characters are specific people under specific pressures. Technical detail stays at briefing level: decisions and consequences, never exploitation mechanics.",
   },
-  groundTruth: [
+    references: [
     {
+      id: "uk-gdpr-breach-notification-duties",
       label: "UK GDPR breach notification duties",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Under UK GDPR Article 33, a personal data breach likely to result in risk to individuals must be notified to the ICO without undue delay and where feasible within 72 hours of the controller becoming AWARE of it — awareness means reasonable certainty a breach has occurred, not full understanding of its scope. Notification may be made in phases: an initial report on known facts with supplementary updates is explicitly permitted and is standard practice in ransomware cases. Late notification must be explained and is itself an infringement. Under Article 34, where the breach is likely to result in HIGH risk to individuals (e.g. exfiltrated payroll and bank details), affected individuals must also be informed directly without undue delay, in clear language, with practical mitigation steps (such as credit monitoring). The duty sits with the controller and cannot be discharged by delegating the decision to advisers.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Under UK GDPR Article 33, a personal data breach likely to result in risk to individuals must be notified to the ICO without undue delay and where feasible within 72 hours of the controller becoming AWARE of it — awareness means reasonable certainty a breach has occurred, not full understanding of its scope. Notification may be made in phases: an initial report on known facts with supplementary updates is explicitly permitted and is standard practice in ransomware cases. Late notification must be explained and is itself an infringement. Under Article 34, where the breach is likely to result in HIGH risk to individuals (e.g. exfiltrated payroll and bank details), affected individuals must also be informed directly without undue delay, in clear language, with practical mitigation steps (such as credit monitoring). The duty sits with the controller and cannot be discharged by delegating the decision to advisers." },
     },
     {
+      id: "ncsc-and-law-enforcement-posture-on-ransomware",
       label: "NCSC and law enforcement posture on ransomware",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "NCSC and UK law enforcement do not encourage payment of ransoms: payment funds criminal groups, offers no guarantee of working decryption or of copied data being deleted, and marks the payer as a repeat target. Payment may create sanctions exposure if the group is a designated entity — sanctions screening and legal advice are mandatory before any payment could even be considered. Incidents should be reported to Action Fraud and can draw on NCSC guidance and support. Where viable backups exist, restore-and-rebuild is the recommended recovery path even when slower than a decryptor. A decision to pay or not pay is a board-level decision taken with legal counsel and the insurer — organisations that make it under deadline pressure, without advice, make it badly.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "NCSC and UK law enforcement do not encourage payment of ransoms: payment funds criminal groups, offers no guarantee of working decryption or of copied data being deleted, and marks the payer as a repeat target. Payment may create sanctions exposure if the group is a designated entity — sanctions screening and legal advice are mandatory before any payment could even be considered. Incidents should be reported to Action Fraud and can draw on NCSC guidance and support. Where viable backups exist, restore-and-rebuild is the recommended recovery path even when slower than a decryptor. A decision to pay or not pay is a board-level decision taken with legal counsel and the insurer — organisations that make it under deadline pressure, without advice, make it badly." },
     },
     {
+      id: "cyber-insurance-policy-conditions",
       label: "Cyber insurance policy conditions",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "The Hartley & Voss cyber policy provides incident response, forensics, legal, notification and business interruption cover, subject to conditions: the insurer's 24-hour incident line must be contacted as soon as practicable and BEFORE external specialists are engaged; response work must use panel firms unless otherwise agreed; and material external statements about the incident should be made in consultation with the appointed response team. Late notification, non-panel engagements, or public statements later shown to be false can each prejudice cover in whole or part. Ransom reimbursement exists in the policy but only where payment was approved by the insurer following sanctions screening and legal sign-off.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "The Hartley & Voss cyber policy provides incident response, forensics, legal, notification and business interruption cover, subject to conditions: the insurer's 24-hour incident line must be contacted as soon as practicable and BEFORE external specialists are engaged; response work must use panel firms unless otherwise agreed; and material external statements about the incident should be made in consultation with the appointed response team. Late notification, non-panel engagements, or public statements later shown to be false can each prejudice cover in whole or part. Ransom reimbursement exists in the policy but only where payment was approved by the insurer following sanctions screening and legal sign-off." },
     },
     {
+      id: "business-facts-on-the-ground",
       label: "Business facts on the ground",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "should_include",
-      content:
-        "Operational facts fixed for this exercise: the last clean offsite backup is 19 days old — the backup job has been silently failing and this is a genuine, embarrassing process gap, not bad luck. Quantified outage cost is approximately £40k per working day in lost billable work and penalty exposure. The file server held HR records for 150 staff (payroll, addresses, bank details) and client project files including the Medway bridge contract, whose stage payment milestone falls on the Thursday after the incident begins. Realistic recovery is restore from the 19-day backups plus manual rebuild of the gap from local copies and email attachments: two to three weeks to full capability.",
+      role: "reference",
+      priority: "should",
+      source: { kind: "text", text: "Operational facts fixed for this exercise: the last clean offsite backup is 19 days old — the backup job has been silently failing and this is a genuine, embarrassing process gap, not bad luck. Quantified outage cost is approximately £40k per working day in lost billable work and penalty exposure. The file server held HR records for 150 staff (payroll, addresses, bank details) and client project files including the Medway bridge contract, whose stage payment milestone falls on the Thursday after the incident begins. Realistic recovery is restore from the 19-day backups plus manual rebuild of the gap from local copies and email attachments: two to three weeks to full capability." },
     },
   ],
-  scripts: [
-    {
+    rules: [
+{
       label: "Clocks always visible",
       priority: "must",
       trigger: "always",
       instruction:
         "Every scene must keep at least one concrete clock in view — the ransom deadline, the 72-hour ICO window, the Medway milestone, the publication deadline — with real timestamps and day markers. Pressure in this exercise is temporal and specific, never vague.",
     },
-    {
+{
       label: "Decisions belong to the learner",
       priority: "must",
       trigger: "always",
       instruction:
         "Narration must never resolve, recommend or pre-empt a decision the learner has not yet made. Advisers state options, obligations and trade-offs; characters apply pressure in their own interest; the choosing is always left at the learner's feet.",
     },
-    {
+{
       label: "No exploitation mechanics",
       priority: "must",
       trigger: "always",
       instruction:
         "Never include technical detail about intrusion methods, malware behaviour, tooling or attacker tradecraft beyond briefing-level fact ('files encrypted', 'evidence of data copied out'). This exercise assesses leadership decisions, not technical knowledge, and must not function as a how-to in either direction.",
     },
-    {
+{
       label: "Vary the surface, keep the structure",
       priority: "must",
       trigger: "always",
       instruction:
         "On each session, vary the incidental specifics — the ransomware group's name, the exact demand within the stated range, the wording of the note, which staff member finds what — while keeping every structural fact (backup age, data held, costs, deadlines) fixed. A repeated run must test the same decisions against fresh surface detail.",
     },
-    {
+{
       label: "Consequences compound through state",
       priority: "should",
       trigger: "always",
@@ -554,13 +544,14 @@ const contextPack: ExperienceContextPack = {
         "Generated scenes should honestly reflect accumulated session state: early containment leaves some shares intact; a premature client email resurfaces when exfiltration is confirmed; a late ICO notification shadows the closing scenes. Good and bad decisions must both visibly compound — that is the pedagogy of a tabletop.",
     },
   ],
-  learningObjectives: [
+  },
+  extension: { kind: "training", learningObjectives: [
     "Apply first-hour containment discipline: isolate without destroying evidence, log from minute one",
     "Escalate to leadership with candour and a plan, and hold the line against premature external reassurance",
     "Make the UK GDPR 72-hour notification decision correctly: notify on awareness, update in phases",
     "Engage insurer, IR firm and counsel in the right order, keeping the ransom question at board level",
     "Deliver an honest, disciplined press holding position under deadline pressure",
-  ],
+  ] },
 }
 
 // ─── SHAPE ────────────────────────────────────────────────────────────────────
@@ -586,6 +577,8 @@ const shape: ShapeDefinition = {
   mandatoryNodeIds: ["n1"],
   displaySteps: 10,
 }
+
+export const experiences = [{ type: "l_and_d", contextPack, nodes: nodes, segments: [] }]
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
@@ -680,9 +673,11 @@ async function main() {
   console.log("    http://localhost:6060/scenario/hartley-voss-ransomware")
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(() => db.$disconnect())
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
+    })
+    .finally(() => db.$disconnect())
+}

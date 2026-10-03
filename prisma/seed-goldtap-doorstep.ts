@@ -1,4 +1,5 @@
-import type { ExperienceContextPack } from "./legacy-seed-types"
+import type { ContextPack } from "../lib/engine/contract"
+import { pathToFileURL } from "url"
 import { PrismaClient } from "@prisma/client"
 import type { Node, ShapeDefinition } from "../types/experience"
 import { USE_CASE_PACKS } from "../lib/engine/usecases"
@@ -236,6 +237,7 @@ Keep these in reach: the **Notes** button in the header holds both briefings dur
     rubric: [
       {
         id: "acknowledge-first",
+        competencyId: "de-escalation",
         label: "Acknowledged before answering",
         description:
           "The learner acknowledged the customer's feeling (caution or anger) as legitimate before arguing their own case, in at least one conversation.",
@@ -243,6 +245,7 @@ Keep these in reach: the **Notes** button in the header holds both briefings dur
       },
       {
         id: "verification-offered",
+        competencyId: "identity-verification",
         label: "Offered verification on the customer's terms",
         description:
           "With Margaret, the learner offered proper identity verification she controls: ID through the window, calling the number on her own bill, the password scheme, or rebooking with a relative present. Dictating a number to call, or relying on charm, does not meet this.",
@@ -250,6 +253,7 @@ Keep these in reach: the **Notes** button in the header holds both briefings dur
       },
       {
         id: "stayed-level",
+        competencyId: "de-escalation",
         label: "Stayed level under hostility",
         description:
           "With Dean, the learner kept an even, non-defensive tone: no sarcasm, no arguing back, no matching his energy, no bluffed consequences.",
@@ -295,16 +299,17 @@ Keep these in reach: the **Notes** button in the header holds both briefings dur
 
 // ─── CONTEXT PACK ────────────────────────────────────────────────────────────
 
-const contextPack: ExperienceContextPack = {
-  world: {
-    description:
-      "Medway Water, a fictional UK water company supplying 1.4 million customers across Kent. The setting is domestic doorsteps on ordinary residential streets: chained doors, bay windows, bins out for collection. The learner is a field operative whose job today requires entry to customers' homes for routine work (stop tap checks, meter inspections, water quality samples).",
-    rules:
-      "Operatives carry photo ID and show it unprompted. Customers verify by calling the number on their own bill, never a number the caller provides. Vulnerable customers may hold an agreed password. Operatives have no right to force entry for routine work; refused visits are logged with a reason and follow-up route. Bogus-caller crime makes customer suspicion correct behaviour, and operatives are trained to welcome it.",
-    atmosphere:
-      "Small-scale and human: net curtains, a radio inside, a dog barking two doors down. The stakes are personal rather than operational: a frightened pensioner's front hall, a working man's bad month. Pressure comes from emotion, not sirens.",
-  },
-  actors: [
+const contextPack: ContextPack = {
+  contractVersion: 2,
+  core: {
+    setting: { summary: "Medway Water, a fictional UK water company supplying 1.4 million customers across Kent. The setting is domestic doorsteps on ordinary residential streets: chained doors, bay windows, bins out for collection. The learner is a field operative whose job today requires entry to customers' homes for routine work (stop tap checks, meter inspections, water quality samples).", details: "Operatives carry photo ID and show it unprompted. Customers verify by calling the number on their own bill, never a number the caller provides. Vulnerable customers may hold an agreed password. Operatives have no right to force entry for routine work; refused visits are logged with a reason and follow-up route. Bogus-caller crime makes customer suspicion correct behaviour, and operatives are trained to welcome it." + " " + "Small-scale and human: net curtains, a radio inside, a dog barking two doors down. The stakes are personal rather than operational: a frightened pensioner's front hall, a working man's bad month. Pressure comes from emotion, not sirens." },
+    participant: {
+      role: "Field operative, Medway Water: carded, uniformed, with a morning list of domestic visits requiring entry.",
+      perspective: "second",
+      startingKnowledge: "Trained on the ID and password procedures and the rights-of-entry rules from the briefings. Competent at the technical work behind the door. The doorstep itself, a frightened or furious human being, is what this session exists to practise.",
+      goal: "Get legitimate work done with the customer's genuine consent: reassure the frightened, de-escalate the angry, and when the answer stays no, withdraw well and record properly.",
+    },
+    characters: [
     {
       name: "Margaret Hale",
       role: "Resident, 81, lives alone",
@@ -314,7 +319,7 @@ const contextPack: ExperienceContextPack = {
         "Careful, polite, slightly formal. Short questions through the gap in the door. Repeats her son's advice like a shield: 'My son says...'. When reassured, her sentences lengthen and she mentions the kettle.",
       knowledge:
         "Knows what her son and the crime-prevention leaflets have told her: real callers show ID, real companies let you phone to check, never let anyone hurry you. Knows nothing about water operations. May or may not remember whether she has a password set up: if asked, she has one.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "A stranger claiming to be from the water company: exactly what she has been warned about. Every word the learner says either confirms the warning or earns her trust.",
       voice: {
         vendorVoiceId: "pFZP5JQG7iQjIQuC4Bku", // "Lily" — British female, warm
@@ -331,7 +336,7 @@ const contextPack: ExperienceContextPack = {
         "Fast, loud at first, rhetorical questions, 'you lot'. Interrupts early. As he de-escalates the volume drops before the vocabulary does: still gruff, but listening. If handled well he ends conversations with grudging practicality: 'Ten minutes, then.'",
       knowledge:
         "His own billing saga in precise, rehearsed detail. Roughly what today's visit is for once told. Nothing about the learner personally, and somewhere he knows that too.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "The company made flesh, until the learner proves otherwise. The first employee who has stood still and listened to him in three months, if they manage it.",
       voice: {
         vendorVoiceId: "JBFqnCBsd6RMkjVDRZzb", // "George" — British male, warm gravel
@@ -340,58 +345,47 @@ const contextPack: ExperienceContextPack = {
       },
     },
   ],
-  protagonist: {
-    perspective: "you",
-    role: "Field operative, Medway Water: carded, uniformed, with a morning list of domestic visits requiring entry.",
-    knowledge:
-      "Trained on the ID and password procedures and the rights-of-entry rules from the briefings. Competent at the technical work behind the door. The doorstep itself, a frightened or furious human being, is what this session exists to practise.",
-    goal:
-      "Get legitimate work done with the customer's genuine consent: reassure the frightened, de-escalate the angry, and when the answer stays no, withdraw well and record properly.",
-  },
-  style: {
+    style: {
     tone:
       "Close, human realism. Two people either side of a threshold. The drama is entirely in the words chosen; no operational stakes beyond this doorstep.",
     language: "en-GB",
     register: "professional",
     targetLength: { min: 90, max: 160 },
-    styleNotes:
+    notes:
       "Second person, present tense. Domestic detail in small touches, never laid on thick. Margaret's fear and Dean's anger are treated with dignity: neither is a caricature. The learner's own conduct is never narrated for them; scenes end where their words must begin.",
   },
-  groundTruth: [
+    references: [
     {
+      id: "identity-verification-and-the-password-scheme",
       label: "Identity verification and the password scheme",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Doorstep procedure: operatives show photo ID unprompted, through a window or letterbox if the customer prefers. Customers are encouraged to keep the door closed and verify by phoning the customer services number printed on their own bill; an operative must never dictate a number to call. Vulnerable customers may register a password that callers must be asked for and state correctly. Rebooking a visit, including to a time when a relative can be present, is always available and costs the customer nothing. Bogus callers posing as water company staff are an established doorstep crime pattern targeting older residents; customer suspicion is correct behaviour and operatives are trained to welcome and never resent it.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Doorstep procedure: operatives show photo ID unprompted, through a window or letterbox if the customer prefers. Customers are encouraged to keep the door closed and verify by phoning the customer services number printed on their own bill; an operative must never dictate a number to call. Vulnerable customers may register a password that callers must be asked for and state correctly. Rebooking a visit, including to a time when a relative can be present, is always available and costs the customer nothing. Bogus callers posing as water company staff are an established doorstep crime pattern targeting older residents; customer suspicion is correct behaviour and operatives are trained to welcome and never resent it." },
     },
     {
+      id: "rights-of-entry-and-refusal-handling",
       label: "Rights of entry and refusal handling",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "For routine visits (meter inspections, internal stop tap checks, sampling) the operative has no right to force entry and never attempts to enter uninvited, block a closing door, or threaten consequences. If entry is refused: explain the follow-up route calmly, thank the customer, leave, and log the visit as refused with the reason recorded promptly. Formal entry powers involve written notice and in rare cases a warrant, handled by the company centrally, never argued on a doorstep. A courteously handled refusal is a correct outcome and is recorded as such.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "For routine visits (meter inspections, internal stop tap checks, sampling) the operative has no right to force entry and never attempts to enter uninvited, block a closing door, or threaten consequences. If entry is refused: explain the follow-up route calmly, thank the customer, leave, and log the visit as refused with the reason recorded promptly. Formal entry powers involve written notice and in rare cases a warrant, handled by the company centrally, never argued on a doorstep. A courteously handled refusal is a correct outcome and is recorded as such." },
     },
     {
+      id: "de-escalation-principles",
       label: "De-escalation principles",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Open with purpose in plain language before paperwork. Acknowledge the customer's feeling as legitimate before answering it. Offer choices rather than ultimatums so the customer keeps control. For fear: slow down, lower stimulation, give time and verification routes. For anger: stay level, keep sentences short, do not defend the company or match energy, separate today's task from the grievance and route the grievance to the correct channel. Watch for vulnerability signals (confusion, distress, password requests) and respond with extra care, involving customer services where needed.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Open with purpose in plain language before paperwork. Acknowledge the customer's feeling as legitimate before answering it. Offer choices rather than ultimatums so the customer keeps control. For fear: slow down, lower stimulation, give time and verification routes. For anger: stay level, keep sentences short, do not defend the company or match energy, separate today's task from the grievance and route the grievance to the correct channel. Watch for vulnerability signals (confusion, distress, password requests) and respond with extra care, involving customer services where needed." },
     },
   ],
-  scripts: [
-    {
+    rules: [
+{
       label: "The learner's conduct is the exercise",
       priority: "must",
       trigger: "always",
       instruction:
         "Narration never performs the learner's people-skills for them: scenes stop where the learner must speak, and outcomes honestly reflect what the learner actually said. Characters respond to the learner's real words, not to an assumed script.",
     },
-    {
+{
       label: "Refusal is a valid ending",
       priority: "must",
       trigger: "always",
@@ -399,8 +393,8 @@ const contextPack: ExperienceContextPack = {
         "A customer who holds their refusal after being offered the correct routes is not a failure state. Treat a graceful withdrawal with proper recording as a successful outcome and reflect that in generated scenes.",
     },
   ],
-  learningObjectives: [OBJ_THEORY, OBJ_REASSURE, OBJ_DEESCALATE],
-  useCaseCategory: "practice_rehearsal",
+  },
+  extension: { kind: "training", learningObjectives: [OBJ_THEORY, OBJ_REASSURE, OBJ_DEESCALATE] },
 }
 
 // ─── SHAPE ───────────────────────────────────────────────────────────────────
@@ -426,6 +420,8 @@ const shape: ShapeDefinition = {
   mandatoryNodeIds: ["n-intro", "n-theory-rights", "n-theory-craft", "d-margaret", "d-dean", "ev-debrief"],
   displaySteps: 10,
 }
+
+export const experiences = [{ type: "l_and_d", contextPack, nodes: nodes, segments: [] }]
 
 // ─── SEED ────────────────────────────────────────────────────────────────────
 
@@ -486,9 +482,11 @@ async function main() {
   console.log("    Play:   /scenario/goldtap-doorstep-practice")
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(() => db.$disconnect())
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
+    })
+    .finally(() => db.$disconnect())
+}

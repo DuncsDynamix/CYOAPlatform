@@ -1,4 +1,5 @@
-import type { ExperienceContextPack } from "./legacy-seed-types"
+import type { ContextPack } from "../lib/engine/contract"
+import { pathToFileURL } from "url"
 import { PrismaClient } from "@prisma/client"
 import type {
   Node,
@@ -324,16 +325,17 @@ const nodes: Node[] = [
   },
 ]
 
-const contextPack: ExperienceContextPack = {
-  world: {
-    description:
-      "Remote coastal headland, British Isles, present day. A storm has closed the roads. The only structure for miles is an old lighthouse on a jagged cliff, its beam cutting through the rain.",
-    rules:
-      "Realistic — no supernatural elements are confirmed, only implied. The world operates on physical reality. Tension comes from isolation, atmosphere, and moral weight.",
-    atmosphere:
-      "Dread, isolation, literary thriller with ghost story ambiguity. Think Daphne du Maurier or early Ian McEwan. Build slowly, accelerate to the climax, earn the ending.",
-  },
-  actors: [
+const contextPack: ContextPack = {
+  contractVersion: 2,
+  core: {
+    setting: { summary: "Remote coastal headland, British Isles, present day. A storm has closed the roads. The only structure for miles is an old lighthouse on a jagged cliff, its beam cutting through the rain.", details: "Realistic — no supernatural elements are confirmed, only implied. The world operates on physical reality. Tension comes from isolation, atmosphere, and moral weight." },
+    participant: {
+      role: "Traveller caught in a storm — no connection to the lighthouse or its keeper. Just needs shelter.",
+      perspective: "second",
+      startingKnowledge: "Nothing about the lighthouse or its keeper. Car is gone. Phone is dead. The lighthouse is the only shelter for five miles.",
+      goal: "To survive the storm — but the lighthouse has other plans.",
+    },
+    characters: [
     {
       name: "The Keeper",
       role: "Absent lighthouse keeper",
@@ -341,50 +343,42 @@ const contextPack: ExperienceContextPack = {
       speech:
         "Only appears through written log entries — clipped, factual, then increasingly desperate",
       knowledge: "Knows about the ship and its repeated appearances; has a plan",
-      relationshipToProtagonist: "Unknown — never met",
+      relationshipToParticipant: "Unknown — never met",
     },
   ],
-  protagonist: {
-    perspective: "you",
-    role: "Traveller caught in a storm — no connection to the lighthouse or its keeper. Just needs shelter.",
-    knowledge:
-      "Nothing about the lighthouse or its keeper. Car is gone. Phone is dead. The lighthouse is the only shelter for five miles.",
-    goal: "To survive the storm — but the lighthouse has other plans.",
-  },
-  style: {
+    style: {
     tone: "Atmospheric, tense, literary. Dread without melodrama.",
     language: "en-GB",
     register: "literary",
     targetLength: { min: 100, max: 300 },
-    styleNotes:
+    notes:
       "Short sentences during action. Longer, more complex sentences for atmosphere. Always second person ('you'). Present tense throughout. No adverbs. Favour concrete nouns.",
   },
-  groundTruth: [
+    references: [
     {
+      id: "core-canon-facts",
       label: "Core canon facts",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "The keeper has been missing for three days. The ship appears every night in the same position during storms. The lighthouse beam can be manually controlled from the light chamber. The basement contains months of log entries.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "The keeper has been missing for three days. The ship appears every night in the same position during storms. The lighthouse beam can be manually controlled from the light chamber. The basement contains months of log entries." },
     },
   ],
-  scripts: [
-    {
+    rules: [
+{
       label: "Preserve mystery",
       priority: "must",
       trigger: "always",
       instruction:
         "Never explain the supernatural origin of the ship. Never give the keeper a name. Never provide a resolution that costs nothing. The mystery must remain unresolved.",
     },
-    {
+{
       label: "Motif weaving",
       priority: "should",
       trigger: "always",
       instruction:
         "Weave in these motifs where natural: light and dark, isolation, the cost of decisive action, the sea as indifferent witness.",
     },
-    {
+{
       label: "Ending elegiac tone",
       priority: "should",
       trigger: "on_node_type",
@@ -393,6 +387,8 @@ const contextPack: ExperienceContextPack = {
         "The ending reflection should be elegiac rather than conclusive. The protagonist has survived but the world has not changed. Leave one question unanswered.",
     },
   ],
+  },
+  extension: { kind: "story", atmosphere: "Dread, isolation, literary thriller with ghost story ambiguity. Think Daphne du Maurier or early Ian McEwan. Build slowly, accelerate to the climax, earn the ending." },
 }
 
 const shape: ShapeDefinition = {
@@ -442,6 +438,8 @@ const segments: Segment[] = [
     nodes: [...nodes],
   },
 ]
+
+export const experiences = [{ type: "cyoa_story", contextPack, nodes: nodes, segments: segments }]
 
 // ─── SEED ─────────────────────────────────────────────────────
 
@@ -506,9 +504,11 @@ async function main() {
   console.log("Authoring: http://localhost:3000/experience/" + EXPERIENCE_ID)
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(() => db.$disconnect())
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
+    })
+    .finally(() => db.$disconnect())
+}

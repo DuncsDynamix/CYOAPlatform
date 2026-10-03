@@ -1,4 +1,5 @@
-import type { ExperienceContextPack } from "./legacy-seed-types"
+import type { ContextPack } from "../lib/engine/contract"
+import { pathToFileURL } from "url"
 import { PrismaClient } from "@prisma/client"
 import type {
   Node,
@@ -309,16 +310,17 @@ const nodes: Node[] = [
 
 // ─── CONTEXT PACK ─────────────────────────────────────────────────────────────
 
-const contextPack: ExperienceContextPack = {
-  world: {
-    description:
-      "ClearConnect's Salford customer service centre — a 200-seat contact centre handling billing, technical support, and complaint resolution for a UK broadband and phone provider with 2.3 million subscribers. The learner is a new call centre agent, one week post-training, on their first unsupported shift handling live billing complaints.",
-    rules:
-      "ClearConnect call handling standards: (1) All billing disputes must be acknowledged within the first 60 seconds of a call. (2) Refunds over £50 require a CRM reference number generated before the call ends — do not end a call without one. (3) Call wrap-up notes must include: issue code, resolution code, reference number, and a plain-language summary of the agreed resolution. (4) Any commitment made to a customer during a call is binding — failure to honour a committed timeline triggers an automatic Ofcom complaint under ADR rules. (5) ClearConnect First Call Resolution target: 78%. Repeat contact rate target: below 18%. Average handle time target: 6.5 minutes.",
-    atmosphere:
-      "Professional, busy, performance-measured. The pressure is ambient — queue numbers ticking in the corner, the low hum of neighbouring calls, CSAT scores visible on the wall display. Not hostile, but never relaxed. Competence here is built through consistent small decisions: preparation, empathy, specificity, and follow-through.",
-  },
-  actors: [
+const contextPack: ContextPack = {
+  contractVersion: 2,
+  core: {
+    setting: { summary: "ClearConnect's Salford customer service centre — a 200-seat contact centre handling billing, technical support, and complaint resolution for a UK broadband and phone provider with 2.3 million subscribers. The learner is a new call centre agent, one week post-training, on their first unsupported shift handling live billing complaints.", details: "ClearConnect call handling standards: (1) All billing disputes must be acknowledged within the first 60 seconds of a call. (2) Refunds over £50 require a CRM reference number generated before the call ends — do not end a call without one. (3) Call wrap-up notes must include: issue code, resolution code, reference number, and a plain-language summary of the agreed resolution. (4) Any commitment made to a customer during a call is binding — failure to honour a committed timeline triggers an automatic Ofcom complaint under ADR rules. (5) ClearConnect First Call Resolution target: 78%. Repeat contact rate target: below 18%. Average handle time target: 6.5 minutes." + " " + "Professional, busy, performance-measured. The pressure is ambient — queue numbers ticking in the corner, the low hum of neighbouring calls, CSAT scores visible on the wall display. Not hostile, but never relaxed. Competence here is built through consistent small decisions: preparation, empathy, specificity, and follow-through." },
+    participant: {
+      role: "New call centre agent at ClearConnect, Salford. One week post-training. First unsupported shift on live billing complaints.",
+      perspective: "second",
+      startingKnowledge: "Competent with the CRM system and the basics of call handling procedure. Still developing instincts for de-escalation and managing conversations where the customer is already frustrated before you pick up.",
+      goal: "Handle the complaint call professionally, resolve Mike's issue without escalating, and complete the call wrap-up correctly.",
+    },
+    characters: [
     {
       name: "Mike Preston",
       role: "ClearConnect customer — billing complaint",
@@ -328,7 +330,7 @@ const contextPack: ExperienceContextPack = {
         "Measured and controlled. Not shouting — just unambiguously clear about what he wants and what he's already been through. Gets more frustrated when he hears hedging. Gets calmer when he hears accountability.",
       knowledge:
         "He knows the amount (£120), the date the charge appeared, and that three previous contacts have produced nothing. He does not know the internal reason for the charge — he just knows it shouldn't be there.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "A frustrated customer who wants resolution. He will respond to genuine empathy and specificity — he is not trying to be difficult, he is trying to get a problem fixed.",
     },
     {
@@ -340,68 +342,58 @@ const contextPack: ExperienceContextPack = {
         "Economical and precise. She doesn't over-explain. When she corrects, she names what happened specifically and says what to do differently — she doesn't diagnose the agent's feelings.",
       knowledge:
         "Full working knowledge of ClearConnect systems, Ofcom rules, call handling best practice, and what makes the difference between agents who develop quickly and those who plateau.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "Team leader and first-week mentor. She is present but not hovering. She steps in when it's necessary and debrief constructively afterwards.",
     },
   ],
-  protagonist: {
-    perspective: "you",
-    role: "New call centre agent at ClearConnect, Salford. One week post-training. First unsupported shift on live billing complaints.",
-    knowledge:
-      "Competent with the CRM system and the basics of call handling procedure. Still developing instincts for de-escalation and managing conversations where the customer is already frustrated before you pick up.",
-    goal: "Handle the complaint call professionally, resolve Mike's issue without escalating, and complete the call wrap-up correctly.",
-  },
-  style: {
+    style: {
     tone:
       "Professional, grounded, realistic. The pressure in a call centre is real but not dramatic — it's measured in queue numbers and CSAT scores, not crises. The stakes for each call are genuine but proportionate.",
     language: "en-GB",
     register: "professional",
     targetLength: { min: 100, max: 200 },
-    styleNotes:
+    notes:
       "Use specific call centre language where it fits: CRM, FCR, after-call work, wrap-up, handle time, CSAT. Second person throughout. Present tense. Reference Mike Preston by name — he is a specific person with a specific situation, not a generic 'customer'. When Sarah gives feedback, make it behavioural and specific, not evaluative ('here's what to do differently' not 'that was disappointing').",
   },
-  groundTruth: [
+    references: [
     {
+      id: "clearconnect-billing-and-refund-policy",
       label: "ClearConnect billing and refund policy",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Billing error refunds: all confirmed billing errors must be refunded within 5 working days. Refunds over £50 require a CRM reference number before the call ends — this reference must be verbally communicated to the customer and included in the follow-up confirmation email within 2 hours of the call closing. If an agent commits to a refund timeline on a call, that commitment is binding and logged against their performance record. Goodwill credits (typically £10–£25) may be offered at team leader discretion for delays over 10 working days or for three or more repeat contacts on the same issue.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Billing error refunds: all confirmed billing errors must be refunded within 5 working days. Refunds over £50 require a CRM reference number before the call ends — this reference must be verbally communicated to the customer and included in the follow-up confirmation email within 2 hours of the call closing. If an agent commits to a refund timeline on a call, that commitment is binding and logged against their performance record. Goodwill credits (typically £10–£25) may be offered at team leader discretion for delays over 10 working days or for three or more repeat contacts on the same issue." },
     },
     {
+      id: "ofcom-and-adr-obligations",
       label: "Ofcom and ADR obligations",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Under Ofcom's General Conditions, ClearConnect must handle unresolved complaints within 8 weeks before a customer can escalate to the Alternative Dispute Resolution (ADR) scheme (Communications Ombudsman). Verbal commitments made by agents during calls are considered binding under consumer contract law if the customer can reasonably demonstrate they relied on them. Agents must not make commitments they cannot guarantee — if unsure of a timeline, escalate to team leader rather than give a date that may not be met.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Under Ofcom's General Conditions, ClearConnect must handle unresolved complaints within 8 weeks before a customer can escalate to the Alternative Dispute Resolution (ADR) scheme (Communications Ombudsman). Verbal commitments made by agents during calls are considered binding under consumer contract law if the customer can reasonably demonstrate they relied on them. Agents must not make commitments they cannot guarantee — if unsure of a timeline, escalate to team leader rather than give a date that may not be met." },
     },
     {
+      id: "call-handling-performance-standards",
       label: "Call handling performance standards",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "should_include",
-      content:
-        "ClearConnect KPI targets: First Call Resolution (FCR) 78% — a call is FCR if the customer does not contact us again within 14 days on the same issue. Average Handle Time (AHT) 6.5 minutes. Customer Satisfaction Score (CSAT) 4.2/5.0, measured by post-call SMS survey. Repeat contact rate below 18%. The primary driver of repeat contacts is incomplete wrap-up — specifically: verbal commitments without CRM reference numbers, and no follow-up confirmation email sent. The secondary driver is unresolved empathy — customers who felt unheard during the call, even if the issue was technically resolved.",
+      role: "reference",
+      priority: "should",
+      source: { kind: "text", text: "ClearConnect KPI targets: First Call Resolution (FCR) 78% — a call is FCR if the customer does not contact us again within 14 days on the same issue. Average Handle Time (AHT) 6.5 minutes. Customer Satisfaction Score (CSAT) 4.2/5.0, measured by post-call SMS survey. Repeat contact rate below 18%. The primary driver of repeat contacts is incomplete wrap-up — specifically: verbal commitments without CRM reference numbers, and no follow-up confirmation email sent. The secondary driver is unresolved empathy — customers who felt unheard during the call, even if the issue was technically resolved." },
     },
   ],
-  scripts: [
-    {
+    rules: [
+{
       label: "Empathy before resolution",
       priority: "must",
       trigger: "always",
       instruction:
         "Every customer interaction in this module must demonstrate the principle that empathy comes before resolution. Do not allow generated content to move to fixing the problem before the agent has acknowledged what it felt like to have the problem. This is not soft — it is operationally effective: customers who feel unheard call back even after the issue is resolved.",
     },
-    {
+{
       label: "Specific over vague",
       priority: "must",
       trigger: "always",
       instruction:
         "Never allow generated content to contain vague commitments: 'we will look into it', 'someone will be in touch', 'it should be sorted soon'. Every resolution in this module must be specific: the amount, the method, the timeframe. Vague commitments are the root cause of the failure states in this module.",
     },
-    {
+{
       label: "FCR framing for consequences",
       priority: "should",
       trigger: "always",
@@ -409,12 +401,13 @@ const contextPack: ExperienceContextPack = {
         "When showing outcomes — good or bad — frame them in terms of first call resolution and what happens next for the customer. A good outcome is Mike not needing to call again. A bad outcome is Mike calling back, or escalating to Ofcom. Ground consequences in these operational realities, not abstract 'customer satisfaction'.",
     },
   ],
-  learningObjectives: [
+  },
+  extension: { kind: "training", learningObjectives: [
     "Prepare for each call by reviewing account history before connecting",
     "Acknowledge customer frustration empathetically before moving to resolution",
     "Offer specific, accountable resolutions with a committed timeframe",
     "Complete call wrap-up to the required standard: notes, reference, confirmation email",
-  ],
+  ] },
 }
 
 // ─── SHAPE ────────────────────────────────────────────────────────────────────
@@ -439,6 +432,8 @@ const shape: ShapeDefinition = {
   pacingModel: "competency_build",
   mandatoryNodeIds: ["n1"],
 }
+
+export const experiences = [{ type: "l_and_d", contextPack, nodes: nodes, segments: [] }]
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
@@ -536,9 +531,11 @@ async function main() {
   console.log("    http://localhost:3000/scenario/clearconnect-complaint-handling")
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(() => db.$disconnect())
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
+    })
+    .finally(() => db.$disconnect())
+}

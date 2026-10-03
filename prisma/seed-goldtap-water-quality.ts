@@ -1,4 +1,5 @@
-import type { ExperienceContextPack } from "./legacy-seed-types"
+import type { ContextPack } from "../lib/engine/contract"
+import { pathToFileURL } from "url"
 import { PrismaClient } from "@prisma/client"
 import type {
   Node,
@@ -354,6 +355,7 @@ const nodes: Node[] = [
     rubric: [
       {
         id: "event-recognition",
+        competencyId: "incident-escalation",
         label: "Event recognition and evidence",
         description:
           "Technician recognised a clustered pattern as a possible water quality event rather than routine jobs, and protected the evidence: samples taken at consumer taps before flushing, contractor job pack gaps recorded and reported as found.",
@@ -375,6 +377,7 @@ const nodes: Node[] = [
       },
       {
         id: "customer-communication",
+        competencyId: "customer-communication",
         label: "Customer communication under distress",
         description:
           "On the doorstep with a frightened parent: acknowledged fear before information, was honest about known and unknown without false reassurance or speculation, gave concrete next steps including appropriate health-service signposting, and arranged follow-up.",
@@ -415,16 +418,17 @@ const nodes: Node[] = [
 
 // ─── CONTEXT PACK ─────────────────────────────────────────────────────────────
 
-const contextPack: ExperienceContextPack = {
-  world: {
-    description:
-      "Medway Water — a fictional UK water company supplying 1.4 million customers across Kent. The setting is the distribution network: vans, job queues, DMAs, mains records, and the Orchard Park estate — a 1970s development of four hundred households, one nursing home, and a six-inch main that a contractor repaired on Saturday night. The learner is a Network Technician; the event runs from a Monday morning job queue to the following Monday.",
-    rules:
-      "Medway Water event procedure: (1) A cluster of quality complaints, or any complaint following network work, must be assessed as a possible event, not routine jobs. (2) Where contamination is possible, samples are taken at consumer taps BEFORE flushing — flushing destroys evidence of what customers received. (3) The water quality duty scientist owns event decisions (flushing, notices, notification); operations executes. (4) Events which may affect water quality are notified to the Drinking Water Inspectorate on suspicion, updated as facts confirm. (5) Consumer advice ('do not drink' / boil) is agreed with the health authority (UKHSA) and issued consistently to all affected properties — never informally or selectively. (6) Vulnerable and priority-services customers are protected first, with alternative supplies. (7) All network work is done under water hygiene rules: National Water Hygiene cards, disinfected fittings, hygiene-completed permits — gaps are reported as found. (8) A timeline log is kept from the first hour of any suspected event.",
-    atmosphere:
-      "Working-day realism under a tightening clock. Vans, kerbside conversations, a job queue that keeps filling, and the specific dread of a public supply going wrong quietly over a weekend. The register is professional and unglamorous — hi-vis and sample bottles, not war rooms. Pressure arrives as reasonable-sounding people wanting reasonable-sounding shortcuts.",
-  },
-  actors: [
+const contextPack: ContextPack = {
+  contractVersion: 2,
+  core: {
+    setting: { summary: "Medway Water — a fictional UK water company supplying 1.4 million customers across Kent. The setting is the distribution network: vans, job queues, DMAs, mains records, and the Orchard Park estate — a 1970s development of four hundred households, one nursing home, and a six-inch main that a contractor repaired on Saturday night. The learner is a Network Technician; the event runs from a Monday morning job queue to the following Monday.", details: "Medway Water event procedure: (1) A cluster of quality complaints, or any complaint following network work, must be assessed as a possible event, not routine jobs. (2) Where contamination is possible, samples are taken at consumer taps BEFORE flushing — flushing destroys evidence of what customers received. (3) The water quality duty scientist owns event decisions (flushing, notices, notification); operations executes. (4) Events which may affect water quality are notified to the Drinking Water Inspectorate on suspicion, updated as facts confirm. (5) Consumer advice ('do not drink' / boil) is agreed with the health authority (UKHSA) and issued consistently to all affected properties — never informally or selectively. (6) Vulnerable and priority-services customers are protected first, with alternative supplies. (7) All network work is done under water hygiene rules: National Water Hygiene cards, disinfected fittings, hygiene-completed permits — gaps are reported as found. (8) A timeline log is kept from the first hour of any suspected event." + " " + "Working-day realism under a tightening clock. Vans, kerbside conversations, a job queue that keeps filling, and the specific dread of a public supply going wrong quietly over a weekend. The register is professional and unglamorous — hi-vis and sample bottles, not war rooms. Pressure arrives as reasonable-sounding people wanting reasonable-sounding shortcuts." },
+    participant: {
+      role: "Network Technician, Medway Water distribution team — four years in, National Water Hygiene carded, trusted with a van and a patch.",
+      perspective: "second",
+      startingKnowledge: "Solid on the tools: mains, flushing, sampling technique, the estate's network. Trained on the event procedure and water hygiene rules — and about to discover the distance between knowing a procedure and holding it against a manager on the phone and a mother on a doorstep.",
+      goal: "Read the morning correctly, protect the public through the uncertain hours, hold the procedural line under pressure from above, tell the truth kindly to the people on the street, and end the week with a record that stands inspection.",
+    },
+    characters: [
     {
       name: "Steve Malin",
       role: "Network duty manager, Medway Water",
@@ -434,7 +438,7 @@ const contextPack: ExperienceContextPack = {
         "Fast, blunt, list-shaped. Talks in job counts and clock times. Pushes hard once, tests whether you fold, then listens if you come back with substance. Never bullies; pressures. On the far side of agreement he becomes brisk and supportive: 'right, then here's what I'll do from my end.'",
       knowledge:
         "The network cold: mains, DMAs, valve positions, which contractor gangs cut corners. The event procedure in outline — he knows the quality team owns these calls, which is exactly why his flush-first framing is a test as much as an instruction. Knows nothing yet about the job pack gaps or Fairhaven House until told.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "The learner's duty manager — four years of mutual professional respect. He rates them, which is why how they handle this call sets how he treats their judgment for years. This is pressure from a decent manager having a bad Monday: the hardest kind to hold a line against.",
       voice: {
         vendorVoiceId: "JBFqnCBsd6RMkjVDRZzb", // "George" — British male, warm gravel
@@ -451,7 +455,7 @@ const contextPack: ExperienceContextPack = {
         "Rapid, direct, interrupting at first — questions stacked on questions, the baby jiggled on her hip. Quotes specifics: days, feeds, the card through the door. Goes quiet and very attentive the moment someone starts telling her the truth. Says 'right' when she's absorbing instructions.",
       knowledge:
         "Everything a resident knows and nothing more: the brown water Saturday, the smell, the card today, the street's WhatsApp theories. Does not know what a coliform is — and does not need the word; she needs what it means for her son.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "A stranger in company hi-vis — the first reachable human face of Medway Water. Whatever the learner says in these two minutes IS the company to her, permanently.",
       voice: {
         vendorVoiceId: "pFZP5JQG7iQjIQuC4Bku", // "Lily" — British female, warm
@@ -460,79 +464,68 @@ const contextPack: ExperienceContextPack = {
       },
     },
   ],
-  protagonist: {
-    perspective: "you",
-    role: "Network Technician, Medway Water distribution team — four years in, National Water Hygiene carded, trusted with a van and a patch.",
-    knowledge:
-      "Solid on the tools: mains, flushing, sampling technique, the estate's network. Trained on the event procedure and water hygiene rules — and about to discover the distance between knowing a procedure and holding it against a manager on the phone and a mother on a doorstep.",
-    goal:
-      "Read the morning correctly, protect the public through the uncertain hours, hold the procedural line under pressure from above, tell the truth kindly to the people on the street, and end the week with a record that stands inspection.",
-  },
-  style: {
+    style: {
     tone:
       "Grounded operational realism with quiet stakes. The tension lives in job queues, sample bottles, phone calls, and doorsteps — never in melodrama. Consequences are institutional and human: files, notices, a baby's bottles.",
     language: "en-GB",
     register: "professional",
     targetLength: { min: 130, max: 240 },
-    styleNotes:
+    notes:
       "Second person, present tense. Day and time markers open scenes where natural ('Monday, 07:20'). Use the industry's real vocabulary plainly: DMA, mains, flushing, sampling, event, notice, hygiene card, job pack. Named characters are specific people under specific pressures. Keep water science at briefing level — what a result means, never a chemistry lesson. Emotional register: restraint; the doorstep scene carries the heart of the module and must be written with care for Kayleigh's dignity.",
   },
-  groundTruth: [
+    references: [
     {
+      id: "water-hygiene-principles-national-water-hygiene-themes",
       label: "Water hygiene principles (National Water Hygiene themes)",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "All work on the potable network is done under water hygiene rules: operatives carry National Water Hygiene cards; fittings and tools in contact with potable water are disinfected; permits include hygiene sign-off; mains returned to service after invasive work are flushed, disinfected where required, and sampled per procedure. An off-and-on repair with groundwater in the excavation is a recognised contamination pathway (ingress under depressurisation). Gaps in hygiene records after network work are themselves reportable findings — the record of what was NOT done is evidence, and smoothing it over compounds the failure.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "All work on the potable network is done under water hygiene rules: operatives carry National Water Hygiene cards; fittings and tools in contact with potable water are disinfected; permits include hygiene sign-off; mains returned to service after invasive work are flushed, disinfected where required, and sampled per procedure. An off-and-on repair with groundwater in the excavation is a recognised contamination pathway (ingress under depressurisation). Gaps in hygiene records after network work are themselves reportable findings — the record of what was NOT done is evidence, and smoothing it over compounds the failure." },
     },
     {
+      id: "event-response-and-notification-duties",
       label: "Event response and notification duties",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Under the drinking water quality framework (Water Supply (Water Quality) Regulations and DWI guidance), companies must notify the Drinking Water Inspectorate of events which may affect, or may have affected, drinking water quality — the duty runs from suspicion, not laboratory confirmation, and initial notifications are updated as facts develop. Consumer protection advice ('do not drink', boil water) is decided by the company's water quality function in consultation with health authorities (UKHSA), issued consistently to all affected properties, and lifted only on satisfactory results. Where contamination is suspected, samples at consumer taps before remedial flushing are the primary evidence of consumer exposure; flushing first is evidentially destructive. Priority-services and vulnerable customers (care settings, infants, dialysis) are protected first with alternative supplies.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Under the drinking water quality framework (Water Supply (Water Quality) Regulations and DWI guidance), companies must notify the Drinking Water Inspectorate of events which may affect, or may have affected, drinking water quality — the duty runs from suspicion, not laboratory confirmation, and initial notifications are updated as facts develop. Consumer protection advice ('do not drink', boil water) is decided by the company's water quality function in consultation with health authorities (UKHSA), issued consistently to all affected properties, and lifted only on satisfactory results. Where contamination is suspected, samples at consumer taps before remedial flushing are the primary evidence of consumer exposure; flushing first is evidentially destructive. Priority-services and vulnerable customers (care settings, infants, dialysis) are protected first with alternative supplies." },
     },
     {
+      id: "operational-facts-fixed-for-this-exercise",
       label: "Operational facts fixed for this exercise",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "should_include",
-      content:
-        "Fixed facts: three discolouration complaints logged overnight within 400m on the Orchard Park DMA, all downstream of a six-inch main repaired by a framework contractor between 22:00 Saturday and 02:00 Sunday (burst clamp; supply off and on; excavation held groundwater). Fairhaven House, a 40-bed nursing home, draws from the affected run. Priority lab turnaround is same-day for first-pass, next-day for confirmation. Alternative supplies available: bottled water stations and one 10,000-litre tanker within two hours. The learner's timeline log, sample records, and photographs of the contractor job pack are the evidential spine of the event file.",
+      role: "reference",
+      priority: "should",
+      source: { kind: "text", text: "Fixed facts: three discolouration complaints logged overnight within 400m on the Orchard Park DMA, all downstream of a six-inch main repaired by a framework contractor between 22:00 Saturday and 02:00 Sunday (burst clamp; supply off and on; excavation held groundwater). Fairhaven House, a 40-bed nursing home, draws from the affected run. Priority lab turnaround is same-day for first-pass, next-day for confirmation. Alternative supplies available: bottled water stations and one 10,000-litre tanker within two hours. The learner's timeline log, sample records, and photographs of the contractor job pack are the evidential spine of the event file." },
     },
   ],
-  scripts: [
-    {
+    rules: [
+{
       label: "Clocks and exposure always visible",
       priority: "must",
       trigger: "always",
       instruction:
         "Every scene keeps the exposure window in view: who has been drinking this water, since when, and what has and hasn't yet been decided. Time markers are concrete. The pressure of this module is the gap between suspicion and confirmation — never let that gap feel comfortable.",
     },
-    {
+{
       label: "Decisions belong to the learner",
       priority: "must",
       trigger: "always",
       instruction:
         "Narration never resolves, recommends, or pre-empts a decision the learner has not made. Characters pressure from their own interests; procedures state duties; the choosing is always left at the learner's feet.",
     },
-    {
+{
       label: "Science at briefing level, honesty about uncertainty",
       priority: "must",
       trigger: "always",
       instruction:
         "Water quality science stays at the level a competent technician would brief: what a result indicates, what is unknown, what the precaution is for. Never provide clinical reassurance or diagnosis about any person's health — the correct move is always health-service signposting, and generated content must model that rather than 'the baby will be fine'.",
     },
-    {
+{
       label: "Vary the surface, keep the structure",
       priority: "must",
       trigger: "always",
       instruction:
         "On each session vary incidental specifics — which hygiene gaps appear in the job pack, the exact lab finding at briefing level, house numbers, weather, minor characters — while keeping every structural fact (the cluster, the repair, the nursing home, the timings, the duties) fixed. A repeat run must test the same judgment against fresh detail.",
     },
-    {
+{
       label: "Consequences compound through state",
       priority: "should",
       trigger: "always",
@@ -540,14 +533,14 @@ const contextPack: ExperienceContextPack = {
         "Generated scenes honestly reflect accumulated decisions: sampling-first preserves evidence that later scenes rely on; flush-first leaves gaps that later scenes expose; prompt notification changes the street's temperature; the doorstep conversation echoes into the closing file. Good and bad decisions must both visibly compound.",
     },
   ],
-  useCaseCategory: "crisis_exercise",
-  learningObjectives: [
+  },
+  extension: { kind: "training", learningObjectives: [
     "Recognise a complaint cluster after network work as a possible water quality event",
     "Protect evidence: sample at consumer taps before flushing where contamination is suspected",
     "Hold the precautionary line under operational pressure and escalate to the water quality function",
     "Apply notification duties on suspicion: DWI event notification and authorised, consistent consumer advice",
     "Communicate honestly with frightened customers: acknowledge, be truthful about uncertainty, give concrete steps and health signposting",
-  ],
+  ] },
 }
 
 // ─── SHAPE ────────────────────────────────────────────────────────────────────
@@ -573,6 +566,8 @@ const shape: ShapeDefinition = {
   mandatoryNodeIds: ["n1"],
   displaySteps: 10,
 }
+
+export const experiences = [{ type: "l_and_d", contextPack, nodes: nodes, segments: [] }]
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
@@ -640,9 +635,11 @@ async function main() {
   console.log("    http://localhost:6060/scenario/goldtap-water-quality-event")
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(() => db.$disconnect())
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
+    })
+    .finally(() => db.$disconnect())
+}

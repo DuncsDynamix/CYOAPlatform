@@ -1,4 +1,4 @@
-import type { ExperienceContextPack } from "./legacy-seed-types"
+import type { ContextPack } from "../lib/engine/contract"
 /**
  * NWH certification training — slide-deck variant (Experience ID: ...0042)
  *
@@ -8,6 +8,7 @@ import type { ExperienceContextPack } from "./legacy-seed-types"
  * PPTX media folder, copied to public/uploads/seed/ at seed time.
  */
 
+import { pathToFileURL } from "url"
 import { PrismaClient } from "@prisma/client"
 import { copyFile, mkdir } from "fs/promises"
 import { existsSync } from "fs"
@@ -644,35 +645,33 @@ const nodes: Node[] = [
 
 // ─── CONTEXT PACK ────────────────────────────────────────────────────────────
 
-const contextPack: ExperienceContextPack = {
-  world: {
-    description: "National Water Hygiene (NWH) certification training delivered under the EUSR scheme. Learners are water industry operatives seeking certification to work on restricted operations involving potable water assets.",
-    rules: "Training content is factual and compliance-driven. MCQ questions have one correct answer. All content is based on the NWH syllabus as required by the EUSR scheme.",
-    atmosphere: "Professional, formal, compliance-focused. Content is presented via slides then tested via MCQ.",
-  },
-  protagonist: {
-    perspective: "you",
-    role: "Water industry operative seeking NWH certification",
-    knowledge: "General awareness of water industry work. Seeking the knowledge and certification to work on restricted operations.",
-    goal: "Complete the NWH training modules and pass the 25-question test with at least 20 correct answers to receive an NWH card.",
-  },
-  actors: [],
-  style: {
+const contextPack: ContextPack = {
+  contractVersion: 2,
+  core: {
+    setting: { summary: "National Water Hygiene (NWH) certification training delivered under the EUSR scheme. Learners are water industry operatives seeking certification to work on restricted operations involving potable water assets.", details: "Training content is factual and compliance-driven. MCQ questions have one correct answer. All content is based on the NWH syllabus as required by the EUSR scheme." + " " + "Professional, formal, compliance-focused. Content is presented via slides then tested via MCQ." },
+    participant: {
+      role: "Water industry operative seeking NWH certification",
+      perspective: "second",
+      startingKnowledge: "General awareness of water industry work. Seeking the knowledge and certification to work on restricted operations.",
+      goal: "Complete the NWH training modules and pass the 25-question test with at least 20 correct answers to receive an NWH card.",
+    },
+    characters: [],
+    style: {
     tone: "formal",
     language: "en-GB",
     register: "professional",
     targetLength: { min: 80, max: 200 },
-    styleNotes: "Professional, clear, compliance-focused. No narrative embellishment. Present content factually.",
+    notes: "Professional, clear, compliance-focused. No narrative embellishment. Present content factually.",
   },
-  groundTruth: [],
-  scripts: [],
-  useCaseCategory: "course_replication",
-  learningObjectives: [
+    references: [],
+    rules: [],
+  },
+  extension: { kind: "training", learningObjectives: [
     "Explain why water is a uniquely precious resource and why hygiene is every operative's personal responsibility",
     "Recognise how water carries disease and why operatives are a critical barrier against contamination",
     "Identify restricted operations, health exclusion rules, and the consequences of contamination",
     "Apply the prevention requirements: clothing, storage, approved products and contamination response",
-  ],
+  ] },
 }
 
 // ─── SHAPE ───────────────────────────────────────────────────────────────────
@@ -705,6 +704,8 @@ const shape: ShapeDefinition = {
   ],
   displaySteps: 31,
 }
+
+export const experiences = [{ type: "l_and_d", contextPack, nodes: nodes, segments: [] }]
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
@@ -789,6 +790,8 @@ async function main() {
   console.log("  Visit: http://localhost:3000/scenario/" + EXPERIENCE_ID)
 }
 
-main()
-  .catch((e) => { console.error(e); process.exit(1) })
-  .finally(() => db.$disconnect())
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .catch((e) => { console.error(e); process.exit(1) })
+    .finally(() => db.$disconnect())
+}

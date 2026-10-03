@@ -1,4 +1,5 @@
-import type { ExperienceContextPack } from "./legacy-seed-types"
+import type { ContextPack } from "../lib/engine/contract"
+import { pathToFileURL } from "url"
 import { PrismaClient } from "@prisma/client"
 import { copyFile, mkdir } from "fs/promises"
 import { existsSync } from "fs"
@@ -609,16 +610,17 @@ const nodes: Node[] = [
 
 // ─── CONTEXT PACK ────────────────────────────────────────────────────────────
 
-const contextPack: ExperienceContextPack = {
-  world: {
-    description:
-      "Thames Water's Lee Valley Water Treatment Works, Hertfordshire. One of the largest drinking water treatment sites in the UK, processing raw water from the River Lee through sedimentation, rapid gravity filtration, and chlorination before supplying over 800,000 people across North London and Hertfordshire. The learner is an 18-month field operations technician — competent but still developing judgement.",
-    rules:
-      "All decisions must comply with: the Water Supply (Water Quality) Regulations 2016; Thames Water's internal WIMS (Water Industry Management System) logging requirements; the DWI (Drinking Water Inspectorate) reporting framework; and Thames Water's asset management standard for equipment isolation. The regulatory environment is non-negotiable — there is no 'close enough' in water quality.",
-    atmosphere:
-      "Professional, pressured, consequential. The stakes are real but not dramatic — this is ordinary operational life at a regulated utility. Competence here is built through small correct decisions, not heroics. The tone should feel like a well-run industrial facility: purposeful, structured, occasionally stressful.",
-  },
-  actors: [
+const contextPack: ContextPack = {
+  contractVersion: 2,
+  core: {
+    setting: { summary: "Thames Water's Lee Valley Water Treatment Works, Hertfordshire. One of the largest drinking water treatment sites in the UK, processing raw water from the River Lee through sedimentation, rapid gravity filtration, and chlorination before supplying over 800,000 people across North London and Hertfordshire. The learner is an 18-month field operations technician — competent but still developing judgement.", details: "All decisions must comply with: the Water Supply (Water Quality) Regulations 2016; Thames Water's internal WIMS (Water Industry Management System) logging requirements; the DWI (Drinking Water Inspectorate) reporting framework; and Thames Water's asset management standard for equipment isolation. The regulatory environment is non-negotiable — there is no 'close enough' in water quality." + " " + "Professional, pressured, consequential. The stakes are real but not dramatic — this is ordinary operational life at a regulated utility. Competence here is built through small correct decisions, not heroics. The tone should feel like a well-run industrial facility: purposeful, structured, occasionally stressful." },
+    participant: {
+      role: "Field Operations Technician, Thames Water Lee Valley Works. 18 months in post. Technically solid, still building confidence in escalation and regulatory judgement.",
+      perspective: "second",
+      startingKnowledge: "Working knowledge of plant operations, monitoring procedures, and the WIMS system. Less confident about the regulatory framework and when to escalate vs. self-resolve.",
+      goal: "Complete the shift safely, make the right calls, and leave the site with the water supply uncompromised and the records clean.",
+    },
+    characters: [
     {
       name: "Priya Sharma",
       role: "Shift Supervisor",
@@ -628,7 +630,7 @@ const contextPack: ExperienceContextPack = {
         "Measured, factual. Uses precise operational language. Never emotional. When she corrects, she gives context, not just the correction.",
       knowledge:
         "Full working knowledge of all Thames Water operational standards, DWI requirements, and WIMS procedures. Twenty years in the industry.",
-      relationshipToProtagonist:
+      relationshipToParticipant:
         "Supervisor and mentor. She is watching the learner's development without being heavy-handed about it.",
     },
     {
@@ -639,74 +641,64 @@ const contextPack: ExperienceContextPack = {
       speech:
         "Informal, a bit rushed. Not used to being accountable for the small procedural things.",
       knowledge: "Technical competence is fine. Record-keeping discipline is the gap.",
-      relationshipToProtagonist: "Peer — same grade, similar experience.",
+      relationshipToParticipant: "Peer — same grade, similar experience.",
     },
   ],
-  protagonist: {
-    perspective: "you",
-    role: "Field Operations Technician, Thames Water Lee Valley Works. 18 months in post. Technically solid, still building confidence in escalation and regulatory judgement.",
-    knowledge:
-      "Working knowledge of plant operations, monitoring procedures, and the WIMS system. Less confident about the regulatory framework and when to escalate vs. self-resolve.",
-    goal: "Complete the shift safely, make the right calls, and leave the site with the water supply uncompromised and the records clean.",
-  },
-  style: {
+    style: {
     tone:
       "Professional, grounded, realistic. No melodrama. The stakes are real but this is an ordinary working day — the tension comes from judgement under time pressure, not crisis.",
     language: "en-GB",
     register: "professional",
     targetLength: { min: 120, max: 220 },
-    styleNotes:
+    notes:
       "Use precise operational language — NTU readings, WIMS, DWI, pump terminology — it grounds the training in reality. Second person throughout. Present tense. Avoid corporate motivational language. When consequences play out, be specific about the regulatory or operational impact rather than vague about 'serious problems'.",
   },
-  groundTruth: [
+    references: [
     {
+      id: "thames-water-operational-standards",
       label: "Thames Water operational standards",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Thames Water internal action level for treated water turbidity: 1.0 NTU. DWI regulatory limit: 4.0 NTU. Chlorine residual minimum in distribution: 0.1 mg/l. Asset vibration tolerance band for transfer pumps: 0–7 mm/s (amber >3.5, red >7.0). All water quality complaints from members of the public must be logged in WIMS and treated as potential incidents pending sample results — they do not route via customer services.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Thames Water internal action level for treated water turbidity: 1.0 NTU. DWI regulatory limit: 4.0 NTU. Chlorine residual minimum in distribution: 0.1 mg/l. Asset vibration tolerance band for transfer pumps: 0–7 mm/s (amber >3.5, red >7.0). All water quality complaints from members of the public must be logged in WIMS and treated as potential incidents pending sample results — they do not route via customer services." },
     },
     {
+      id: "regulatory-framework",
       label: "Regulatory framework",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Water Supply (Water Quality) Regulations 2016 (England): requires water suppliers to maintain complete and accurate process and quality records. Any retrospective amendment to process records must be formally authorised and documented. Water Industry Act 1991: sets the legal framework for drinking water quality. DWI can require access to all operational records and WIMS data without notice. Falsification of water quality records is a criminal offence.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Water Supply (Water Quality) Regulations 2016 (England): requires water suppliers to maintain complete and accurate process and quality records. Any retrospective amendment to process records must be formally authorised and documented. Water Industry Act 1991: sets the legal framework for drinking water quality. DWI can require access to all operational records and WIMS data without notice. Falsification of water quality records is a criminal offence." },
     },
     {
+      id: "competency-framework",
       label: "Competency framework",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "The four competencies being assessed in this module: (1) Water Quality Monitoring — correct response to automated alarm conditions. (2) Regulatory Record Integrity — understanding that process records are legal documents. (3) Asset Management — precautionary equipment isolation vs. run-to-fail risk. (4) Incident Escalation — water quality complaints are operational incidents, not customer service matters.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "The four competencies being assessed in this module: (1) Water Quality Monitoring — correct response to automated alarm conditions. (2) Regulatory Record Integrity — understanding that process records are legal documents. (3) Asset Management — precautionary equipment isolation vs. run-to-fail risk. (4) Incident Escalation — water quality complaints are operational incidents, not customer service matters." },
     },
   ],
-  scripts: [
-    {
+    rules: [
+{
       label: "Regulatory grounding",
       priority: "must",
       trigger: "always",
       instruction:
         "Every consequence — good or bad — must be grounded in a specific regulatory requirement or operational standard, not vague 'best practice'. Name the regulation, the internal standard, or the system (WIMS, DWI, Water Quality Regulations). This is not corporate compliance theatre — it is what protects drinking water safety.",
     },
-    {
+{
       label: "No right-answer signposting",
       priority: "must",
       trigger: "always",
       instruction:
         "Before a CHOICE node, never indicate which option is correct. Present the situation factually and end at the decision point. The learner must use their judgement, not pick up cues from the narrator.",
     },
-    {
+{
       label: "Consequences are educational not punitive",
       priority: "must",
       trigger: "always",
       instruction:
         "When a learner makes a sub-optimal choice, the consequence must be proportionate and framed as a learning opportunity. Priya corrects but does not punish. The DWI framework is serious but not catastrophic for a first-time lapse. The goal is changed behaviour, not fear.",
     },
-    {
+{
       label: "Endpoint personalisation",
       priority: "should",
       trigger: "on_node_type",
@@ -715,11 +707,11 @@ const contextPack: ExperienceContextPack = {
         "The endpoint summary must reference specific decisions from the learner's session history, not generic feedback. If they got Q1 right but Q3 wrong, name those specifically. The debrief should feel like it is talking about this specific shift, not a template.",
     },
   ],
-  useCaseCategory: "assessed_training",
-  learningObjectives: [
+  },
+  extension: { kind: "training", learningObjectives: [
     "Respond to water quality alarms decisively and protect the integrity of process records",
     "Manage asset risk under peak demand: recognise warning signs and act before failure",
-  ],
+  ] },
 }
 
 // ─── SHAPE ───────────────────────────────────────────────────────────────────
@@ -785,6 +777,8 @@ const segments: Segment[] = [
     nodes: nodes.filter((n) => AFTERNOON_NODE_IDS.includes(n.id)),
   },
 ]
+
+export const experiences = [{ type: "l_and_d", contextPack, nodes: nodes, segments: segments }]
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
@@ -885,9 +879,11 @@ async function main() {
   console.log("  Open: http://localhost:3000/experience/" + EXPERIENCE_ID)
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(() => db.$disconnect())
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
+    })
+    .finally(() => db.$disconnect())
+}

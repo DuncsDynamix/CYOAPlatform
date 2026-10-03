@@ -1,4 +1,4 @@
-import type { ExperienceContextPack } from "./legacy-seed-types"
+import type { ContextPack } from "../lib/engine/contract"
 /**
  * Gold Tap Training — anchor design partner seed.
  *
@@ -12,8 +12,10 @@ import type { ExperienceContextPack } from "./legacy-seed-types"
  *
  * Run: npx tsx prisma/seed-goldtap.ts
  */
+import { pathToFileURL } from "url"
 import { db } from "../lib/db/prisma"
 import { USE_CASE_PACKS } from "../lib/engine/usecases"
+import { GOLDTAP_COMPETENCIES } from "./seed-data/goldtap-competencies"
 import type { Node, ShapeDefinition } from "../types/experience"
 
 const ORG_ID = "00000000-0000-0000-0000-000000000051"
@@ -25,15 +27,17 @@ const LEARNER_B_ID = "00000000-0000-0000-0000-000000000054"
 
 // ─── CONTEXT PACK ─────────────────────────────────────────────────────────────
 
-const contextPack: ExperienceContextPack = {
-  world: {
-    description:
-      "The Gilded Lion, a busy gastropub on a Friday evening. The learner is a recently hired bar team member on their first weekend shift. The venue holds a premises licence; the duty manager is on site but stretched.",
-    rules:
-      "Realistic UK licensed-premises setting. Licensing Act 2003 applies: it is an offence to serve alcohol to a person who is drunk. No dramatic exaggeration — consequences are professional and legal, not theatrical.",
-    atmosphere: "Loud, warm, fast-moving. Pressure comes from queues and regulars, not villains.",
-  },
-  actors: [
+const contextPack: ContextPack = {
+  contractVersion: 2,
+  core: {
+    setting: { summary: "The Gilded Lion, a busy gastropub on a Friday evening. The learner is a recently hired bar team member on their first weekend shift. The venue holds a premises licence; the duty manager is on site but stretched.", details: "Realistic UK licensed-premises setting. Licensing Act 2003 applies: it is an offence to serve alcohol to a person who is drunk. No dramatic exaggeration — consequences are professional and legal, not theatrical." + " " + "Loud, warm, fast-moving. Pressure comes from queues and regulars, not villains." },
+    participant: {
+      role: "new bar team member",
+      perspective: "second",
+      startingKnowledge: "Completed induction e-learning; first weekend shift; knows where the duty manager is.",
+      goal: "Serve customers well while meeting legal responsibilities around alcohol service.",
+    },
+    characters: [
     {
       name: "Marie",
       role: "Duty manager at The Gilded Lion",
@@ -42,33 +46,35 @@ const contextPack: ExperienceContextPack = {
       speech: "Plain, brisk sentences. Asks pointed questions before giving answers.",
       knowledge:
         "Personal licence holder. Knows the Licensing Act 2003 duties on serving intoxicated customers, refusal procedures, and the venue's incident log.",
-      relationshipToProtagonist: "Line manager — supportive but assessing how the learner handled the situation.",
+      relationshipToParticipant: "Line manager — supportive but assessing how the learner handled the situation.",
     },
   ],
-  protagonist: {
-    perspective: "you",
-    role: "new bar team member",
-    knowledge: "Completed induction e-learning; first weekend shift; knows where the duty manager is.",
-    goal: "Serve customers well while meeting legal responsibilities around alcohol service.",
-  },
-  style: {
+    style: {
     tone: "grounded and professional, with warmth",
     language: "en-GB",
     register: "plain",
     targetLength: { min: 120, max: 220 },
-    styleNotes: "Second person, present tense. Concrete sensory detail of a busy bar. No moralising narrator.",
+    notes: "Second person, present tense. Concrete sensory detail of a busy bar. No moralising narrator.",
   },
-  groundTruth: [
+    references: [
     {
+      id: "licensing-duty",
       label: "Licensing duty",
-      type: "inline",
-      fetchStrategy: "on_session_start",
-      priority: "must_include",
-      content:
-        "Under the Licensing Act 2003 it is an offence to knowingly sell alcohol to a person who is drunk. Staff should refuse service politely, offer alternatives (water, food), and involve the duty manager when a refusal may escalate. Refusals should be logged.",
+      role: "reference",
+      priority: "must",
+      source: { kind: "text", text: "Under the Licensing Act 2003 it is an offence to knowingly sell alcohol to a person who is drunk. Staff should refuse service politely, offer alternatives (water, food), and involve the duty manager when a refusal may escalate. Refusals should be logged." },
     },
   ],
-  scripts: [],
+    rules: [],
+  },
+  extension: {
+    kind: "training",
+    learningObjectives: [
+      "Recognise that serving a visibly intoxicated customer is an offence and that the duty applies to the individual server",
+      "Refuse service in a low-key, respectful way that offers alternatives and avoids an audience",
+      "Involve the duty manager appropriately when a situation could escalate",
+    ],
+  },
 }
 
 // ─── SHAPE ────────────────────────────────────────────────────────────────────
@@ -204,6 +210,7 @@ const nodes: Node[] = [
       },
       {
         id: "crit-escalation",
+        competencyId: "incident-escalation",
         label: "Sensible use of escalation",
         description:
           "Learner involved the duty manager appropriately — neither dumping the decision nor refusing help when a situation could escalate.",
@@ -231,32 +238,35 @@ const nodes: Node[] = [
   },
 ]
 
+export const experiences = [{ type: "l_and_d", contextPack, nodes: nodes, segments: [] }]
+
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
 async function main() {
   console.log("Seeding Gold Tap Training (anchor design partner)…")
-
-  const existing = await db.experience.findUnique({ where: { id: EXPERIENCE_ID } })
-  if (existing) {
-    console.log("✓ Already seeded. Run with a clean DB to re-seed.")
-    return
-  }
 
   const useCasePack = USE_CASE_PACKS.l_and_d
   if (!useCasePack) throw new Error('USE_CASE_PACK "l_and_d" not found in lib/engine/usecases')
 
   await db.org.upsert({
     where: { id: ORG_ID },
-    update: {},
+    update: { competencyFramework: GOLDTAP_COMPETENCIES as unknown as object[] },
     create: {
       id: ORG_ID,
       name: "Gold Tap Training",
       slug: "gold-tap-training",
       trainingTier: "training_pilot",
       isOperator: false,
+      competencyFramework: GOLDTAP_COMPETENCIES as unknown as object[],
     },
   })
   console.log("  ✓ Org seeded (Gold Tap Training, training_pilot)")
+
+  const existing = await db.experience.findUnique({ where: { id: EXPERIENCE_ID } })
+  if (existing) {
+    console.log("✓ Already seeded. Run with a clean DB to re-seed.")
+    return
+  }
 
   // The dev author joins Gold Tap as an owner — Gold Tap is the anchor
   // partner, so local dev should see the org-gated experience end to end.
@@ -334,9 +344,11 @@ async function main() {
   console.log("Done. Play at /scenario/" + EXPERIENCE_ID)
 }
 
-main()
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
-  .finally(() => db.$disconnect())
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
+    })
+    .finally(() => db.$disconnect())
+}
