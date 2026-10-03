@@ -77,3 +77,36 @@ describe("emptyContextPack / getContextPack", () => {
     expect(getContextPack(exp)).toBe(getContextPack(exp))
   })
 })
+
+describe("robustness: never throws, recovers v2 data", () => {
+  it("drops invalid voice.pace without throwing", () => {
+    const legacyWithBadPace = {
+      actors: [{ name: "Test", role: "Role", personality: "P", speech: "S", knowledge: "K", relationshipToProtagonist: "Friend", voice: { vendorVoiceId: "v1", pace: "fast" } }],
+    }
+    const { pack, warnings } = normaliseContextPack(legacyWithBadPace, "l_and_d")
+    expect(pack.core.characters[0]?.voice?.vendorVoiceId).toBe("v1")
+    expect(pack.core.characters[0]?.voice?.pace).toBeUndefined()
+    expect(ContextPackSchema.safeParse(pack).success).toBe(true)
+  })
+
+  it("recovers v2 data when pack has one invalid field", () => {
+    const malformedV2 = {
+      contractVersion: 2,
+      core: {
+        setting: { summary: "Original summary", details: "Original details" },
+        participant: { role: "Role", perspective: "sideways", startingKnowledge: "Know", goal: "Goal" },
+        characters: [],
+        style: { tone: "Tone", register: "Reg", language: "en-GB", targetLength: { min: 100, max: 200 }, notes: "Notes" },
+        references: [{ id: "ref-1", label: "Ref 1", role: "reference", priority: "must", source: { kind: "text", text: "Content" } }],
+        rules: [],
+      },
+      extension: { kind: "training", learningObjectives: ["Obj 1", "Obj 2"] },
+    }
+    const { pack, warnings } = normaliseContextPack(malformedV2, "l_and_d")
+    expect(pack.core.setting.summary).toBe("Original summary")
+    expect(pack.core.references).toEqual([{ id: "ref-1", label: "Ref 1", role: "reference", priority: "must", source: { kind: "text", text: "Content" } }])
+    expect(pack.extension).toEqual({ kind: "training", learningObjectives: ["Obj 1", "Obj 2"] })
+    expect(pack.core.participant.perspective).toBe("second")
+    expect(ContextPackSchema.safeParse(pack).success).toBe(true)
+  })
+})

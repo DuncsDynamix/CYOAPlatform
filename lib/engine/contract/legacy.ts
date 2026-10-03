@@ -1,4 +1,4 @@
-import { ContextPackSchema, type ContextPack, type ReferenceItem } from "./schemas"
+import { ContextPackSchema, ReferenceItemSchema, type ContextPack, type ReferenceItem } from "./schemas"
 
 /** Use case → extension kind. education reuses the objectives-led training shape. */
 export function extensionKindFor(useCaseId: string): "training" | "story" {
@@ -62,6 +62,8 @@ export function normaliseContextPack(
   }
 
   const core = obj(r.core)
+  const coreExtension = obj(core.extension)
+  const rootExtension = obj(r.extension)
   const world = obj(r.world)
   const protagonist = obj(r.protagonist)
   const participantV2 = obj(core.participant)
@@ -69,20 +71,33 @@ export function normaliseContextPack(
   const targetLength = obj(style.targetLength)
 
   const references: ReferenceItem[] = []
-  arr(r.groundTruth).forEach((g) => {
-    const gt = obj(g)
-    if (gt.type === "inline" && typeof gt.content === "string") {
-      references.push({
-        id: `ref-${references.length + 1}`,
-        label: str(gt.label),
-        role: "reference",
-        priority: PRIORITY[str(gt.priority)] ?? "should",
-        source: { kind: "text", text: gt.content },
-      })
-    } else {
-      warnings.push(`Dropped non-inline reference "${str(gt.label)}" (${str(gt.type) || "unknown"} sources were never supported)`)
-    }
-  })
+  const groundTruthArr = arr(r.groundTruth)
+  if (groundTruthArr.length > 0) {
+    groundTruthArr.forEach((g) => {
+      const gt = obj(g)
+      if (gt.type === "inline" && typeof gt.content === "string") {
+        references.push({
+          id: `ref-${references.length + 1}`,
+          label: str(gt.label),
+          role: "reference",
+          priority: PRIORITY[str(gt.priority)] ?? "should",
+          source: { kind: "text", text: gt.content },
+        })
+      } else {
+        warnings.push(`Dropped non-inline reference "${str(gt.label)}" (${str(gt.type) || "unknown"} sources were never supported)`)
+      }
+    })
+  } else {
+    // Fallback: read from v2 core.references
+    arr(core.references).forEach((ref) => {
+      const parsed = ReferenceItemSchema.safeParse(ref)
+      if (parsed.success) {
+        references.push(parsed.data)
+      } else {
+        warnings.push(`Dropped invalid reference "${obj(ref).label || "unknown"}" (failed schema validation)`)
+      }
+    })
+  }
 
   const characters = arr(r.actors ?? core.characters).map((a) => {
     const c = obj(a)
@@ -97,7 +112,7 @@ export function normaliseContextPack(
       ...(typeof voice.vendorVoiceId === "string" && {
         voice: {
           vendorVoiceId: voice.vendorVoiceId,
-          ...(typeof voice.pace === "string" && { pace: voice.pace as "measured" | "normal" | "rapid" }),
+          ...(["measured", "normal", "rapid"].includes(str(voice.pace)) && { pace: voice.pace as "measured" | "normal" | "rapid" }),
           ...(typeof voice.notes === "string" && { notes: voice.notes }),
         },
       }),
@@ -117,11 +132,12 @@ export function normaliseContextPack(
     }
   })
 
-  const details = str(world.rules)
+  const details = str(world.rules) || str(obj(core.setting).details)
+  const settingSummary = str(world.description) || str(obj(core.setting).summary)
   const pack: ContextPack = {
     contractVersion: 2,
     core: {
-      setting: { summary: str(world.description), ...(details && { details }) },
+      setting: { summary: settingSummary, ...(details && { details }) },
       participant: {
         role: str(protagonist.role ?? participantV2.role),
         perspective: perspectiveOf(protagonist.perspective ?? participantV2.perspective),
@@ -144,11 +160,22 @@ export function normaliseContextPack(
     },
     extension:
       kind === "training"
-        ? { kind, learningObjectives: arr(r.learningObjectives).filter((o): o is string => typeof o === "string") }
-        : { kind, atmosphere: str(world.atmosphere) },
+        ? {
+            kind,
+            learningObjectives:
+              arr(r.learningObjectives).filter((o): o is string => typeof o === "string").length > 0
+                ? arr(r.learningObjectives).filter((o): o is string => typeof o === "string")
+                : arr(coreExtension.learningObjectives ?? rootExtension.learningObjectives).filter((o): o is string => typeof o === "string"),
+          }
+        : { kind, atmosphere: str(world.atmosphere) || str(coreExtension.atmosphere) || str(rootExtension.atmosphere) },
   }
 
-  return { pack: ContextPackSchema.parse(pack), useCaseCategory, warnings }
+  const parsed = ContextPackSchema.safeParse(pack)
+  if (parsed.success) {
+    return { pack: parsed.data, useCaseCategory, warnings }
+  }
+  warnings.push("Pack could not be read; replaced with an empty pack")
+  return { pack: emptyContextPack(useCaseId), useCaseCategory, warnings }
 }
 
 const cache = new WeakMap<object, ContextPack>()
