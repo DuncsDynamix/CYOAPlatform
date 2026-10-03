@@ -1,97 +1,24 @@
-import Link from "next/link"
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { getPageUser } from "@/lib/auth/page-user"
-import { db } from "@/lib/db/prisma"
-import { resolveBrand } from "@/lib/branding"
-import { groupCoursesByCategory } from "@/lib/training/use-case-categories"
-import type { ShapeDefinition } from "@/types/experience"
-import { normaliseContextPack } from "@/lib/engine"
+import { loadLibraryMetadata, loadLibraryPage } from "@/lib/training/library-page"
+import { BrandScope } from "@/components/training-ui/BrandScope"
+import { LibraryScreen } from "@/components/training-ui/library/LibraryScreen"
 
 // DB-backed page: render per request, never at build time
 export const dynamic = "force-dynamic"
 
-/**
- * The org training library: a signed-in learner sees the courses their
- * organisation owns — and only theirs (the multi-tenancy story made visible).
- * Route access itself is enforced by middleware (auth + org membership);
- * this page resolves the user again only to know WHICH org's shelf to show.
- */
-function minutesFor(shape: ShapeDefinition | null): number {
-  const steps = shape?.displaySteps ?? shape?.totalDepthMax ?? 0
-  return Math.max(10, Math.round((steps * 1.5) / 5) * 5)
+export async function generateMetadata(): Promise<Metadata> {
+  return loadLibraryMetadata(await getPageUser())
 }
 
 export default async function TrainingLibraryPage() {
-  const userId = (await getPageUser())?.id ?? null
-  const user = userId
-    ? await db.user.findUnique({
-        where: { id: userId },
-        select: { orgId: true, org: { select: { slug: true, name: true } } },
-      })
-    : null
-
-  if (!user?.orgId) redirect("/login")
-
-  const brand = resolveBrand(user.org?.slug)
-  const courses = await db.experience.findMany({
-    where: { orgId: user.orgId, renderingTheme: "training", status: "published" },
-    orderBy: { createdAt: "asc" },
-    select: { slug: true, type: true, title: true, description: true, contextPack: true, presentation: true, shape: true },
-  })
+  const data = await loadLibraryPage(await getPageUser())
+  if (!data) redirect("/login")
 
   return (
-    <div
-      style={{
-        "--t-accent": brand.accent,
-        "--t-accent-hover": brand.accentHover,
-        "--t-accent-light": brand.accentLight,
-      } as React.CSSProperties}
-    >
-      <div className="t-lib">
-        <header className="t-lib-header">
-          <div className="t-lib-org">{brand.name}</div>
-          <h1 className="t-lib-title">Training Library</h1>
-          <p className="t-lib-sub">
-            Scenario-based courses built for your organisation. Each one is assessed and
-            produces a competence record.
-          </p>
-        </header>
-
-        {courses.length === 0 ? (
-          <p className="t-lib-empty">No courses have been published for your organisation yet.</p>
-        ) : (
-          groupCoursesByCategory(courses).map(({ category, courses: sectionCourses }) => (
-            <section key={category.id} className="t-lib-section">
-              <h2 className="t-lib-section-title">{category.title}</h2>
-              <p className="t-lib-section-blurb">{category.blurb}</p>
-              <div className="t-lib-grid">
-                {sectionCourses.map((c) => {
-                  const pack = normaliseContextPack(c.contextPack, c.type).pack
-                  const objectives = pack.extension.kind === "training" ? pack.extension.learningObjectives : []
-                  return (
-                    <Link key={c.slug} href={`/scenario/${c.slug}`} className="t-lib-card">
-                      <h3 className="t-lib-card-title">{c.title}</h3>
-                      {c.description && <p className="t-lib-card-desc">{c.description}</p>}
-                      <div className="t-lib-card-meta">
-                        <span>About {minutesFor(c.shape as ShapeDefinition | null)} minutes</span>
-                        {objectives.length > 0 && (
-                          <>
-                            <span aria-hidden="true">·</span>
-                            <span>
-                              {objectives.length} learning objective{objectives.length === 1 ? "" : "s"}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      <span className="t-lib-card-cta">Open course</span>
-                    </Link>
-                  )
-                })}
-              </div>
-            </section>
-          ))
-        )}
-      </div>
-    </div>
+    <BrandScope pack={data.pack}>
+      <LibraryScreen view={data.view} />
+    </BrandScope>
   )
 }
