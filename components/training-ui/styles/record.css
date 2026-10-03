@@ -1,0 +1,210 @@
+/* The evidence record: an A4 sheet on screen, a clean document in print. */
+
+.tg-record-page {
+  padding: var(--tg-space-4);
+}
+.tg-record-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--tg-space-2);
+  max-width: var(--tg-record-width);
+  margin: 0 auto var(--tg-space-4);
+}
+.tg-record {
+  max-width: var(--tg-record-width);
+  margin: 0 auto;
+}
+.tg-record-sheet,
+.tg-record-appendix {
+  padding: var(--tg-space-6);
+  background: var(--tg-surface-raised);
+  box-shadow: var(--tg-shadow-raised);
+}
+@media (min-width: 720px) {
+  .tg-record-sheet,
+  .tg-record-appendix {
+    padding: 14mm;
+  }
+}
+.tg-record-appendix {
+  margin-top: var(--tg-space-6);
+}
+
+.tg-record-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tg-space-4);
+  padding-bottom: var(--tg-space-3);
+  margin-bottom: var(--tg-space-4);
+  border-bottom: 3px solid var(--tg-brand);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.tg-record-logo {
+  height: 44px;
+  width: auto;
+}
+.tg-record-wordmark {
+  font-family: var(--tg-font-heading);
+  font-weight: 700;
+  font-size: var(--tg-fs-lg);
+}
+.tg-record-ref {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-text-muted);
+}
+.tg-record-doctitle {
+  font-size: var(--tg-fs-base);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tg-text);
+}
+
+.tg-record-ids {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--tg-space-3) var(--tg-space-6);
+  margin: 0 0 var(--tg-space-4);
+}
+.tg-record-id dt {
+  font-size: var(--tg-fs-xs);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--tg-text-muted);
+}
+.tg-record-id dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.tg-record-score {
+  margin-top: var(--tg-space-3);
+  font-size: var(--tg-fs-sm);
+}
+.tg-record-section {
+  margin-top: var(--tg-space-5);
+}
+.tg-record-criteria {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tg-record-criterion {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--tg-space-4);
+  padding: var(--tg-space-2) 0;
+  border-bottom: 1px solid var(--tg-border);
+  break-inside: avoid;
+}
+.tg-record-crit-main {
+  min-width: 0;
+}
+.tg-record-crit-label {
+  font-weight: 600;
+}
+.tg-record-evidence {
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-text-muted);
+}
+.tg-record-reassessed {
+  font-size: var(--tg-fs-xs);
+  color: var(--tg-text-muted);
+}
+.tg-record-reflection {
+  font-size: var(--tg-fs-sm);
+}
+
+.tg-record-accred {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tg-space-3);
+  margin-top: var(--tg-space-5);
+  padding-top: var(--tg-space-3);
+  border-top: 1px solid var(--tg-border);
+  break-inside: avoid;
+}
+.tg-record-badge {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+.tg-record-accred-name {
+  font-weight: 700;
+}
+.tg-record-accred-note,
+.tg-record-disclaimer {
+  font-size: var(--tg-fs-xs);
+  color: var(--tg-text-muted);
+}
+
+.tg-record-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--tg-space-3);
+  margin-top: var(--tg-space-6);
+  padding-top: var(--tg-space-2);
+  border-top: 1px solid var(--tg-border);
+  font-size: var(--tg-fs-xs);
+  color: var(--tg-text-muted);
+}
+
+.tg-appendix-scene {
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-text-muted);
+}
+.tg-appendix-block {
+  margin-top: var(--tg-space-3);
+  font-size: var(--tg-fs-sm);
+  break-inside: avoid-page;
+}
+.tg-appendix-label {
+  font-family: var(--tg-font-heading);
+  font-weight: 700;
+}
+.tg-appendix-turn {
+  margin-top: var(--tg-space-1);
+}
+
+.tg-record .tg-chip,
+.tg-record .tg-verdict {
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+@page {
+  size: A4;
+  margin: 14mm;
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font-size: 8pt;
+  }
+}
+
+@media print {
+  .tg-no-print {
+    display: none;
+  }
+  .tg-scope {
+    min-height: 0;
+    background: var(--tg-surface-raised);
+  }
+  .tg-record-page {
+    padding: 0;
+  }
+  .tg-record-sheet,
+  .tg-record-appendix {
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+  }
+  .tg-record-appendix {
+    break-before: page;
+  }
+}

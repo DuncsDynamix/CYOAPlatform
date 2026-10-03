@@ -11,6 +11,7 @@ import "@/components/training-ui/styles/assessment.css"
 import "@/components/training-ui/styles/debrief.css"
 import "@/components/training-ui/styles/cover.css"
 import "@/components/training-ui/styles/library.css"
+import "@/components/training-ui/styles/record.css"
 import type { Metadata } from "next"
 import { fontVariables } from "./fonts"
 
