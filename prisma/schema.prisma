@@ -31,6 +31,10 @@ model Org {
   competencyFramework Json @default("[]")
   // Learner-profile personalisation opt-in
   personalisationEnabled Boolean @default(false)
+  // White-label brand pack (lib/training/brand-pack.ts); null = neutral default
+  brandPack Json?
+  // [{ id, name, awardingBody, badge, url? }] (lib/training/accreditations.ts)
+  accreditations Json @default("[]")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
