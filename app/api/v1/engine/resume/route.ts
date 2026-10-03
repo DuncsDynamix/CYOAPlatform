@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { arriveAtNode, getSession, resumeSession } from "@/lib/engine"
 import { getExperienceById } from "@/lib/db/queries/experience"
 import { requireAuth, getAnthropicKey } from "@/lib/auth"
-import { checkEngineLimit } from "@/lib/security/ratelimit"
+import { checkEngineLimit, checkGenerationLimit } from "@/lib/security/ratelimit"
 import { buildResumeSnapshot } from "@/lib/training/resume"
 import { engineErrorResponse } from "@/lib/api/errors"
 
@@ -27,6 +27,15 @@ export async function GET(req: NextRequest) {
   if (session.userId !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   if (session.status !== "active") {
     return NextResponse.json({ error: "This session has finished." }, { status: 409 })
+  }
+
+  // The fallbacks can generate a scene or run an assessment.
+  const genLimit = await checkGenerationLimit(user.id)
+  if (!genLimit.success) {
+    return NextResponse.json(
+      { error: "Generation limit reached. Try again in a minute.", retryable: true },
+      { status: 429 }
+    )
   }
 
   const experience = await getExperienceById(session.experienceId)

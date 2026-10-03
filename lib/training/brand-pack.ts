@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { AssetPath } from "./safe-url"
 
 /**
  * Per-org white-label brand pack (Org.brandPack). Packs vary identity,
@@ -15,7 +16,7 @@ const Hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, "must be a #RRGGBB colour")
 export const BrandPackSchema = z.object({
   displayName: z.string().min(1).max(80),
   logo: z
-    .object({ onLight: z.string().min(1), onDark: z.string().min(1), mark: z.string().min(1) })
+    .object({ onLight: AssetPath, onDark: AssetPath, mark: AssetPath })
     .optional(),
   colours: z.object({
     brand: Hex,
@@ -26,7 +27,7 @@ export const BrandPackSchema = z.object({
   }),
   fonts: z.object({ heading: z.enum(FONT_KEYS), body: z.enum(FONT_KEYS) }),
   imagery: z
-    .object({ hero: z.string().min(1).optional(), courseFallback: z.string().min(1).optional() })
+    .object({ hero: AssetPath.optional(), courseFallback: AssetPath.optional() })
     .optional(),
   recordPrefix: z.string().regex(/^[A-Z]{2,4}$/).optional(),
 })

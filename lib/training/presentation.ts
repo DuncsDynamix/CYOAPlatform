@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { AssetPath } from "./safe-url"
 import { CourseAccreditationLinkSchema, type CourseAccreditationLink } from "./accreditations"
 
 /**
@@ -26,7 +27,7 @@ export interface CoursePresentation {
 
 const FIELDS: { [K in keyof CoursePresentation]-?: z.ZodType<NonNullable<CoursePresentation[K]>> } = {
   useCaseCategory: z.string().min(1),
-  image: z.string().min(1),
+  image: AssetPath,
   durationMinutes: z.number().int().min(1).max(600),
   stages: z.array(StageSchema).min(1),
   accreditations: z.array(CourseAccreditationLinkSchema),

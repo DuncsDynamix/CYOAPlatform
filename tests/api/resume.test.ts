@@ -11,13 +11,17 @@ vi.mock("@/lib/auth", () => ({
   getAnthropicKey: vi.fn().mockReturnValue(undefined),
 }))
 vi.mock("@/lib/db/queries/experience", () => ({ getExperienceById: vi.fn() }))
-vi.mock("@/lib/security/ratelimit", () => ({ checkEngineLimit: vi.fn().mockResolvedValue({ success: true }) }))
+vi.mock("@/lib/security/ratelimit", () => ({
+  checkEngineLimit: vi.fn().mockResolvedValue({ success: true }),
+  checkGenerationLimit: vi.fn().mockResolvedValue({ success: true }),
+}))
 vi.mock("@/lib/training/resume", () => ({ buildResumeSnapshot: vi.fn().mockReturnValue({ moduleTitle: "T" }) }))
 
 import { GET } from "@/app/api/v1/engine/resume/route"
 import { getSession, resumeSession, arriveAtNode } from "@/lib/engine"
 import { requireAuth } from "@/lib/auth"
 import { getExperienceById } from "@/lib/db/queries/experience"
+import { checkGenerationLimit } from "@/lib/security/ratelimit"
 
 const SID = "11111111-1111-4111-8111-111111111111"
 const req = (q = `?sessionId=${SID}`) => new NextRequest(`http://localhost/api/v1/engine/resume${q}`)
@@ -60,5 +64,13 @@ describe("GET /api/v1/engine/resume", () => {
     const body = await (await GET(req())).json()
     expect(arriveAtNode).toHaveBeenCalledWith(SID, "m1", { id: "e1" }, undefined)
     expect(body.node).toEqual({ id: "m1" })
+  })
+  it("applies the generation limit, since its fallbacks can generate", async () => {
+    vi.mocked(checkGenerationLimit).mockResolvedValueOnce({ success: false } as never)
+    const res = await GET(req())
+    expect(res.status).toBe(429)
+    expect(await res.json()).toEqual({ error: "Generation limit reached. Try again in a minute.", retryable: true })
+    expect(checkGenerationLimit).toHaveBeenCalledWith("u1")
+    expect(resumeSession).not.toHaveBeenCalled()
   })
 })

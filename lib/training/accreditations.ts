@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { AssetPath, LinkUrl } from "./safe-url"
 
 /**
  * Accreditations are claims, not branding: the org lists what it is
@@ -11,8 +12,8 @@ export const AccreditationSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   awardingBody: z.string().min(1),
-  badge: z.string().min(1),
-  url: z.string().url().optional(),
+  badge: AssetPath,
+  url: LinkUrl.optional(),
 })
 export type Accreditation = z.infer<typeof AccreditationSchema>
 
