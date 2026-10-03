@@ -77,7 +77,7 @@ After the training you will complete a **25-question multiple choice test**. You
   {
     id: "n-m1a",
     type: "FIXED",
-    label: "Module 1 — What is wholesome water?",
+    label: "Module 1: What is wholesome water?",
     mandatory: true,
     content: `## Module 1: The Importance of Water
 
@@ -92,7 +92,7 @@ Producing wholesome water is similar to food production — just as food hygiene
   {
     id: "n-m1b",
     type: "FIXED",
-    label: "Module 1 — Water scarcity",
+    label: "Module 1: Water scarcity",
     mandatory: true,
     content: `### Water — A Scarce Resource
 
@@ -107,7 +107,7 @@ This scarcity means every litre of drinking water must be protected carefully th
   {
     id: "n-m1c",
     type: "FIXED",
-    label: "Module 1 — Why water hygiene matters",
+    label: "Module 1: Why water hygiene matters",
     mandatory: true,
     content: `### Why Water Hygiene Matters
 
@@ -136,7 +136,7 @@ Contaminating the water supply does not just affect drinking water — it affect
   {
     id: "n-m2a",
     type: "FIXED",
-    label: "Module 2 — Waterborne disease: historical context",
+    label: "Module 2: Waterborne disease: historical context",
     mandatory: true,
     content: `## Module 2: Water as a Carrier of Disease
 
@@ -151,7 +151,7 @@ The risk has not gone away. Contaminated water still causes illness and death wo
   {
     id: "n-m2b",
     type: "FIXED",
-    label: "Module 2 — Cryptosporidium",
+    label: "Module 2: Cryptosporidium",
     mandatory: true,
     content: `### Cryptosporidium — A Modern Threat
 
@@ -168,7 +168,7 @@ If Cryptosporidium enters the water supply, the consequences are serious. This i
   {
     id: "n-m2c",
     type: "FIXED",
-    label: "Module 2 — Regulation and personal risk",
+    label: "Module 2: Regulation and personal risk",
     mandatory: true,
     content: `### Regulation and Personal Responsibility
 
@@ -198,7 +198,7 @@ Failure to report places public health at risk and may be a disciplinary matter.
   {
     id: "n-m3a",
     type: "FIXED",
-    label: "Module 3 — What are restricted operations?",
+    label: "Module 3: What are restricted operations?",
     mandatory: true,
     content: `## Module 3: Potential Contamination and Its Consequences
 
@@ -224,7 +224,7 @@ To work on restricted operations, you must hold a current **National Water Hygie
   {
     id: "n-m3b",
     type: "FIXED",
-    label: "Module 3 — Health exclusion criteria",
+    label: "Module 3: Health exclusion criteria",
     mandatory: true,
     content: `### Health Exclusion — When You Must Not Work
 
@@ -247,7 +247,7 @@ These exclusions exist because contaminated individuals can shed pathogens that 
   {
     id: "n-m3c",
     type: "FIXED",
-    label: "Module 3 — Contamination sources by site",
+    label: "Module 3: Contamination sources by site",
     mandatory: true,
     content: `### How Contamination Happens
 
@@ -267,7 +267,7 @@ Each of these risks can be prevented through training, personal hygiene, and fol
   {
     id: "n-m3d",
     type: "FIXED",
-    label: "Module 3 — Consequences of contamination",
+    label: "Module 3: Consequences of contamination",
     mandatory: true,
     content: `### Consequences of Contamination
 
@@ -301,7 +301,7 @@ These are not theoretical risks. Water contamination incidents have resulted in 
   {
     id: "n-m4a",
     type: "FIXED",
-    label: "Module 4 — Personal hygiene and clothing",
+    label: "Module 4: Personal hygiene and clothing",
     mandatory: true,
     content: `## Module 4: Preventing Contamination
 
@@ -321,7 +321,7 @@ These are not theoretical risks. Water contamination incidents have resulted in 
   {
     id: "n-m4b",
     type: "FIXED",
-    label: "Module 4 — Vehicles, pets and site controls",
+    label: "Module 4: Vehicles, pets and site controls",
     mandatory: true,
     content: `### Vehicles, Pets and Site Controls
 
@@ -339,7 +339,7 @@ These are not theoretical risks. Water contamination incidents have resulted in 
   {
     id: "n-m4c",
     type: "FIXED",
-    label: "Module 4 — Fuel, chemicals and approved products",
+    label: "Module 4: Fuel, chemicals and approved products",
     mandatory: true,
     content: `### Fuel, Chemicals and Approved Products
 
@@ -360,7 +360,7 @@ must be used in contact with the water supply. The approved products list is pub
   {
     id: "n-m4d",
     type: "FIXED",
-    label: "Module 4 — Pipe and fitting storage",
+    label: "Module 4: Pipe and fitting storage",
     mandatory: true,
     content: `### Pipe and Fitting Storage
 
@@ -377,7 +377,7 @@ Pipes and fittings that contact the water supply must be stored correctly:
   {
     id: "n-m4e",
     type: "FIXED",
-    label: "Module 4 — Disinfection and high-risk operations",
+    label: "Module 4: Disinfection and high-risk operations",
     mandatory: true,
     content: `### Disinfection and High-Risk Operations
 
@@ -400,7 +400,7 @@ After completing these operations, the asset must be **flushed, chlorinated and 
   {
     id: "n-m4f",
     type: "FIXED",
-    label: "Module 4 — Suspected contamination, sampling and EUSR card",
+    label: "Module 4: Suspected contamination, sampling and EUSR card",
     mandatory: true,
     content: `### Suspected Contamination, Sampling and Your EUSR Card
 
@@ -456,7 +456,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q1",
     type: "CHOICE",
-    label: "Q1 — Wholesome water",
+    label: "Q1: Wholesome water",
     prompt: "What is the meaning of wholesome water?",
     responseType: "closed",
     options: [
@@ -479,7 +479,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q2",
     type: "CHOICE",
-    label: "Q2 — Milk and water production",
+    label: "Q2: Milk and water production",
     prompt: "Why are milk and drinking water similar in their production?",
     responseType: "closed",
     options: [
@@ -502,7 +502,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q3",
     type: "CHOICE",
-    label: "Q3 — Drinkable water percentage",
+    label: "Q3: Drinkable water percentage",
     prompt: "Water covers 70% of our planet, how much of this water is suitable for use as drinking water?",
     responseType: "closed",
     options: [
@@ -525,7 +525,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q4",
     type: "CHOICE",
-    label: "Q4 — Why sewage causes illness",
+    label: "Q4: Why sewage causes illness",
     prompt: "Why can sewage cause illness if it contaminates drinking water?",
     responseType: "closed",
     options: [
@@ -548,7 +548,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q5",
     type: "CHOICE",
-    label: "Q5 — Cryptosporidium impact",
+    label: "Q5: Cryptosporidium impact",
     prompt: "What could be the impact of Cryptosporidium in the drinking water supply?",
     responseType: "closed",
     options: [
@@ -571,7 +571,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q6",
     type: "CHOICE",
-    label: "Q6 — Returning from abroad with diarrhoea",
+    label: "Q6: Returning from abroad with diarrhoea",
     prompt: "When returning to work, after travelling abroad, you find that you are experiencing persistent diarrhoea. What must you do?",
     responseType: "closed",
     options: [
@@ -594,7 +594,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q7",
     type: "CHOICE",
-    label: "Q7 — Purpose of water quality audits",
+    label: "Q7: Purpose of water quality audits",
     prompt: "Why are water quality audits carried out in the water industry?",
     responseType: "closed",
     options: [
@@ -617,7 +617,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q8",
     type: "CHOICE",
-    label: "Q8 — Restricted operation activity",
+    label: "Q8: Restricted operation activity",
     prompt: "Under the National Water Hygiene scheme, which of these is classed as a Restricted Operation activity?",
     responseType: "closed",
     options: [
@@ -640,7 +640,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q9",
     type: "CHOICE",
-    label: "Q9 — Reportable illness for restricted operations",
+    label: "Q9: Reportable illness for restricted operations",
     prompt: "Which of these illnesses would be reportable to your line manager/supervisor if you work on Restricted Operations?",
     responseType: "closed",
     options: [
@@ -663,7 +663,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q10",
     type: "CHOICE",
-    label: "Q10 — What you need to work on a restricted operation",
+    label: "Q10: What you need to work on a restricted operation",
     prompt: "What must you have to work on a Restricted Operation?",
     responseType: "closed",
     options: [
@@ -686,7 +686,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q11",
     type: "CHOICE",
-    label: "Q11 — Why birds are a contamination risk at treatment works",
+    label: "Q11: Why birds are a contamination risk at treatment works",
     prompt: "Why can birds be a possible cause of contamination at a water treatment works?",
     responseType: "closed",
     options: [
@@ -709,7 +709,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q12",
     type: "CHOICE",
-    label: "Q12 — Where to keep cleaned and disinfected tools",
+    label: "Q12: Where to keep cleaned and disinfected tools",
     prompt: "Cleaned and disinfected tools should be kept:",
     responseType: "closed",
     options: [
@@ -732,7 +732,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q13",
     type: "CHOICE",
-    label: "Q13 — Diesel spill near water supply installation",
+    label: "Q13: Diesel spill near water supply installation",
     prompt: "What should you do if you spill diesel whilst working near a water supply installation?",
     responseType: "closed",
     options: [
@@ -755,7 +755,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q14",
     type: "CHOICE",
-    label: "Q14 — Result of water supply contamination",
+    label: "Q14: Result of water supply contamination",
     prompt: "Contamination of the water supply could result in:",
     responseType: "closed",
     options: [
@@ -778,7 +778,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q15",
     type: "CHOICE",
-    label: "Q15 — Why personal hygiene is important on water supply installations",
+    label: "Q15: Why personal hygiene is important on water supply installations",
     prompt: "Why is personal hygiene so important when working on water supply installations?",
     responseType: "closed",
     options: [
@@ -801,7 +801,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q16",
     type: "CHOICE",
-    label: "Q16 — Using the toilet on site",
+    label: "Q16: Using the toilet on site",
     prompt: "What should you do if you are working on a site and need to use the toilet?",
     responseType: "closed",
     options: [
@@ -824,7 +824,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q17",
     type: "CHOICE",
-    label: "Q17 — Clothing for water supply and sewage work",
+    label: "Q17: Clothing for water supply and sewage work",
     prompt: "If you are working on both water supply and sewage, you should have:",
     responseType: "closed",
     options: [
@@ -847,7 +847,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q18",
     type: "CHOICE",
-    label: "Q18 — Why pets and livestock are not allowed on restricted operation sites",
+    label: "Q18: Why pets and livestock are not allowed on restricted operation sites",
     prompt: "Why are pets and livestock NOT allowed on Restricted Operations sites?",
     responseType: "closed",
     options: [
@@ -870,7 +870,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q19",
     type: "CHOICE",
-    label: "Q19 — Storing small fittings in a van",
+    label: "Q19: Storing small fittings in a van",
     prompt: "How must small fittings be stored in a van?",
     responseType: "closed",
     options: [
@@ -893,7 +893,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q20",
     type: "CHOICE",
-    label: "Q20 — Where to store fuel in a van",
+    label: "Q20: Where to store fuel in a van",
     prompt: "Where should you store fuel in your van?",
     responseType: "closed",
     options: [
@@ -916,7 +916,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q21",
     type: "CHOICE",
-    label: "Q21 — How pipes must be stored",
+    label: "Q21: How pipes must be stored",
     prompt: "How must pipes be stored?",
     responseType: "closed",
     options: [
@@ -939,7 +939,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q22",
     type: "CHOICE",
-    label: "Q22 — Where to find the approved products list",
+    label: "Q22: Where to find the approved products list",
     prompt: "Where can you find a list of Approved Products for the water sector in the UK?",
     responseType: "closed",
     options: [
@@ -962,7 +962,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q23",
     type: "CHOICE",
-    label: "Q23 — Process for making bacteria harmless in water",
+    label: "Q23: Process for making bacteria harmless in water",
     prompt: "The process of treating water to remove or make bacteria harmless is called:",
     responseType: "closed",
     options: [
@@ -985,7 +985,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q24",
     type: "CHOICE",
-    label: "Q24 — Disposing of chlorinated water",
+    label: "Q24: Disposing of chlorinated water",
     prompt: "Which of the following statements is true regarding the disposal of chlorinated water?",
     responseType: "closed",
     options: [
@@ -1008,7 +1008,7 @@ Read each question carefully and select the best answer.`,
   {
     id: "n-q25",
     type: "CHOICE",
-    label: "Q25 — Purpose of water quality sampling",
+    label: "Q25: Purpose of water quality sampling",
     prompt: "What is the purpose of taking drinking water quality samples?",
     responseType: "closed",
     options: [
@@ -1146,7 +1146,7 @@ async function main() {
     where: { id: EXPERIENCE_ID },
     create: {
       id: EXPERIENCE_ID,
-      title: "National Water Hygiene — Certification Training",
+      title: "National Water Hygiene: Certification Training",
       slug: "national-water-hygiene-certification",
       type: "l_and_d",
       renderingTheme: "training",
@@ -1164,7 +1164,7 @@ async function main() {
       shape: shape as object,
     },
     update: {
-      title: "National Water Hygiene — Certification Training",
+      title: "National Water Hygiene: Certification Training",
       slug: "national-water-hygiene-certification",
       type: "l_and_d",
       renderingTheme: "training",

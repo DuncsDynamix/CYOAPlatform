@@ -63,7 +63,7 @@ const nodes: Node[] = [
   {
     id: "sd1",
     type: "SLIDE_DECK",
-    label: "Course introduction — National Water Hygiene overview",
+    label: "Course introduction: National Water Hygiene overview",
     nextNodeId: "n1",
     slides: [
       {
@@ -120,7 +120,7 @@ const nodes: Node[] = [
   {
     id: "n1",
     type: "FIXED",
-    label: "Opening — Lee Valley Treatment Works",
+    label: "Opening: Lee Valley Treatment Works",
     content:
       "6:45 am. The security barrier lifts and you pull into the car park at Thames Water's Lee Valley Water Treatment Works.\n\nThis is one of the largest water treatment facilities in the UK — 60 hectares of settlement tanks, rapid gravity filters, and chlorination plant processing up to 280 million litres of raw river water every day. Eight hundred thousand people across North London and Hertfordshire depend on what leaves this site.\n\nYou're a Field Operations Technician, eighteen months in. Your shift supervisor, Priya, meets you at the control building with a handover sheet.\n\n\"Quiet night,\" she says. \"Instruments look normal. Standard checks. I'll be in the office if you need me.\"\n\nYou sign in, pull on your PPE, and head for the monitoring console.",
     mandatory: true,
@@ -132,7 +132,7 @@ const nodes: Node[] = [
   {
     id: "n2",
     type: "GENERATED",
-    label: "Morning checks — turbidity alarm",
+    label: "Morning checks: turbidity alarm",
     beatInstruction:
       "The learner has arrived at the monitoring console to run the standard morning checks. Walk them through the console: flow rates, pH levels, chlorine residuals — all normal. Then, as they reach the turbidity readings for Filter Bank 3, an amber alert fires. Turbidity is reading 1.8 NTU on the filtered water outlet — above the Thames Water internal action level of 1.0 NTU and approaching the DWI regulatory limit of 4.0 NTU. The reading has been climbing for the past 20 minutes. The learner must decide what to do. End at the moment of decision with the amber light blinking on the console.",
     constraints: {
@@ -154,7 +154,7 @@ const nodes: Node[] = [
   {
     id: "q1",
     type: "CHOICE",
-    label: "Q1 — Turbidity alert response",
+    label: "Q1: Turbidity alert response",
     responseType: "closed",
     prompt:
       "The turbidity alarm is still sounding on Filter Bank 3, and the reading is holding. What do you do?",
@@ -174,7 +174,7 @@ const nodes: Node[] = [
       {
         id: "q1-b",
         label:
-          "Re-run the automated test — it may be sensor drift. If the second reading is the same, then escalate",
+          "Re-run the automated test, as it may be sensor drift. If the second reading is the same, then escalate",
         nextNodeId: "n3b",
         isLoadBearing: true,
         stateChanges: { q1_correct: false, performance_score: 0 },
@@ -190,7 +190,7 @@ const nodes: Node[] = [
   {
     id: "n3a",
     type: "GENERATED",
-    label: "Q1 correct — isolation and escalation",
+    label: "Q1 correct: isolation and escalation",
     beatInstruction:
       "The learner has done exactly the right thing: isolated Filter Bank 3 from the distribution network and immediately notified their supervisor. Describe the action: they override the supply valve on Filter Bank 3, the panel registers the isolation, and they call Priya. Priya arrives within two minutes. She confirms the manual sample shows elevated particulate matter — likely a filter medium disturbance from last night's backwash cycle. The isolation was proportionate and correct. The filter is assessed, backwashed again, and brought back online within 45 minutes — well within Thames Water's SLA. Priya notes the response in WIMS. She gives a brief nod of approval — not praise, just professional acknowledgement. End with the filter back online and the learner picking up the morning's remaining task list.",
     constraints: {
@@ -210,7 +210,7 @@ const nodes: Node[] = [
   {
     id: "n3b",
     type: "GENERATED",
-    label: "Q1 risk — delayed escalation",
+    label: "Q1 risk: delayed escalation",
     beatInstruction:
       "The learner chose to re-test before escalating. Describe the second test cycle — another 8 minutes passing, the reading returning 1.9 NTU. The learner now calls Priya. Priya arrives and immediately asks why the filter wasn't isolated on the first amber reading. Explain the operational risk: for those 8 minutes, sub-optimal filtered water was within the distribution margin. Priya isolates the filter, notes the delayed response in WIMS as a process observation, and explains clearly: at Thames Water, the protocol is 'isolate first, investigate second.' A near-miss, not an incident — but a learning moment that will go into the shift log. End with Priya returning to the office and the learner back at the task list, the process observation noted.",
     constraints: {
@@ -230,7 +230,7 @@ const nodes: Node[] = [
   {
     id: "n4",
     type: "GENERATED",
-    label: "At the chlorination log — Marcus approaches",
+    label: "At the chlorination log: Marcus approaches",
     beatInstruction:
       "The learner has moved to the chlorination monitoring station — a separate console room adjacent to the main control building — to carry out the routine chlorine dosing log verification. The morning log should show two entries from the night shift: a dosing rate check at 22:00 and a residual confirmation at 02:00. The 22:00 entry is there. The 02:00 entry is absent. While the learner is looking at this gap, Marcus Webb — a fellow field technician finishing a handover — appears in the doorway. He's the one who was on nights. Before the learner can say anything, Marcus gets there first: 'Yeah, I know — I missed the 02:00 check. I was dealing with a drainage issue on the far side of the site. It was probably fine. I was going to... I don't know. What are you going to do?' He's not aggressive. He's uncomfortable. He's asking for help as much as anything. End with Marcus waiting for the learner's response, the unsigned log entry on the screen between them.",
     constraints: {
@@ -253,7 +253,7 @@ const nodes: Node[] = [
   {
     id: "q2",
     type: "CHOICE",
-    label: "Q2 — Colleague's missed dosing log",
+    label: "Q2: Colleague's missed dosing log",
     responseType: "closed",
     prompt:
       "Marcus is standing in front of you, waiting to hear what you will do about the missed verification. What do you do?",
@@ -261,7 +261,7 @@ const nodes: Node[] = [
       {
         id: "q2-a",
         label:
-          "Log it formally in WIMS as a procedural gap and let Priya know — it needs to be on record",
+          "Log it formally in WIMS as a procedural gap and let Priya know, as it needs to be on record",
         nextNodeId: "n5a",
         isLoadBearing: true,
         stateChanges: { q2_correct: true },
@@ -273,7 +273,7 @@ const nodes: Node[] = [
       {
         id: "q2-b",
         label:
-          "Help Marcus fill in the gap informally — it was likely fine, and formally logging it might get him in trouble",
+          "Help Marcus fill in the gap informally, since it was likely fine, and formally logging it might get him in trouble",
         nextNodeId: "n5b",
         isLoadBearing: true,
         stateChanges: { q2_correct: false },
@@ -289,7 +289,7 @@ const nodes: Node[] = [
   {
     id: "n5a",
     type: "GENERATED",
-    label: "Q2 correct — formal logging and reporting",
+    label: "Q2 correct: formal logging and reporting",
     beatInstruction:
       "The learner has made the right call: a missed verification in a regulated water treatment process must go on record, regardless of whether it caused harm. Describe the action: the learner raises the gap in WIMS, references the correct procedure number, and notifies Priya. Priya speaks with Marcus privately. The entry reads as a procedural observation — not a formal disciplinary matter at this stage. Explain the wider context: the Drinking Water Inspectorate requires complete and unbroken process records. A backdated or undocumented verification would expose Thames Water to regulatory risk, and Marcus to far greater personal risk if a problem were discovered later and records showed falsification. Marcus thanks the learner later — reluctantly, but genuinely. End with the morning in-take checks complete, the learner heading toward the pump room for the afternoon shift's first task.",
     constraints: {
@@ -309,7 +309,7 @@ const nodes: Node[] = [
   {
     id: "n5b",
     type: "GENERATED",
-    label: "Q2 risk — informal cover",
+    label: "Q2 risk: informal cover",
     beatInstruction:
       "The learner has helped Marcus fill in the gap informally, not logging it in WIMS. Describe the short-term feeling — it felt like the right thing to do, protecting a colleague. Then explain the structural problem: water treatment records are legal documents under the Water Supply (Water Quality) Regulations 2016. An unrecorded procedural gap is a compliance breach. If a water quality incident occurred later in the same distribution zone, the missing verification would be discovered by the DWI, and both Marcus and the learner would be implicated in falsification rather than a simple procedural miss. Priya does a routine spot-check on the WIMS log later in the shift and notices the timing anomaly. She pulls the learner and Marcus into her office at the end of the shift. End with that meeting called, both of them waiting outside Priya's door.",
     constraints: {
@@ -330,7 +330,7 @@ const nodes: Node[] = [
   {
     id: "cp1",
     type: "CHECKPOINT",
-    label: "Act One complete — morning shift assessed",
+    label: "Act One complete: morning shift assessed",
     visible: false,
     marksCompletionOf: "Respond to water quality alarms decisively and protect the integrity of process records",
     unlocks: [],
@@ -342,7 +342,7 @@ const nodes: Node[] = [
   {
     id: "n6",
     type: "GENERATED",
-    label: "Afternoon shift — pump room scenario",
+    label: "Afternoon shift: pump room scenario",
     beatInstruction:
       "Time jump to early afternoon. The morning's events have settled. The learner is now in the pump room conducting a routine inspection of the raw water transfer pumps — large submersible units that move water from the River Lee intake to the primary settlement tanks. It is a high-demand day: temperatures are up, consumption is elevated, and all four transfer pumps are running at capacity. During the walkround, the learner notices that Pump 2 has an unusual sound — a faint rhythmic cavitation, the kind that comes when a pump is working against a partially blocked intake screen or running slightly under-primed. The vibration gauge on the pump housing is reading amber at 4.8 mm/s — inside the tolerance band of 0–7 mm/s, but elevated from yesterday's 2.1 mm/s reading. End with the learner standing at the pump, gauge in hand, engine noise all around, peak demand continuing above ground.",
     constraints: {
@@ -363,7 +363,7 @@ const nodes: Node[] = [
   {
     id: "q3",
     type: "CHOICE",
-    label: "Q3 — Pump cavitation response",
+    label: "Q3: Pump cavitation response",
     responseType: "closed",
     prompt:
       "Pump 2: vibration at 4.8 mm/s and double yesterday's reading, cavitation audible, peak demand running across all four pumps. What do you do?",
@@ -383,7 +383,7 @@ const nodes: Node[] = [
       {
         id: "q3-b",
         label:
-          "Keep Pump 2 running — it's within tolerance. Log the vibration reading and check again in an hour",
+          "Keep Pump 2 running, as it's within tolerance. Log the vibration reading and check again in an hour",
         nextNodeId: "n7b",
         isLoadBearing: true,
         stateChanges: { q3_correct: false },
@@ -399,7 +399,7 @@ const nodes: Node[] = [
   {
     id: "n7a",
     type: "GENERATED",
-    label: "Q3 correct — pump isolated and ticketed",
+    label: "Q3 correct: pump isolated and ticketed",
     beatInstruction:
       "The learner has taken Pump 2 offline and redistributed the load. Describe the action: they shut down Pump 2 via the local isolator, confirm the other three pumps ramp up to compensate, and raise a maintenance ticket in the asset management system citing the vibration readings and the cavitation sound. The asset team responds within 30 minutes — a maintenance technician attends, inspects the intake screen, and finds a significant debris accumulation from overnight rainfall that was restricting prime. The debris is cleared, the screen cleaned, the pump re-primed and returned to service within two hours. End with the pump room quiet again, all four pumps running normally, the learner's ticket closed as a preventive intervention — asset saved, supply uninterrupted. Shift log entry complete.",
     constraints: {
@@ -418,7 +418,7 @@ const nodes: Node[] = [
   {
     id: "n7b",
     type: "GENERATED",
-    label: "Q3 risk — pump continues and fails",
+    label: "Q3 risk: pump continues and fails",
     beatInstruction:
       "The learner has decided to keep Pump 2 running and monitor it. Describe the next 40 minutes: periodic checks, vibration hovering at amber, nothing dramatic. Then at 14:22 the pump trips on over-temperature. The motor winding has failed. Describe the immediate impact: three pumps now carrying load they can't sustain at peak demand, inflow rate dropping, a pressure dip appearing on the distribution system dashboard that the control room flags within seven minutes. The maintenance team are called as an emergency rather than a planned job — a significantly higher cost and a two-hour gap in intake capacity that requires emergency demand management. The post-incident review later that week will note that the original vibration reading and cavitation sound, taken together, met the criteria for a precautionary isolation under Thames Water's asset management standard. End with the pump failed, the incident report open on screen, and the learner heading for a debrief.",
     constraints: {
@@ -437,7 +437,7 @@ const nodes: Node[] = [
   {
     id: "cp2",
     type: "CHECKPOINT",
-    label: "Afternoon shift — asset risk assessed",
+    label: "Afternoon shift: asset risk assessed",
     visible: false,
     marksCompletionOf: "Manage asset risk under peak demand: recognise warning signs and act before failure",
     unlocks: [],
@@ -449,7 +449,7 @@ const nodes: Node[] = [
   {
     id: "q4",
     type: "CHOICE",
-    label: "Q4 — Customer discolouration report",
+    label: "Q4: Customer discolouration report",
     responseType: "closed",
     prompt:
       "As you close out the pump-room log, the control room patches through a customer call: a resident on Fairview Road, downstream of the works, is reporting brown water from her kitchen tap. She is still on the line. How do you respond?",
@@ -469,7 +469,7 @@ const nodes: Node[] = [
       {
         id: "q4-b",
         label:
-          "Log the complaint and pass the details to the customer services team — they handle customer contacts, not field operations",
+          "Log the complaint and pass the details to the customer services team, as they handle customer contacts, not field operations",
         nextNodeId: "n9b",
         isLoadBearing: false,
         stateChanges: { q4_correct: false },
@@ -481,7 +481,7 @@ const nodes: Node[] = [
       {
         id: "q4-c",
         label:
-          "Reassure the customer it is likely a temporary disturbance — mains flushing nearby or a burst repair. Note it for the end-of-shift report",
+          "Reassure the customer it is likely a temporary disturbance, such as mains flushing nearby or a burst repair. Note it for the end-of-shift report",
         nextNodeId: "n9c",
         isLoadBearing: false,
         stateChanges: { q4_correct: false },
@@ -499,7 +499,7 @@ const nodes: Node[] = [
   {
     id: "n9a",
     type: "GENERATED",
-    label: "Q4 correct — incident protocol initiated",
+    label: "Q4 correct: incident protocol initiated",
     beatInstruction:
       "The learner has correctly initiated the customer water quality incident protocol. Describe the sequence: WIMS entry with time, location, and complaint details; a distribution sample collected from the nearest hydrant point; the sample dispatched to the on-site lab; Priya notified and the duty water quality manager contacted. The lab result comes back within the hour — turbidity at 0.8 NTU, iron at 0.09 mg/l, both within regulatory limits. The discolouration is traced to a small main flushing operation by a network team two streets away — a communication failure between field teams, not a quality issue. The customer is called back by the water quality manager with a full explanation and an apology for the inconvenience. No DWI notification required. But the protocol was followed correctly: if the sample had shown a compliance failure, the rapid response would have been essential. End with Priya reviewing the learner's shift log entries — all four incidents handled and recorded. She asks them to take a seat for the end-of-shift debrief.",
     constraints: {
@@ -518,7 +518,7 @@ const nodes: Node[] = [
   {
     id: "n9b",
     type: "GENERATED",
-    label: "Q4 partial — complaint passed to customer services",
+    label: "Q4 partial: complaint passed to customer services",
     beatInstruction:
       "The learner has passed the complaint to customer services. Describe the gap: customer services are trained to handle billing and service complaints — not water quality incidents. The complaint sits in a queue for 40 minutes before a customer services agent recognises the language and escalates it to the field ops duty line. By the time Priya is notified, it has been 55 minutes since the original call. The distribution sample is collected and the result is clear — not a quality issue. But the Water Supply (Water Quality) Regulations require that a water quality complaint from a member of the public is treated as a potential incident until sampling proves otherwise, not routed through customer services as a general enquiry. Priya explains this in the debrief: the 55-minute delay would have mattered if the sample had shown a compliance breach. Water quality complaints route directly to operations, not customer services. End with the end-of-shift debrief in progress, Priya working through the learner's four decisions.",
     constraints: {
@@ -537,7 +537,7 @@ const nodes: Node[] = [
   {
     id: "n9c",
     type: "GENERATED",
-    label: "Q4 risk — customer reassured, not logged",
+    label: "Q4 risk: customer reassured, not logged",
     beatInstruction:
       "The learner has reassured the customer and noted the call for the shift report. Describe the consequences: no WIMS entry, no sample taken, no supervisor informed. The call is not logged in the incident register at all. Three hours later, a second customer from the same street calls — same complaint, more agitated. Now a third call, this time to the out-of-hours duty line. The duty manager calls Priya, who pulls the shift log and finds nothing. She calls the learner. Explain the regulatory position: under the Water Industry Act and the DWI reporting framework, multiple customer contacts about the same apparent quality issue, if not captured in the incident register, constitute a regulatory near-miss — potentially a reportable failure depending on what the samples show. A distribution sample is taken at 21:00 — result is clear, no quality issue. But the failure to log and sample at first contact is the critical gap. End with the learner in Priya's office the next morning, a formal development plan on the table.",
     constraints: {
@@ -558,7 +558,7 @@ const nodes: Node[] = [
   {
     id: "ep1",
     type: "ENDPOINT",
-    label: "Endpoint — Safety Champion",
+    label: "Endpoint: Safety Champion",
     endpointId: "ep-champion",
     outcomeLabel: "Safety Champion",
     closingLine:
@@ -575,7 +575,7 @@ const nodes: Node[] = [
   {
     id: "ep2",
     type: "ENDPOINT",
-    label: "Endpoint — Competent Practitioner",
+    label: "Endpoint: Competent Practitioner",
     endpointId: "ep-competent",
     outcomeLabel: "Competent Practitioner",
     closingLine:
@@ -592,7 +592,7 @@ const nodes: Node[] = [
   {
     id: "ep3",
     type: "ENDPOINT",
-    label: "Endpoint — Development Required",
+    label: "Endpoint: Development Required",
     endpointId: "ep-development",
     outcomeLabel: "Development Required",
     closingLine:

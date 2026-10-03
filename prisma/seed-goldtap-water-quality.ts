@@ -48,7 +48,7 @@ const nodes: Node[] = [
   {
     id: "n1",
     type: "FIXED",
-    label: "Monday 07:20 — three jobs, one street",
+    label: "Monday 07:20: three jobs, one street",
     content:
       "Monday, 07:20. You collect the van keys and check the morning job queue.\n\nYou are a Network Technician at Medway Water, four years on the distribution team. Most Mondays start with a meter swap and a pressure complaint. Not this one.\n\nThree jobs, logged overnight, all within four hundred metres of each other on the Orchard Park estate: \"water brown, smells odd\" — 22:40. \"Discoloured water, won't clear on running\" — 06:15. \"Brown water, children in property\" — 06:52.\n\nYou pull up the mains records. A contractor gang did an emergency repair on the six-inch main under Orchard Way on Saturday night — burst clamp, off-and-on in four hours, job closed at 02:00 Sunday.\n\nThree discolouration complaints, clustered downstream of a weekend contractor repair. The van is fuelled. The estate is fifteen minutes away. And something in the shape of this is telling you it isn't three separate jobs.",
     mandatory: true,
@@ -60,7 +60,7 @@ const nodes: Node[] = [
   {
     id: "q1",
     type: "CHOICE",
-    label: "Q1 — Three jobs or one event?",
+    label: "Q1: Three jobs or one event?",
     responseType: "closed",
     prompt:
       "Three clustered complaints downstream of a weekend repair. How do you play the first hour?",
@@ -80,7 +80,7 @@ const nodes: Node[] = [
       {
         id: "q1-b",
         label:
-          "Get flushing immediately — discolouration after a repair is normal disturbed sediment, and the fastest way to help customers is to clear the main now",
+          "Get flushing immediately, since discolouration after a repair is normal disturbed sediment, and the fastest way to help customers is to clear the main now",
         nextNodeId: "cp1",
         isLoadBearing: false,
         stateChanges: { recognised_event: false, q1_correct: false },
@@ -92,7 +92,7 @@ const nodes: Node[] = [
       {
         id: "q1-c",
         label:
-          "Work the jobs in queue order as logged — assess each property on its merits and keep the morning's other jobs on schedule",
+          "Work the jobs in queue order as logged, then assess each property on its merits and keep the morning's other jobs on schedule",
         nextNodeId: "cp1",
         isLoadBearing: false,
         stateChanges: { recognised_event: false, q1_correct: false },
@@ -109,7 +109,7 @@ const nodes: Node[] = [
   {
     id: "cp1",
     type: "CHECKPOINT",
-    label: "Inject gate — triage closed",
+    label: "Inject gate: triage closed",
     visible: false,
     marksCompletionOf: "Recognise a complaint cluster after network work as a possible water quality event",
     unlocks: ["escalation-phase"],
@@ -122,7 +122,7 @@ const nodes: Node[] = [
   {
     id: "n2",
     type: "GENERATED",
-    label: "On site — the job pack, and the nursing home",
+    label: "On site: the job pack, and the nursing home",
     beatInstruction:
       "Mid-morning on the Orchard Park estate. Two injects land in sequence. FIRST: the learner reviews the contractor's job pack for Saturday night's repair and finds it thin in ways that matter — vary the specifics each session, drawing from: no record of disinfection of fittings before insertion; the hygiene section of the permit left blank; one operative's National Water Hygiene card number missing or lapsed; no flushing/sampling noted at recommissioning; the excavation photographed part-flooded with groundwater. Do not use all of them — two or three, concretely described. Reflect session state: if the learner sampled first (check state), samples from three properties are already with the lab on priority; if they flushed first, the mains water now runs clearer and the learner must reckon with what that means for evidence. SECOND: walking the DMA, the learner clocks Fairhaven House — a forty-bed nursing home, on the affected run, whose kitchen has been drawing water all morning. End with the learner's phone ringing: Steve Malin, the network duty manager, wanting a picture and wanting it quick.",
     constraints: {
@@ -147,7 +147,7 @@ const nodes: Node[] = [
   {
     id: "d1",
     type: "DIALOGUE",
-    label: "The call — Steve Malin, network duty manager",
+    label: "The call: Steve Malin, network duty manager",
     actorId: "Steve Malin",
     openingLine:
       "Right, talk to me. I've got three discolouration jobs on my board for Orchard Park and I've just had the contracts manager on saying their repair was signed off clean. Here's where I am: it's Monday, I'm two techs down, and if we start saying the word 'event' this turns into forms, the quality team, and a very long week for both of us. Sediment after a repair clears with a good flush. So — tell me why I shouldn't just have you flush the run and close the jobs by lunch.",
@@ -163,7 +163,7 @@ const nodes: Node[] = [
   {
     id: "n3a",
     type: "GENERATED",
-    label: "Midday — the precautionary path holds",
+    label: "Midday: the precautionary path holds",
     beatInstruction:
       "Midday. The machinery is running the way the procedure intends: the water quality duty scientist has taken ownership; priority samples are at the lab with results expected late afternoon; Fairhaven House has been visited, its kitchen switched to bottled water, its manager grateful and calm; the affected properties have had a knock on the door and a straight factual line. Steve Malin, having agreed the escalation, is now solidly behind it — reflect that a manager who has been talked round becomes an ally. Show the quiet operational competence: barriers, a tanker of alternative supply on standby, the timeline log being kept. THEN the tension re-tightens: the lab calls ahead informally — first-pass results are not clean; confirmation and speciation by late afternoon. Whatever this is, it was in the water people drank over the weekend. End with the water quality scientist saying the next decision is about notification — and asking the learner, who has been on the ground all day, to walk the incident room through the timeline.",
     constraints: {
@@ -184,7 +184,7 @@ const nodes: Node[] = [
   {
     id: "n3b",
     type: "GENERATED",
-    label: "Midday — the flush went ahead",
+    label: "Midday: the flush went ahead",
     beatInstruction:
       "Midday, on the path where Steve's flush-first instinct carried the call. The run has been flushed; the water at the taps looks better; two of the three complaints have been closed. Show the surface calm and let the unease build underneath it: the samples that would have shown what customers drank over the weekend were never taken (or were taken only after flushing — reflect session state); the contractor job pack gaps are still sitting in the learner's photos, unreported; Fairhaven House has been drinking and cooking on the supply all morning. THEN the day turns: a GP surgery on the estate phones the company — two patients, same street, gastrointestinal symptoms, both households on the affected run. The water quality team is now involved by a route nobody wanted, asking the questions the morning should have answered: what did the samples show? There are no samples. End with Steve Malin, quieter than this morning, telling the learner the quality duty scientist wants them in the incident room with everything they've got — and the learner knowing exactly how much thinner 'everything' is than it should be.",
     constraints: {
@@ -205,7 +205,7 @@ const nodes: Node[] = [
   {
     id: "q2",
     type: "CHOICE",
-    label: "Q2 — Who gets told, and when?",
+    label: "Q2: Who gets told, and when?",
     responseType: "closed",
     prompt:
       "The incident room turns to notification. Possible contamination of a public supply, a vulnerable site on the run, results not yet confirmed. What do you argue for?",
@@ -213,7 +213,7 @@ const nodes: Node[] = [
       {
         id: "q2-a",
         label:
-          "Notify now on what is known: formal event notification to the Drinking Water Inspectorate, precautionary 'do not drink' advice to affected properties agreed with the health authority, alternative water out this afternoon — update everyone as results confirm",
+          "Notify now on what is known: formal event notification to the Drinking Water Inspectorate, precautionary 'do not drink' advice to affected properties agreed with the health authority, alternative water out this afternoon, and update everyone as results confirm",
         nextNodeId: "cp2",
         isLoadBearing: true,
         stateChanges: { notified_promptly: true, q2_correct: true },
@@ -225,7 +225,7 @@ const nodes: Node[] = [
       {
         id: "q2-b",
         label:
-          "Hold until the lab confirms this evening — issuing 'do not drink' advice on an unconfirmed first pass will frighten hundreds of households, hammer trust, and might all be for nothing",
+          "Hold until the lab confirms this evening, because issuing 'do not drink' advice on an unconfirmed first pass will frighten hundreds of households, hammer trust, and might all be for nothing",
         nextNodeId: "cp2",
         isLoadBearing: false,
         stateChanges: { notified_promptly: false, q2_correct: false },
@@ -237,7 +237,7 @@ const nodes: Node[] = [
       {
         id: "q2-c",
         label:
-          "Quietly advise Fairhaven House and the three complainants directly, but keep it informal and off the record until the picture is certain — protect the vulnerable without starting the regulatory machine",
+          "Quietly advise Fairhaven House and the three complainants directly, but keep it informal and off the record until the picture is certain, to protect the vulnerable without starting the regulatory machine",
         nextNodeId: "cp2",
         isLoadBearing: false,
         stateChanges: { notified_promptly: false, q2_correct: false },
@@ -254,7 +254,7 @@ const nodes: Node[] = [
   {
     id: "cp2",
     type: "CHECKPOINT",
-    label: "Inject gate — regulatory phase closed",
+    label: "Inject gate: regulatory phase closed",
     visible: false,
     marksCompletionOf: "Apply notification duties on suspicion: DWI event notification and authorised, consistent consumer advice",
     unlocks: ["street-phase"],
@@ -267,7 +267,7 @@ const nodes: Node[] = [
   {
     id: "n4",
     type: "GENERATED",
-    label: "Late afternoon — the street knows",
+    label: "Late afternoon: the street knows",
     beatInstruction:
       "Late afternoon on Orchard Way. The lab has confirmed: microbiological contamination consistent with ingress at the repair — vary the specific finding each session at briefing level only (coliforms present / E. coli detection at low count) with reassuring-but-real framing. Reflect session state honestly: on the prompt-notification path, 'do not drink' cards are going door to door with bottled water stations at the community centre, and the learner is delivering them; on the delayed paths, the confirmation has forced the same actions hours later, with the WhatsApp version of events already ahead of the official one. Either way the street is out on its doorsteps. The learner, in Medway Water hi-vis, is the visible face of the company on the pavement. A local Facebook group post — 'they've known since THIS MORNING' — is being shown around on phones, accurate in the way that hurts most on the delayed path. End with a woman coming out of number 14 straight at the learner, a baby on her hip and a bottle of brown-ish tap water in her free hand: Kayleigh Morris, and she wants answers now.",
     constraints: {
@@ -293,7 +293,7 @@ const nodes: Node[] = [
   {
     id: "d2",
     type: "DIALOGUE",
-    label: "The doorstep — Kayleigh Morris",
+    label: "The doorstep: Kayleigh Morris",
     actorId: "Kayleigh Morris",
     openingLine:
       "You. You're the water company, yeah? I made his bottles up with that on Saturday. Saturday, Sunday, this morning — he's seven months old. And now there's a card through my door saying don't drink it? I've been giving it to my BABY. What was in it? Don't give me 'we're investigating' — what was in my water and is he going to be alright?",
@@ -309,7 +309,7 @@ const nodes: Node[] = [
   {
     id: "n5a",
     type: "GENERATED",
-    label: "One week later — what the record shows",
+    label: "One week later: what the record shows",
     beatInstruction:
       "One week on. Close with an honest reckoning, not a victory lap. The event is over: the main recommissioned after disinfection and clear samples, the notice lifted after two consecutive clean results, bottled water stations stood down. Count the real outcomes, reflecting session state: the DWI's event report acknowledged (on the prompt path) early notification and evidence preserved by sampling before flushing — or recorded the gaps (on mixed paths); no confirmed illness linked to the supply, Kayleigh Morris's baby seen by the GP and fine, and her follow-up call from the company actually made; the contractor's hygiene failures now a formal non-conformance with consequences for their framework contract; Fairhaven House writing, unexpectedly, to thank the company for how it was handled. Steve Malin's debrief line to the learner should carry the theme: the paperwork nobody enjoys is the story the company gets to tell afterwards. End in the yard, Monday again, job queue loading — and the learner reading the queue differently than they did a week ago.",
     constraints: {
@@ -330,7 +330,7 @@ const nodes: Node[] = [
   {
     id: "n5b",
     type: "GENERATED",
-    label: "One week later — the harder read",
+    label: "One week later: the harder read",
     beatInstruction:
       "One week on, on the path where the doorstep went badly — the learner reassured where they should have been honest, got defensive, blamed the contractor, or sent Kayleigh Morris away with fear and no next step. The operational event closed the same way: disinfection, clear samples, notice lifted. But the human record reads differently: Kayleigh's account of the doorstep — 'the man from the water company told me it was basically fine' or 'couldn't even look at me' — quoted in a local news piece and in her formal complaint, now attached to the DWI event file; the company's otherwise defensible response coloured by its worst conversation, plus whatever notification delay session state carries. Be fair and precise about the lesson: the samples, the notices and the flushing were all recoverable by process — the two minutes on the doorstep were the only part of the event that was the learner's alone, and that is the part in the file. No confirmed illness; the baby is fine; that fact arriving as relief rather than vindication. Steve Malin's debrief is unsparing but decent. End in the yard, Monday, the queue loading.",
     constraints: {
@@ -351,7 +351,7 @@ const nodes: Node[] = [
   {
     id: "ev1",
     type: "EVALUATIVE",
-    label: "Event assessment — water quality competence rubric",
+    label: "Event assessment: water quality competence rubric",
     rubric: [
       {
         id: "event-recognition",
@@ -400,7 +400,7 @@ const nodes: Node[] = [
   {
     id: "ep1",
     type: "ENDPOINT",
-    label: "Endpoint — Event Closed",
+    label: "Endpoint: Event Closed",
     endpointId: "ep-event-closed",
     outcomeLabel: "Event Closed — Competence Record",
     closingLine:
@@ -552,7 +552,7 @@ const shape: ShapeDefinition = {
   endpoints: [
     {
       id: "ep-event-closed",
-      label: "Event Closed — Competence Record",
+      label: "Event Closed: Competence Record",
       minChoicesToReach: 2,
       maxChoicesToReach: 2,
       narrativeWeight: "earned",

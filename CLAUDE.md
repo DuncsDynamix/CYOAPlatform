@@ -226,6 +226,7 @@ Seed scripts in `prisma/`. Run directly with `npx tsx prisma/seed-*.ts`. The dev
 - `seed-clearconnect.ts` — L&D experience (ID `...0030`), uses DIALOGUE + EVALUATIVE nodes; creates a test Org
 - `seed-nwh.ts` — NWH certification (ID `...0040`), flat FIXED content nodes + 25 MCQ CHOICE nodes
 - `seed-nwh-slides.ts` — NWH slides variant (ID `...0042`), same as 040 but module content delivered via SLIDE_DECK nodes; copies 12 images to `public/uploads/seed/`
+- `seed-goldtap-brand.ts` — brand packs (Gold Tap, Fernbrook, Hartley & Voss), Gold Tap accreditations, and course presentation (stages, images, durations, accreditation links) from `prisma/seed-data/brand-packs.ts`. Run after the course seeds; safe to re-run
 
 ## Roadmap Status
 

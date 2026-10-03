@@ -64,7 +64,7 @@ const nodes: Node[] = [
   {
     id: "sd-intro",
     type: "SLIDE_DECK",
-    label: "Welcome — course introduction",
+    label: "Welcome: course introduction",
     nextNodeId: "sd-m1",
     slides: [
       {
@@ -89,7 +89,7 @@ const nodes: Node[] = [
   {
     id: "sd-m1",
     type: "SLIDE_DECK",
-    label: "Module 1 — The Importance of Water",
+    label: "Module 1: The Importance of Water",
     nextNodeId: "cp-m1",
     slides: [
       {
@@ -107,7 +107,7 @@ const nodes: Node[] = [
       {
         id: "sd-m1-s3",
         template: "text-only",
-        title: "Water — A Scarce Resource",
+        title: "Water: A Scarce Resource",
         body: "• 70% of the Earth's surface is covered by water\n• 97% of that is seawater — not suitable for drinking\n• Only 0.5% of all water on Earth is fresh and drinkable\n\nThis scarcity means every litre of drinking water must be protected carefully throughout treatment and distribution.",
       },
       {
@@ -135,7 +135,7 @@ const nodes: Node[] = [
   {
     id: "sd-m2",
     type: "SLIDE_DECK",
-    label: "Module 2 — Water as a Carrier of Disease",
+    label: "Module 2: Water as a Carrier of Disease",
     nextNodeId: "cp-m2",
     slides: [
       {
@@ -153,7 +153,7 @@ const nodes: Node[] = [
       {
         id: "sd-m2-s3",
         template: "text-only",
-        title: "Cryptosporidium — A Modern Threat",
+        title: "Cryptosporidium: A Modern Threat",
         body: "Cryptosporidium is a microscopic parasite that lives in the intestines of animals and humans. It is one of the most significant water safety risks because:\n\n• It is resistant to chlorine — standard disinfection does not kill it\n• It must be physically removed through filtration or destroyed by UV treatment\n• Infection causes severe gastrointestinal illness\n\nIf Cryptosporidium enters the water supply, the consequences are serious. This is why physical containment and hygiene controls around water sources are critical.",
       },
       {
@@ -181,7 +181,7 @@ const nodes: Node[] = [
   {
     id: "sd-m3",
     type: "SLIDE_DECK",
-    label: "Module 3 — Potential Contamination and Its Consequences",
+    label: "Module 3: Potential Contamination and Its Consequences",
     nextNodeId: "cp-m3",
     slides: [
       {
@@ -199,7 +199,7 @@ const nodes: Node[] = [
       {
         id: "sd-m3-s3",
         template: "text-only",
-        title: "Health Exclusion — When You Must Not Work",
+        title: "Health Exclusion: When You Must Not Work",
         body: "You must not work on restricted operations if you currently have, or have recently had:\n\n• Persistent vomiting or diarrhoea\n• Prolonged unexplained fever\n• Cryptosporidiosis\n• Jaundice\n• Hepatitis A or E\n• Dysentery\n• Typhoid or paratyphoid (including if a family member has been diagnosed)\n\nIf you develop any of these conditions while at work, inform your supervisor immediately and leave the restricted operation site.",
       },
       {
@@ -235,7 +235,7 @@ const nodes: Node[] = [
   {
     id: "sd-m4",
     type: "SLIDE_DECK",
-    label: "Module 4 — Preventing Contamination",
+    label: "Module 4: Preventing Contamination",
     nextNodeId: "cp-m4",
     slides: [
       {
@@ -334,7 +334,7 @@ const nodes: Node[] = [
   // ─── MCQ QUESTIONS (identical to seed-nwh.ts) ────────────────────────────
 
   {
-    id: "n-q1", type: "CHOICE", label: "Q1 — Wholesome water",
+    id: "n-q1", type: "CHOICE", label: "Q1: Wholesome water",
     prompt: "What is the meaning of wholesome water?",
     responseType: "closed",
     options: [
@@ -345,7 +345,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q2", type: "CHOICE", label: "Q2 — Milk and water production",
+    id: "n-q2", type: "CHOICE", label: "Q2: Milk and water production",
     prompt: "Why are milk and drinking water similar in their production?",
     responseType: "closed",
     options: [
@@ -356,7 +356,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q3", type: "CHOICE", label: "Q3 — Drinkable water percentage",
+    id: "n-q3", type: "CHOICE", label: "Q3: Drinkable water percentage",
     prompt: "Water covers 70% of our planet, how much of this water is suitable for use as drinking water?",
     responseType: "closed",
     options: [
@@ -367,7 +367,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q4", type: "CHOICE", label: "Q4 — Why sewage causes illness",
+    id: "n-q4", type: "CHOICE", label: "Q4: Why sewage causes illness",
     prompt: "Why can sewage cause illness if it contaminates drinking water?",
     responseType: "closed",
     options: [
@@ -378,7 +378,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q5", type: "CHOICE", label: "Q5 — Cryptosporidium impact",
+    id: "n-q5", type: "CHOICE", label: "Q5: Cryptosporidium impact",
     prompt: "What could be the impact of Cryptosporidium in the drinking water supply?",
     responseType: "closed",
     options: [
@@ -389,7 +389,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q6", type: "CHOICE", label: "Q6 — Returning from abroad with diarrhoea",
+    id: "n-q6", type: "CHOICE", label: "Q6: Returning from abroad with diarrhoea",
     prompt: "When returning to work, after travelling abroad, you find that you are experiencing persistent diarrhoea. What must you do?",
     responseType: "closed",
     options: [
@@ -400,7 +400,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q7", type: "CHOICE", label: "Q7 — Purpose of water quality audits",
+    id: "n-q7", type: "CHOICE", label: "Q7: Purpose of water quality audits",
     prompt: "Why are water quality audits carried out in the water industry?",
     responseType: "closed",
     options: [
@@ -411,7 +411,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q8", type: "CHOICE", label: "Q8 — Restricted operation activity",
+    id: "n-q8", type: "CHOICE", label: "Q8: Restricted operation activity",
     prompt: "Under the National Water Hygiene scheme, which of these is classed as a Restricted Operation activity?",
     responseType: "closed",
     options: [
@@ -422,7 +422,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q9", type: "CHOICE", label: "Q9 — Reportable illness for restricted operations",
+    id: "n-q9", type: "CHOICE", label: "Q9: Reportable illness for restricted operations",
     prompt: "Which of these illnesses would be reportable to your line manager/supervisor if you work on Restricted Operations?",
     responseType: "closed",
     options: [
@@ -433,7 +433,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q10", type: "CHOICE", label: "Q10 — What you need to work on a restricted operation",
+    id: "n-q10", type: "CHOICE", label: "Q10: What you need to work on a restricted operation",
     prompt: "What must you have to work on a Restricted Operation?",
     responseType: "closed",
     options: [
@@ -444,7 +444,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q11", type: "CHOICE", label: "Q11 — Why birds are a contamination risk at treatment works",
+    id: "n-q11", type: "CHOICE", label: "Q11: Why birds are a contamination risk at treatment works",
     prompt: "Why can birds be a possible cause of contamination at a water treatment works?",
     responseType: "closed",
     options: [
@@ -455,7 +455,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q12", type: "CHOICE", label: "Q12 — Where to keep cleaned and disinfected tools",
+    id: "n-q12", type: "CHOICE", label: "Q12: Where to keep cleaned and disinfected tools",
     prompt: "Cleaned and disinfected tools should be kept:",
     responseType: "closed",
     options: [
@@ -466,7 +466,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q13", type: "CHOICE", label: "Q13 — Diesel spill near water supply installation",
+    id: "n-q13", type: "CHOICE", label: "Q13: Diesel spill near water supply installation",
     prompt: "What should you do if you spill diesel whilst working near a water supply installation?",
     responseType: "closed",
     options: [
@@ -477,7 +477,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q14", type: "CHOICE", label: "Q14 — Result of water supply contamination",
+    id: "n-q14", type: "CHOICE", label: "Q14: Result of water supply contamination",
     prompt: "Contamination of the water supply could result in:",
     responseType: "closed",
     options: [
@@ -488,7 +488,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q15", type: "CHOICE", label: "Q15 — Why personal hygiene is important on water supply installations",
+    id: "n-q15", type: "CHOICE", label: "Q15: Why personal hygiene is important on water supply installations",
     prompt: "Why is personal hygiene so important when working on water supply installations?",
     responseType: "closed",
     options: [
@@ -499,7 +499,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q16", type: "CHOICE", label: "Q16 — Using the toilet on site",
+    id: "n-q16", type: "CHOICE", label: "Q16: Using the toilet on site",
     prompt: "What should you do if you are working on a site and need to use the toilet?",
     responseType: "closed",
     options: [
@@ -510,7 +510,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q17", type: "CHOICE", label: "Q17 — Clothing for water supply and sewage work",
+    id: "n-q17", type: "CHOICE", label: "Q17: Clothing for water supply and sewage work",
     prompt: "If you are working on both water supply and sewage, you should have:",
     responseType: "closed",
     options: [
@@ -521,7 +521,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q18", type: "CHOICE", label: "Q18 — Why pets and livestock are not allowed on restricted operation sites",
+    id: "n-q18", type: "CHOICE", label: "Q18: Why pets and livestock are not allowed on restricted operation sites",
     prompt: "Why are pets and livestock NOT allowed on Restricted Operations sites?",
     responseType: "closed",
     options: [
@@ -532,7 +532,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q19", type: "CHOICE", label: "Q19 — Storing small fittings in a van",
+    id: "n-q19", type: "CHOICE", label: "Q19: Storing small fittings in a van",
     prompt: "How must small fittings be stored in a van?",
     responseType: "closed",
     options: [
@@ -543,7 +543,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q20", type: "CHOICE", label: "Q20 — Where to store fuel in a van",
+    id: "n-q20", type: "CHOICE", label: "Q20: Where to store fuel in a van",
     prompt: "Where should you store fuel in your van?",
     responseType: "closed",
     options: [
@@ -554,7 +554,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q21", type: "CHOICE", label: "Q21 — How pipes must be stored",
+    id: "n-q21", type: "CHOICE", label: "Q21: How pipes must be stored",
     prompt: "How must pipes be stored?",
     responseType: "closed",
     options: [
@@ -565,7 +565,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q22", type: "CHOICE", label: "Q22 — Where to find the approved products list",
+    id: "n-q22", type: "CHOICE", label: "Q22: Where to find the approved products list",
     prompt: "Where can you find a list of Approved Products for the water sector in the UK?",
     responseType: "closed",
     options: [
@@ -576,7 +576,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q23", type: "CHOICE", label: "Q23 — Process for making bacteria harmless in water",
+    id: "n-q23", type: "CHOICE", label: "Q23: Process for making bacteria harmless in water",
     prompt: "The process of treating water to remove or make bacteria harmless is called:",
     responseType: "closed",
     options: [
@@ -587,7 +587,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q24", type: "CHOICE", label: "Q24 — Disposing of chlorinated water",
+    id: "n-q24", type: "CHOICE", label: "Q24: Disposing of chlorinated water",
     prompt: "Which of the following statements is true regarding the disposal of chlorinated water?",
     responseType: "closed",
     options: [
@@ -598,7 +598,7 @@ const nodes: Node[] = [
     ],
   },
   {
-    id: "n-q25", type: "CHOICE", label: "Q25 — Purpose of water quality sampling",
+    id: "n-q25", type: "CHOICE", label: "Q25: Purpose of water quality sampling",
     prompt: "What is the purpose of taking drinking water quality samples?",
     responseType: "closed",
     options: [
@@ -745,7 +745,7 @@ async function main() {
     where: { id: EXPERIENCE_ID },
     create: {
       id: EXPERIENCE_ID,
-      title: "National Water Hygiene — Certification Training (Slides)",
+      title: "National Water Hygiene: Certification Training (Slides)",
       slug: "national-water-hygiene-slides",
       type: "l_and_d",
       renderingTheme: "training",
@@ -763,7 +763,7 @@ async function main() {
       shape: shape as object,
     },
     update: {
-      title: "National Water Hygiene — Certification Training (Slides)",
+      title: "National Water Hygiene: Certification Training (Slides)",
       slug: "national-water-hygiene-slides",
       type: "l_and_d",
       renderingTheme: "training",

@@ -32,7 +32,7 @@ const nodes: Node[] = [
   {
     id: "n-intro",
     type: "FIXED",
-    label: "Welcome — why the doorstep is the hardest part of the job",
+    label: "Welcome: why the doorstep is the hardest part of the job",
     mandatory: true,
     content: `# The Doorstep: Refusal-of-Entry Practice
 
@@ -47,7 +47,7 @@ A refused visit handled well is a success. Forcing a doorstep is the only way to
   {
     id: "n-theory-rights",
     type: "FIXED",
-    label: "Briefing 1 — Rights, identity, and why customers are right to be cautious",
+    label: "Briefing 1: Rights, identity, and why customers are right to be cautious",
     mandatory: true,
     content: `## Rights, identity and the cautious customer
 
@@ -75,7 +75,7 @@ Bogus callers posing as "the water board" are one of the most common forms of di
   {
     id: "n-theory-craft",
     type: "FIXED",
-    label: "Briefing 2 — The conversation craft",
+    label: "Briefing 2: The conversation craft",
     mandatory: true,
     content: `## The conversation craft
 
@@ -109,7 +109,7 @@ Keep these in reach: the **Notes** button in the header holds both briefings dur
   {
     id: "n-scene-margaret",
     type: "GENERATED",
-    label: "Doorstep 1 — the chain stays on",
+    label: "Doorstep 1: the chain stays on",
     beatInstruction:
       "Set up the learner's first doorstep visit of the morning. Invent the specifics fresh: street name, weather, time, the exact job (an internal stop tap check, a routine water quality sample, or a meter inspection at the property). The address belongs to Margaret Hale, 81, who lives alone. The learner knocks; after a long pause the door opens a few inches on the chain. One eye and a cardigan shoulder. She asks who they are, voice careful. End at that moment: chain on, Margaret waiting, the learner about to speak first.",
     constraints: {
@@ -127,7 +127,7 @@ Keep these in reach: the **Notes** button in the header holds both briefings dur
   {
     id: "d-margaret",
     type: "DIALOGUE",
-    label: "Margaret Hale — the chain stays on",
+    label: "Margaret Hale: the chain stays on",
     actorId: "Margaret Hale",
     openingLine:
       "I don't open the door to people I don't know. My son says the water board never just turns up. How do I know you're who you say you are?",
@@ -141,7 +141,7 @@ Keep these in reach: the **Notes** button in the header holds both briefings dur
   {
     id: "n-out-margaret",
     type: "GENERATED",
-    label: "Doorstep 1 — how it ended",
+    label: "Doorstep 1: how it ended",
     beatInstruction:
       "Close the Margaret Hale visit, honestly reflecting the conversation that just happened. If the learner reassured her properly (acknowledged her caution, offered verification on her terms, gave her choices), she either admits them once satisfied or agrees a rebooking she is comfortable with: either is a good outcome, and the scene should feel like trust carefully built. If the learner pressured or rushed her, the chain stays on and the door closes: describe the learner logging a refused visit and what they would record. Never punish a well-handled refusal: if the learner offered the right routes and Margaret still said no, the closing note is that this is the procedure working.",
     constraints: {
@@ -171,7 +171,7 @@ Keep these in reach: the **Notes** button in the header holds both briefings dur
   {
     id: "n-scene-dean",
     type: "GENERATED",
-    label: "Doorstep 2 — already angry",
+    label: "Doorstep 2: already angry",
     beatInstruction:
       "Set up the second visit, late morning, at a different property: invent the street and the job fresh (options: a leak trace needing access to an internal stop tap, a flow check after low-pressure complaints, a meter inspection). The customer is Dean Currie, mid-forties. He has an unresolved billing dispute with the water company and answers the door already angry: arms folded or door half-open, jaw set. He recognises the uniform and starts before the learner can speak. End just before Dean's opening salvo lands.",
     constraints: {
@@ -189,7 +189,7 @@ Keep these in reach: the **Notes** button in the header holds both briefings dur
   {
     id: "d-dean",
     type: "DIALOGUE",
-    label: "Dean Currie — already angry",
+    label: "Dean Currie: already angry",
     actorId: "Dean Currie",
     openingLine:
       "Oh, you're joking. You lot chase me for a bill I've already paid, and now you want to come into my house? You've got some nerve. Go on then, what is it this time?",
@@ -203,7 +203,7 @@ Keep these in reach: the **Notes** button in the header holds both briefings dur
   {
     id: "n-out-dean",
     type: "GENERATED",
-    label: "Doorstep 2 — how it ended",
+    label: "Doorstep 2: how it ended",
     beatInstruction:
       "Close the Dean Currie visit, honestly reflecting the conversation. If the learner stayed level, acknowledged the frustration, separated the jobs and offered choices, Dean either grudgingly allows the work ('go on then, ten minutes') or agrees a rebooking, still grumbling but no longer at war. If the learner argued, got defensive, or threatened consequences, Dean shuts the door hard: describe the learner recording a refused visit and the note they leave for the billing team about the unresolved dispute. Either way, end with the learner in the van completing the visit log, and one line acknowledging that doorsteps like these are the job at its hardest.",
     constraints: {
@@ -233,7 +233,7 @@ Keep these in reach: the **Notes** button in the header holds both briefings dur
   {
     id: "ev-debrief",
     type: "EVALUATIVE",
-    label: "Coaching review — your two doorsteps",
+    label: "Coaching review: your two doorsteps",
     rubric: [
       {
         id: "acknowledge-first",

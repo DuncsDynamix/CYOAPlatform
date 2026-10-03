@@ -54,3 +54,25 @@ describe.each(Object.entries(SEEDS))("%s", (name, mod) => {
     })
   }
 })
+
+describe("Gold Tap shelf learner copy", () => {
+  const GOLD_TAP_SHELF = [
+    "seed-goldtap-doorstep", "seed-goldtap-water-quality", "seed-thames-water",
+    "seed-nwh", "seed-nwh-interactive", "seed-nwh-slides",
+  ]
+
+  it.each(GOLD_TAP_SHELF)("%s has no em-dashes in learner-visible labels, prompts or objectives", (name) => {
+    for (const exp of SEEDS[name].experiences as unknown as Record<string, unknown>[]) {
+      const nodes = [...((exp.nodes ?? []) as unknown[]), ...((exp.segments ?? []) as { nodes?: unknown[] }[]).flatMap((s) => s.nodes ?? [])] as Record<string, unknown>[]
+      const strings: string[] = []
+      for (const n of nodes) {
+        for (const key of ["label", "prompt", "openPrompt"]) if (typeof n[key] === "string") strings.push(n[key] as string)
+        for (const o of (n.options as { label: string }[] | undefined) ?? []) strings.push(o.label)
+        for (const s of (n.slides as { title?: string }[] | undefined) ?? []) if (s.title) strings.push(s.title)
+      }
+      const pack = exp.contextPack as { extension?: { learningObjectives?: string[] } }
+      strings.push(...(pack.extension?.learningObjectives ?? []))
+      for (const s of strings) expect(s, `${name}: "${s}"`).not.toMatch(/—/)
+    }
+  })
+})
