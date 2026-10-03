@@ -11,6 +11,7 @@ import type { BinderyDraft } from "./Desk"
 
 const LOOSE_INTRO = "The binding is loose on these pages:"
 const ADRIFT_INTRO = "No path leads to these pages. Readers will never find them:"
+const UNBINDABLE_COPY = "Part of this book cannot be bound yet. Open it in the Studio to fix it."
 const JAMMED_COPY = "the presses jammed. Try again."
 
 function getSegments(draft: BinderyDraft): Segment[] {
@@ -75,9 +76,16 @@ export function SheetBind({
           allNodes,
           draft.contextPack
         )
+        const serverErrors = Array.isArray(data.errors) ? (data.errors as { code?: unknown; nodeId?: unknown }[]) : []
+        // Errors that are not a node's loose link (missing details, bad setup) cannot be fixed by retrying.
+        const hasGeneralError = serverErrors.some((e) => e && e.code !== "dangling_link" && typeof e.nodeId !== "string")
+        const general: LooseStitch[] = hasGeneralError || (fromServer.length === 0 && serverErrors.length > 0)
+          ? [{ nodeId: "", nodeLabel: "", message: UNBINDABLE_COPY, severity: "blocking" }]
+          : []
+        const all = [...fromServer, ...general]
         setServerStitches(
-          fromServer.length > 0
-            ? fromServer
+          all.length > 0
+            ? all
             : [{ nodeId: "", nodeLabel: "", message: JAMMED_COPY, severity: "blocking" }]
         )
         return

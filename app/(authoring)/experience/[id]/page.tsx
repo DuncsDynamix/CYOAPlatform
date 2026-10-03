@@ -207,16 +207,16 @@ export default function ExperienceEditorPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        // Graph validation failure: list the problems so the author can fix them
-        const issues = [
-          ...(data.brokenLinks ?? []).map(
-            (b: { nodeId: string; handle: string }) => `• Broken link on node ${b.nodeId} (${b.handle})`
-          ),
-          ...(data.deadEnds ?? []).map((d: string) => `• Dead end: node ${d} has no way forward`),
-        ]
+        // Validation failure: list the problems so the author can fix them
+        const issues = Array.isArray(data.errors)
+          ? (data.errors as { message: string }[]).map((e) => `• ${e.message}`)
+          : []
         throw new Error(issues.length > 0 ? `${data.error}\n\n${issues.join("\n")}` : data.error ?? "Publish failed")
       }
       setExperience((prev) => prev ? { ...prev, status: data.status } : prev)
+      if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+        alert(`Published, with a few things worth a look:\n\n${(data.warnings as { message: string }[]).map((w) => `• ${w.message}`).join("\n")}`)
+      }
     } catch (err) {
       alert(err instanceof Error ? err.message : "Publish failed")
     } finally {

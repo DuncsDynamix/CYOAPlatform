@@ -239,6 +239,16 @@ describe("SheetBind", () => {
     expect(screen.getByRole("button", { name: /bind and shelve this book/i })).toBeEnabled()
   })
 
+  it("a publish 400 with a non-link error shows the unbindable copy, not the jammed copy", async () => {
+    vi.stubGlobal("fetch", vi.fn(() =>
+      jsonResponse({ error: "problems", errors: [{ code: "missing_required_field", message: "Tone is empty." }], warnings: [] }, 400)
+    ))
+    render(<SheetBind draft={draftWithSegments(VALID_SEGMENTS)} onJumpToNode={vi.fn()} onShelved={vi.fn()} />)
+    fireEvent.click(screen.getByRole("button", { name: /bind and shelve this book/i }))
+    await screen.findByText(/part of this book cannot be bound yet\. open it in the studio to fix it\./i)
+    expect(screen.queryByText(/presses jammed/i)).not.toBeInTheDocument()
+  })
+
   it("a publish 400 renders the in-theme failure list and never calls window.alert", async () => {
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {})
     const fetchMock = vi.fn(() =>

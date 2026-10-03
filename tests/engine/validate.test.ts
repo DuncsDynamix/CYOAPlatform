@@ -6,6 +6,15 @@ const story = (overrides: Record<string, unknown> = {}) => ({ type: "cyoa_story"
 const codes = (r: ReturnType<typeof validateExperience>) => ({ e: r.errors.map((i) => i.code), w: r.warnings.map((i) => i.code) })
 
 describe("validateExperience", () => {
+  it("reports one dangling_link per node and plain labels for missing fields", () => {
+    const nodes = createTestNodeGraph().map((n) => (n.id === "node-1" ? { ...n, nextNodeId: "" } : n))
+    const pack = createTestContextPack()
+    pack.core.setting.summary = ""
+    const r = validateExperience(story({ nodes, contextPack: pack }))
+    expect(r.errors.filter((i) => i.code === "dangling_link" && i.nodeId === "node-1")).toHaveLength(1)
+    const missing = r.errors.find((i) => i.code === "missing_required_field")
+    expect(missing).toMatchObject({ message: "Setting description is empty.", path: "core.setting.summary" })
+  })
   it("accepts the factory story", () => {
     expect(validateExperience(story()).errors).toEqual([])
   })

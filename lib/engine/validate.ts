@@ -9,6 +9,13 @@ export interface ValidationIssue { code: string; message: string; nodeId?: strin
 function readPath(pack: ContextPack, path: string): unknown {
   return path.split(".").reduce<unknown>((cur, key) => (cur && typeof cur === "object" ? (cur as Record<string, unknown>)[key] : undefined), pack)
 }
+const FIELD_LABELS: Record<string, string> = {
+  "core.setting.summary": "Setting description",
+  "core.participant.role": "The learner's or reader's role",
+  "core.style.tone": "Tone",
+  "core.characters": "Characters",
+  "extension.learningObjectives": "Learning objectives",
+}
 const isEmpty = (v: unknown) => v === undefined || v === null || (typeof v === "string" && v.trim() === "") || (Array.isArray(v) && v.length === 0)
 
 export function validateExperience(
@@ -29,7 +36,7 @@ export function validateExperience(
   const pack = normaliseContextPack(experience.contextPack, experience.type).pack
 
   for (const path of useCase.authoringConfig.requiredContextFields) {
-    if (isEmpty(readPath(pack, path))) errors.push({ code: "missing_required_field", message: `Required field is empty: ${path}`, path })
+    if (isEmpty(readPath(pack, path))) errors.push({ code: "missing_required_field", message: `${FIELD_LABELS[path] ?? path} is empty.`, path })
   }
 
   for (const ref of pack.core.references) {
@@ -72,8 +79,16 @@ export function validateExperience(
   }
 
   const graph = validateExperienceGraph(nodes as Node[])
-  for (const link of graph.brokenLinks) errors.push({ code: "dangling_link", message: `A link from ${byId.get(link.nodeId)?.label || link.nodeId} points nowhere.`, nodeId: link.nodeId })
-  for (const id of graph.deadEnds) errors.push({ code: "dangling_link", message: `${byId.get(id)?.label || id} has no way forward.`, nodeId: id })
+  const linkFlagged = new Set<string>()
+  for (const link of graph.brokenLinks) {
+    if (linkFlagged.has(link.nodeId)) continue
+    linkFlagged.add(link.nodeId)
+    errors.push({ code: "dangling_link", message: `A link from ${byId.get(link.nodeId)?.label || link.nodeId} points nowhere.`, nodeId: link.nodeId })
+  }
+  for (const id of graph.deadEnds) {
+    if (linkFlagged.has(id)) continue
+    errors.push({ code: "dangling_link", message: `${byId.get(id)?.label || id} has no way forward.`, nodeId: id })
+  }
   for (const id of graph.unreachable) warnings.push({ code: "unreachable_node", message: `${byId.get(id)?.label || id} can never be reached.`, nodeId: id })
 
   return { errors, warnings }
