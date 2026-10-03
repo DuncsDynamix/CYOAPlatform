@@ -37,3 +37,25 @@ describe("SlideDeckScreen", () => {
     expect(onContinue).toHaveBeenCalledOnce()
   })
 })
+
+describe("SlideDeckScreen continue latch", () => {
+  it("continues once from an empty deck", () => {
+    const onContinue = vi.fn()
+    render(<SlideDeckScreen slides={[]} onContinue={onContinue} />)
+    const button = screen.getByRole("button", { name: "Continue" })
+    fireEvent.click(button)
+    fireEvent.click(button)
+    expect(onContinue).toHaveBeenCalledTimes(1)
+    expect(button).toBeDisabled()
+  })
+
+  it("continues once from the last slide", () => {
+    const onContinue = vi.fn()
+    render(<SlideDeckScreen slides={slides.slice(0, 1)} onContinue={onContinue} />)
+    const button = screen.getByRole("button", { name: "Continue" })
+    fireEvent.click(button)
+    fireEvent.click(button)
+    expect(onContinue).toHaveBeenCalledTimes(1)
+    expect(button).toBeDisabled()
+  })
+})

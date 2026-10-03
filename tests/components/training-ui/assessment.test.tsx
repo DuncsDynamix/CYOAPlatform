@@ -53,3 +53,29 @@ describe("AssessmentScreen", () => {
     expect(await screen.findByText("The assessment could not be re-run. Try again shortly.")).toBeInTheDocument()
   })
 })
+
+describe("AssessmentScreen edge states", () => {
+  it("says the assessment is incomplete when there are no results", () => {
+    render(<AssessmentScreen {...props} results={[]} />)
+    expect(screen.getByText("Incomplete: no criteria were assessed.")).toBeInTheDocument()
+    expect(screen.queryByRole("list")).not.toBeInTheDocument()
+  })
+
+  it("disables Continue while a re-run is pending, and after it is pressed", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => {})))
+    const onContinue = vi.fn()
+    render(<AssessmentScreen {...props} onContinue={onContinue} results={[r("not_assessed")]} />)
+    await userEvent.click(screen.getByRole("button", { name: "Re-run assessment" }))
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled()
+  })
+
+  it("continues once, however often it is pressed", async () => {
+    const onContinue = vi.fn()
+    render(<AssessmentScreen {...props} onContinue={onContinue} results={[r("passed")]} />)
+    const button = screen.getByRole("button", { name: "Continue" })
+    await userEvent.click(button)
+    await userEvent.click(button)
+    expect(onContinue).toHaveBeenCalledTimes(1)
+    expect(button).toBeDisabled()
+  })
+})

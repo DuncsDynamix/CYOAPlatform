@@ -119,3 +119,28 @@ describe("ObservedScreen", () => {
     expect(container.querySelectorAll(".tg-observe-row--b")).toHaveLength(1)
   })
 })
+
+describe("ObservedScreen continue latch", () => {
+  it("continues once, however often it is pressed", () => {
+    const onContinue = vi.fn()
+    render(<ObservedScreen exchanges={[{ speaker: "Pat", line: "Hi." }]} onContinue={onContinue} />)
+    const button = screen.getByRole("button", { name: "Continue" })
+    fireEvent.click(button)
+    fireEvent.click(button)
+    expect(onContinue).toHaveBeenCalledTimes(1)
+    expect(button).toBeDisabled()
+  })
+})
+
+describe("ConversationScreen composer while sending", () => {
+  it("keeps the textarea focusable (readOnly, not disabled) so the phone keyboard stays up", () => {
+    const onSubmit = vi.fn(() => new Promise<void>(() => {}))
+    render(<ConversationScreen {...base} onSubmit={onSubmit} />)
+    const box = screen.getByLabelText("Your reply")
+    fireEvent.change(box, { target: { value: "Hello" } })
+    fireEvent.keyDown(box, { key: "Enter" })
+    expect(box).not.toBeDisabled()
+    expect(box).toHaveAttribute("readonly")
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled()
+  })
+})

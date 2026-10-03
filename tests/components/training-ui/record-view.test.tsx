@@ -105,3 +105,20 @@ describe("record print styles", () => {
     expect(css).toMatch(/\.tg-record-criterion\s*\{[^}]*break-inside:\s*avoid/)
   })
 })
+
+describe("RecordView renders the document, never re-derives it", () => {
+  it("prints the document's verdict label, pass rule and row status labels", () => {
+    const doc: RecordDocument = {
+      ...base,
+      verdict: { outcome: "passed", label: "Doc verdict label", summary: "s", passRule: "Doc pass rule text." },
+      criteria: [{ label: "Introduces self", status: "passed", statusLabel: "Doc status label", critical: true, evidence: "e" }],
+    }
+    render(<RecordView doc={doc} />)
+    const verdict = screen.getByRole("status")
+    expect(within(verdict).getByText("Doc verdict label")).toBeInTheDocument()
+    expect(within(verdict).getByText("Doc pass rule text.")).toBeInTheDocument()
+    const chip = screen.getByText("Doc status label")
+    expect(chip).toHaveClass("tg-chip--pass")
+    expect(screen.queryByText("Demonstrated")).not.toBeInTheDocument()
+  })
+})

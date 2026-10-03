@@ -12,7 +12,6 @@ const evidence = (results: CompetencyResult[], hasAssessment = true) =>
   buildEvidenceRecord({ moduleTitle: "The Doorstep", outcomeLabel: "Practice complete", aiSummary: "s", completedAt: "2026-10-03T10:00:00Z", results, decisions: [], hasAssessment })
 
 const base = {
-  outcomeLabel: "Practice complete",
   learnerName: "Sam Taylor",
   aiSummary: "You gave Margaret real control over checking who you were.",
   decisionHistory: [],

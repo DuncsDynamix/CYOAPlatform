@@ -4,7 +4,7 @@ import { useState } from "react"
 import type { DecisionReview, OutcomeCardData } from "@/types/engine"
 import type { EvidenceRecord } from "@/lib/training/evidence"
 import type { FeedbackStyle } from "@/lib/training/views"
-import { DEBRIEF_COPY, debriefGreeting, feedbackHeading, passMarkNote, scoreLine, verdictSummary } from "@/lib/training/copy"
+import { DEBRIEF_COPY, debriefGreeting, feedbackHeading, passMarkNote, scoreLine, verdictSummary, VERDICT_LABEL, VERDICT_PASS_RULE } from "@/lib/training/copy"
 import { toDisplayText } from "@/lib/training/display"
 import { Footer, Screen, ScreenBody } from "../Screen"
 import { DocumentIcon, RefreshIcon } from "../icons"
@@ -60,7 +60,6 @@ function ReassessActions({ evidence, onReassess }: { evidence: EvidenceRecord; o
 }
 
 export function DebriefScreen({
-  outcomeLabel,
   learnerName,
   aiSummary,
   decisionHistory,
@@ -71,7 +70,6 @@ export function DebriefScreen({
   libraryHref,
   onReassess,
 }: {
-  outcomeLabel: string
   learnerName: string | null
   aiSummary: string
   decisionHistory: DecisionReview[]
@@ -88,9 +86,9 @@ export function DebriefScreen({
     <Screen>
       <section className="tg-debrief-hero">
         <div className="tg-debrief-hero-inner">
-          <p className="tg-debrief-kicker">{toDisplayText(outcomeLabel)}</p>
+          <p className="tg-debrief-kicker">{DEBRIEF_COPY.kicker}</p>
           <h1 className="tg-debrief-title">{debriefGreeting(learnerName)}</h1>
-          {outcome && evidence && <VerdictPanel outcome={outcome} summary={verdictSummary(evidence.criteria)} />}
+          {outcome && evidence && <VerdictPanel outcome={outcome} label={VERDICT_LABEL[outcome]} summary={verdictSummary(evidence.criteria)} rule={VERDICT_PASS_RULE} />}
           {score && (
             <p className="tg-debrief-score">
               {scoreLine(score)} · {passMarkNote(score.passed)}

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import type { CompetencyResult } from "@/types/session"
 import type { AssessmentOutcome } from "@/lib/engine/client"
-import { NOT_ASSESSED_NOTE } from "@/lib/training/copy"
+import { ASSESSMENT_EMPTY, NOT_ASSESSED_NOTE } from "@/lib/training/copy"
 import { toDisplayText } from "@/lib/training/display"
 import { StatusChip } from "../StatusChip"
 import { Footer, Screen, ScreenBody } from "../Screen"
@@ -35,6 +35,7 @@ export function AssessmentScreen({
   const [feedback, setFeedback] = useState(initialFeedback)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [continued, setContinued] = useState(false)
   const canReassess = Boolean(sessionId) && results.some((r) => r.status === "not_assessed")
 
   async function reassess() {
@@ -65,6 +66,8 @@ export function AssessmentScreen({
         <p className="tg-kicker">Assessment</p>
         {title && <h1 className="tg-assess-title">{title}</h1>}
         {feedback && <p className="tg-assess-feedback">{feedback}</p>}
+        {results.length === 0 && <p className="tg-assess-empty">{ASSESSMENT_EMPTY}</p>}
+        {results.length > 0 && (
         <ul className="tg-criteria">
           {results.map((r) => (
             <li key={`${r.nodeId}-${r.rubricCriterionId}`} className="tg-criterion">
@@ -76,6 +79,7 @@ export function AssessmentScreen({
             </li>
           ))}
         </ul>
+        )}
         {canReassess && (
           <div className="tg-rerun">
             <button type="button" className="tg-btn tg-btn--secondary" onClick={reassess} disabled={pending}>
@@ -90,7 +94,12 @@ export function AssessmentScreen({
         )}
       </ScreenBody>
       <Footer>
-        <button type="button" className="tg-btn tg-btn--primary tg-btn--block" onClick={onContinue}>
+        <button type="button" className="tg-btn tg-btn--primary tg-btn--block" disabled={pending || continued}
+          onClick={() => {
+            setContinued(true)
+            onContinue()
+          }}
+        >
           Continue
         </button>
       </Footer>

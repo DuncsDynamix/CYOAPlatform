@@ -22,6 +22,7 @@ export function ConversationScreen({
   maxTurns,
   onSubmit,
   onConclude,
+  replying = false,
 }: {
   sessionId: string | null
   actorName: string
@@ -31,6 +32,8 @@ export function ConversationScreen({
   maxTurns: number
   onSubmit: (text: string) => Promise<void> | void
   onConclude: () => Promise<void> | void
+  /** A reply is already on its way (a retried turn): show the typing indicator. */
+  replying?: boolean
 }) {
   const [draft, setDraft] = useState("")
   const [submitting, setSubmitting] = useState(false)
@@ -39,11 +42,12 @@ export function ConversationScreen({
   const endRef = useRef<HTMLDivElement>(null)
   const { voiceOn, available, speaking, toggle, speak } = useActorVoice(sessionId)
   const name = toDisplayText(actorName)
+  const busy = submitting || replying
 
   // Keep the newest turn in view.
   useEffect(() => {
     endRef.current?.scrollIntoView?.({ block: "end" })
-  }, [history, submitting])
+  }, [history, busy])
 
   // Speak each character turn once as it arrives (including the opening line).
   const spokenCountRef = useRef(0)
@@ -103,7 +107,7 @@ export function ConversationScreen({
             {t.content}
           </li>
         ))}
-        {submitting && (
+        {busy && (
           <li className="tg-msg tg-msg--theirs tg-typing">
             <span className="tg-sr-only">{name} is replying</span>
             <span className="tg-typing-dot" aria-hidden="true" />
@@ -118,7 +122,7 @@ export function ConversationScreen({
           <button
             type="button"
             className="tg-btn tg-btn--quiet tg-conclude"
-            disabled={submitting || concluding}
+            disabled={busy || concluding}
             onClick={() => {
               setConcluding(true)
               onConclude()
@@ -134,7 +138,7 @@ export function ConversationScreen({
             aria-label="Your reply"
             placeholder="Type what you'd say"
             value={draft}
-            disabled={submitting || concluding}
+            readOnly={busy || concluding}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -143,7 +147,7 @@ export function ConversationScreen({
               }
             }}
           />
-          <button type="button" className="tg-btn tg-btn--primary" onClick={submit} disabled={!draft.trim() || submitting || concluding}>
+          <button type="button" className="tg-btn tg-btn--primary" onClick={submit} disabled={!draft.trim() || busy || concluding}>
             Send
           </button>
         </div>

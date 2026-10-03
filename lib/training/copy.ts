@@ -113,6 +113,7 @@ export function turnLabel(completedTurns: number, maxTurns: number): string {
 }
 
 export const DEBRIEF_COPY = {
+  kicker: "Course complete",
   recordTitle: "Your evidence record",
   recordHint: "Ready to print or save as PDF",
   openRecord: "Open evidence record",
@@ -134,6 +135,9 @@ export function scoreLine(score: { label: string; value: number; outOf: number; 
 export function passMarkNote(reached: boolean): string {
   return reached ? "Pass mark reached" : "Below the pass mark"
 }
+
+/** Shown on the assessment screen when it carries no results at all. */
+export const ASSESSMENT_EMPTY = "Incomplete: no criteria were assessed."
 
 export const NOTES_EMPTY = "No course content yet. Notes collect here as you progress."
 export const OBJECTIVES_EMPTY = "No objectives defined."

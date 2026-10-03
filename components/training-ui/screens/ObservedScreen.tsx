@@ -16,6 +16,7 @@ export function ObservedScreen({
   onContinue: () => void
 }) {
   const [revealed, setRevealed] = useState(1)
+  const [continued, setContinued] = useState(false)
   const complete = revealed >= exchanges.length
   const speakerA = exchanges[0]?.speaker ?? ""
 
@@ -38,7 +39,13 @@ export function ObservedScreen({
       </ScreenBody>
       <Footer>
         {complete ? (
-          <button type="button" className="tg-btn tg-btn--primary tg-btn--block" onClick={onContinue}>
+          <button type="button" className="tg-btn tg-btn--primary tg-btn--block"
+            disabled={continued}
+            onClick={() => {
+              setContinued(true)
+              onContinue()
+            }}
+          >
             Continue
           </button>
         ) : (

@@ -76,7 +76,6 @@ export function TrainingPlayer({
       <Shell brand={brand} title={title}>
         {isDemoMode() && <DemoBadge copyKey="ENDPOINT" />}
         <DebriefScreen
-          outcomeLabel={status.outcomeLabel}
           learnerName={learnerName}
           aiSummary={status.aiSummary}
           decisionHistory={status.decisionHistory}
@@ -171,6 +170,7 @@ export function TrainingPlayer({
             actorName={status.actorName}
             actorRole={status.actorRole}
             history={status.dialogueHistory}
+            replying={s.dialogueReplying}
             turnCount={status.turnCount}
             maxTurns={status.maxTurns}
             onSubmit={s.handleDialogueTurn}

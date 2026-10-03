@@ -4,6 +4,8 @@ import { TrainingPlayer } from "@/components/training-ui/TrainingPlayer"
 import type { CompetencyResult } from "@/types/session"
 import type { CoverView, PlayerBrand } from "@/lib/training/views"
 
+vi.mock("@/lib/voice/client", () => ({ fetchActorAudio: () => Promise.resolve({ kind: "disabled" }) }))
+
 const brand: PlayerBrand = { displayName: "Gold Tap Training", header: "dark", recordPrefix: "GT" }
 
 function jsonResponse(body: unknown, status = 200) {
@@ -107,7 +109,7 @@ describe("TrainingPlayer debrief verdict", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue" }))
 
     // The waiting screen also has a status line: wait for the debrief itself.
-    await screen.findByText("Practice session complete")
+    await screen.findByText("Course complete")
     const verdict = screen.getByRole("status")
     expect(within(verdict).getByText("Not yet demonstrated")).toBeInTheDocument()
     expect(screen.queryByText("Competence demonstrated")).not.toBeInTheDocument()
@@ -121,7 +123,7 @@ describe("TrainingPlayer debrief verdict", () => {
     render(<TrainingPlayer experienceSlug="doorstep" brand={brand} />)
     await screen.findByText("Intro text.")
     fireEvent.click(screen.getByRole("button", { name: "Continue" }))
-    await screen.findByText("Practice session complete")
+    await screen.findByText("Course complete")
     const verdict = screen.getByRole("status")
     expect(within(verdict).getByText("Not yet demonstrated")).toBeInTheDocument()
     expect(within(verdict).getByText("1 of 5 criteria demonstrated, 4 not yet demonstrated")).toBeInTheDocument()
@@ -135,7 +137,7 @@ describe("TrainingPlayer debrief verdict", () => {
     render(<TrainingPlayer experienceSlug="slides" brand={brand} />)
     await screen.findByText("Intro text.")
     fireEvent.click(screen.getByRole("button", { name: "Continue" }))
-    await screen.findByText("Practice session complete")
+    await screen.findByText("Course complete")
     expect(screen.queryByRole("status")).not.toBeInTheDocument()
     for (const label of ["Competence demonstrated", "Not yet demonstrated", "Incomplete"]) expect(screen.queryByText(label)).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Open evidence record" })).toHaveAttribute("href", "/scenario/slides/record/sess-1")
@@ -264,5 +266,77 @@ describe("TrainingPlayer titles", () => {
     render(<TrainingPlayer experienceSlug="doorstep" brand={brand} />)
     await screen.findByText("Intro text.")
     expect(screen.getByText("The Doorstep: Practice")).toBeInTheDocument()
+  })
+})
+
+describe("TrainingPlayer dialogue retry", () => {
+  it("returns to the conversation after a failed turn is retried, with the learner turn shown once", async () => {
+    let dialogueCalls = 0
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/engine/start")) {
+        return jsonResponse({
+          sessionId: "sess-1", experienceTitle: "The Doorstep", node: { id: "d1", type: "DIALOGUE", label: "Talk", nextNodeId: "n2" },
+          content: { type: "dialogue", actorName: "Margaret Hale", actorRole: "Resident", characterLine: "Who are you?", turnCount: 0, maxTurns: 6 },
+        })
+      }
+      if (url.includes("/engine/dialogue")) {
+        dialogueCalls++
+        if (dialogueCalls === 1) return jsonResponse({ error: "Temporarily unavailable. Try again in a moment.", retryable: true }, 503)
+        return jsonResponse({ characterLine: "Prove it.", turnCount: 1, maxTurns: 6, breakthroughAchieved: false, dialogueComplete: false })
+      }
+      return jsonResponse({ error: "unexpected" }, 500)
+    }))
+    render(<TrainingPlayer experienceSlug="doorstep" brand={brand} />)
+    const input = await screen.findByRole("textbox", { name: "Your reply" })
+    fireEvent.change(input, { target: { value: "I am Sam" } })
+    fireEvent.click(screen.getByRole("button", { name: "Send" }))
+    await screen.findByText(/Temporarily unavailable/)
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }))
+    await screen.findByText("Prove it.")
+    expect(screen.getAllByText(/I am Sam/)).toHaveLength(1)
+    expect(screen.getByRole("textbox", { name: "Your reply" })).toBeEnabled()
+    expect(screen.queryByText(/Temporarily unavailable/)).not.toBeInTheDocument()
+  })
+})
+
+describe("TrainingPlayer open response", () => {
+  it("sends the typed text as freeTextResponse, and again on retry", async () => {
+    const openNode = { id: "choice-o", type: "CHOICE", label: "Respond", responseType: "open", options: [] }
+    const fetchMock = vi.fn((input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes("/engine/start")) return jsonResponse({ sessionId: "sess-1", node: openNode, content: { type: "choice", prompt: "What do you say?" } })
+      if (url.includes("/engine/choose")) {
+        if (fetchMock.mock.calls.filter(([u]) => String(u).includes("/engine/choose")).length === 1) return jsonResponse({ error: "Busy.", retryable: true }, 503)
+        return jsonResponse({ node: proseNode, content: { type: "prose", content: "She nods slowly." } })
+      }
+      return jsonResponse({ error: "unexpected" }, 500)
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    render(<TrainingPlayer experienceSlug="doorstep" brand={brand} />)
+    fireEvent.change(await screen.findByPlaceholderText("Type your response"), { target: { value: "  I'm from the water company. " } })
+    fireEvent.click(screen.getByRole("button", { name: "Submit response" }))
+    await screen.findByText("Busy.")
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }))
+    await screen.findByText("She nods slowly.")
+    const chooseCalls = (fetchMock.mock.calls as unknown as [string, RequestInit][]).filter(([u]) => String(u).includes("/engine/choose"))
+    expect(chooseCalls).toHaveLength(2)
+    for (const [, init] of chooseCalls) {
+      expect(JSON.parse(String(init.body))).toEqual({ sessionId: "sess-1", choiceId: "open", freeTextResponse: "I'm from the water company." })
+    }
+  })
+})
+
+describe("TrainingPlayer debrief kicker", () => {
+  it("shows fixed 'Course complete' copy and never the authored outcome label on an unassessed course", async () => {
+    stubStartAndNode(
+      { sessionId: "sess-1", experienceTitle: "Slides only", node: introNode, content: { type: "prose", content: "Intro text." } },
+      { node: endNode, content: endpointContent({ outcomeCard: { ...endpointContent().outcomeCard, outcomeLabel: "Competent Practitioner" } }) }
+    )
+    render(<TrainingPlayer experienceSlug="slides" brand={brand} />)
+    await screen.findByText("Intro text.")
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }))
+    await screen.findByText("Course complete")
+    expect(screen.queryByText("Competent Practitioner")).not.toBeInTheDocument()
   })
 })

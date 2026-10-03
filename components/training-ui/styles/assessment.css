@@ -8,6 +8,10 @@
   margin-bottom: var(--tg-space-4);
   color: var(--tg-text-muted);
 }
+.tg-assess-empty {
+  margin-bottom: var(--tg-space-4);
+  color: var(--tg-text-muted);
+}
 .tg-criteria {
   display: flex;
   flex-direction: column;

@@ -52,7 +52,7 @@ export function RecordView({ doc, logo }: { doc: RecordDocument; logo?: string }
             </div>
           </dl>
 
-          {doc.verdict && <VerdictPanel outcome={doc.verdict.outcome} summary={doc.verdict.summary} />}
+          {doc.verdict && <VerdictPanel outcome={doc.verdict.outcome} label={doc.verdict.label} summary={doc.verdict.summary} rule={doc.verdict.passRule} />}
           {doc.score && (
             <p className="tg-record-score">
               {scoreLine(doc.score)} · {passMarkNote(doc.score.meetsPassMark)}
@@ -73,7 +73,7 @@ export function RecordView({ doc, logo }: { doc: RecordDocument; logo?: string }
                       <p className="tg-record-evidence">{c.evidence}</p>
                       {c.reassessedAt && <p className="tg-record-reassessed">Re-assessed {formatDay(c.reassessedAt)}</p>}
                     </div>
-                    <StatusChip status={c.status} />
+                    <StatusChip status={c.status} label={c.statusLabel} />
                   </li>
                 ))}
               </ul>

@@ -8,6 +8,11 @@ import { ArrowLeftIcon, ArrowRightIcon } from "../icons"
 
 export function SlideDeckScreen({ slides, onContinue }: { slides: Slide[]; onContinue: () => void }) {
   const [index, setIndex] = useState(0)
+  const [continued, setContinued] = useState(false)
+  const proceed = () => {
+    setContinued(true)
+    onContinue()
+  }
   const total = slides.length
   const goNext = useCallback(() => setIndex((i) => Math.min(i + 1, Math.max(total - 1, 0))), [total])
   const goPrev = useCallback(() => setIndex((i) => Math.max(i - 1, 0)), [])
@@ -28,7 +33,7 @@ export function SlideDeckScreen({ slides, onContinue }: { slides: Slide[]; onCon
           <p className="tg-slides-empty">No slides in this deck.</p>
         </ScreenBody>
         <Footer>
-          <button type="button" className="tg-btn tg-btn--primary tg-btn--block" onClick={onContinue}>
+          <button type="button" className="tg-btn tg-btn--primary tg-btn--block" disabled={continued} onClick={proceed}>
             Continue
           </button>
         </Footer>
@@ -66,7 +71,7 @@ export function SlideDeckScreen({ slides, onContinue }: { slides: Slide[]; onCon
             ))}
           </div>
           {isLast ? (
-            <button type="button" className="tg-btn tg-btn--primary" onClick={onContinue}>
+            <button type="button" className="tg-btn tg-btn--primary" disabled={continued} onClick={proceed}>
               Continue
             </button>
           ) : (

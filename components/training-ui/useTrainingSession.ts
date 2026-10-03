@@ -1,30 +1,12 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import type { TrainingPlayerStatus, LearningObjective, DecisionReview, CompetencyProfile, CourseNote, ResolvedContent } from "@/types/engine"
+import type { TrainingPlayerStatus, LearningObjective, DecisionReview, CourseNote, ResolvedContent } from "@/types/engine"
 import type { ChoiceOption, FixedNode, GeneratedNode, Node } from "@/types/experience"
 import type { DialogueTurn, CompetencyResult } from "@/types/session"
 import { buildEvidenceRecord } from "@/lib/training/evidence"
 import { shuffleWith } from "@/lib/training/shuffle"
 import type { ResumeSnapshot } from "@/lib/training/resume"
-
-export function buildCompetencyProfile(history: DecisionReview[]): CompetencyProfile[] {
-  const map = new Map<string, CompetencyProfile>()
-  for (const d of history) {
-    if (!d.competencySignal) continue
-    const existing = map.get(d.competencySignal) ?? {
-      name: d.competencySignal,
-      demonstratedCount: 0,
-      developmentalCount: 0,
-      totalSignals: 0,
-    }
-    existing.totalSignals++
-    if (d.feedbackTone === "positive") existing.demonstratedCount++
-    if (d.feedbackTone === "developmental") existing.developmentalCount++
-    map.set(d.competencySignal, existing)
-  }
-  return Array.from(map.values())
-}
 
 /** Reads the engine's { error, retryable } envelope off a failed response. */
 async function readFailure(res: Response, fallback: string): Promise<{ message: string; retryable: boolean }> {
@@ -88,6 +70,13 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId,
   const [pendingNodeId, setPendingNodeId] = useState<string | null>(null)
   // The last node arrived at, checkpoints included: where "advance" heads from.
   const lastNodeRef = useRef<Node | null>(null)
+  // The conversation as last shown (learner turns included): a failed turn
+  // swaps the screen for the error, and its retry puts this back.
+  const lastDialogueStatusRef = useRef<TrainingPlayerStatus | null>(null)
+  const [dialogueReplying, setDialogueReplying] = useState(false)
+  useEffect(() => {
+    if (playerStatus.status === "in_dialogue") lastDialogueStatusRef.current = playerStatus
+  }, [playerStatus])
 
   const addCourseNote = (note: CourseNote) =>
     setCourseNotes((prev) => (prev.some((n) => n.nodeId === note.nodeId) ? prev : [...prev, note]))
@@ -412,6 +401,8 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId,
 
   async function handleChoice(choiceId: string, choiceLabel: string, option: ChoiceOption) {
     if (!sessionId) return
+    // An open response is the learner's own words: the route needs them verbatim.
+    const freeText = choiceId === "open" ? choiceLabel : undefined
 
     // Show feedback panel if this option has training feedback
     if (option.trainingFeedback) {
@@ -432,13 +423,13 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId,
         choiceLabel,
         onContinue: () => {
           setFeedbackVisible(false)
-          setTimeout(() => submitChoice(choiceId, option.nextNodeId || null), 350)
+          setTimeout(() => submitChoice(choiceId, option.nextNodeId || null, freeText), 350)
         },
       })
       // Trigger slide-in animation on next tick
       setTimeout(() => setFeedbackVisible(true), 20)
     } else {
-      submitChoice(choiceId, option.nextNodeId || null)
+      submitChoice(choiceId, option.nextNodeId || null, freeText)
     }
   }
 
@@ -457,7 +448,9 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId,
 
   // Separated so a retry can re-send the same turn without re-appending it
   // to the local transcript. The server persists nothing on failure.
-  async function submitDialogueTurn(participantText: string) {
+  async function submitDialogueTurn(participantText: string, restoreConversation = false) {
+    if (restoreConversation && lastDialogueStatusRef.current) setPlayerStatus(lastDialogueStatusRef.current)
+    setDialogueReplying(true)
     try {
       const res = await fetch("/api/v1/engine/dialogue", {
         method: "POST",
@@ -467,7 +460,7 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId,
       })
       if (!res.ok) {
         const failure = await readFailure(res, "Could not submit dialogue turn")
-        setPlayerStatus({ status: "error", ...failure, retry: () => submitDialogueTurn(participantText) })
+        setPlayerStatus({ status: "error", ...failure, retry: () => submitDialogueTurn(participantText, true) })
         return
       }
       const data = await res.json() as {
@@ -501,7 +494,9 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId,
       }
     } catch (err) {
       if (isAbort(err)) return
-      setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: () => submitDialogueTurn(participantText) })
+      setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: () => submitDialogueTurn(participantText, true) })
+    } finally {
+      setDialogueReplying(false)
     }
   }
 
@@ -542,7 +537,7 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId,
     advanceToNextNode(sessionId)
   }
 
-  async function submitChoice(choiceId: string, towards: string | null = null) {
+  async function submitChoice(choiceId: string, towards: string | null = null, freeTextResponse?: string) {
     if (!sessionId) return
     setPendingNodeId(towards)
     setPlayerStatus({ status: "advancing" })
@@ -550,12 +545,12 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId,
       const res = await fetch("/api/v1/engine/choose", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, choiceId }),
+        body: JSON.stringify(freeTextResponse === undefined ? { sessionId, choiceId } : { sessionId, choiceId, freeTextResponse }),
         signal: nextSignal(),
       })
       if (!res.ok) {
         const failure = await readFailure(res, "Could not submit response")
-        setPlayerStatus({ status: "error", ...failure, retry: () => submitChoice(choiceId, towards) })
+        setPlayerStatus({ status: "error", ...failure, retry: () => submitChoice(choiceId, towards, freeTextResponse) })
         return
       }
       const data = await res.json() as { node: Node; content: ResolvedContent }
@@ -563,7 +558,7 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId,
     } catch (err) {
       if (isAbort(err)) return
       console.error("[player] choice failed:", err)
-      setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: () => submitChoice(choiceId, towards) })
+      setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: () => submitChoice(choiceId, towards, freeTextResponse) })
     }
   }
 
@@ -588,6 +583,7 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId,
     currentNodeKey,
     currentNode,
     pendingNodeId,
+    dialogueReplying,
     startSession,
     advanceToNextNode,
     handleChoice,
@@ -598,5 +594,3 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId,
     replaceResultsForNodes,
   }
 }
-
-export type TrainingSession = ReturnType<typeof useTrainingSession>

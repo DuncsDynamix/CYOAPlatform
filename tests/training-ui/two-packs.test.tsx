@@ -36,7 +36,7 @@ const screens: [string, () => ReactElement][] = [
   ["assessment", () => <AssessmentScreen sessionId="s1" title="Review" feedback="Steady." results={results} onReassessed={vi.fn()} onContinue={vi.fn()} />],
   ["debrief", () => (
     <DebriefScreen
-      outcomeLabel="Practice complete" learnerName="Sam Taylor" aiSummary="Steady." decisionHistory={[]} feedbackStyle="scenario"
+      learnerName="Sam Taylor" aiSummary="Steady." decisionHistory={[]} feedbackStyle="scenario"
       evidence={buildEvidenceRecord({ moduleTitle: "The Doorstep", outcomeLabel: "x", aiSummary: "s", completedAt: "2026-10-03T10:00:00Z", results, decisions: [] })}
       record={{ href: "/scenario/doorstep/record/s1", reference: "TR-0000-0001" }} libraryHref="/scenario"
     />
