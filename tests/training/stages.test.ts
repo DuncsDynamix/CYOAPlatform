@@ -64,3 +64,14 @@ describe("stageWarnings", () => {
     ])
   })
 })
+
+describe("malformed segment data", () => {
+  it("skips null, non-object and node-less entries instead of throwing", () => {
+    const src = {
+      nodes: [],
+      segments: [null, "junk", { label: "Morning", order: 0, nodes: [null, { id: "a1" }] }, { label: "Bad", order: 1, nodes: "x" }],
+    }
+    expect(courseStages(src)).toEqual([{ label: "Morning", startsAt: "a1" }])
+    expect(() => stageWarnings(src)).not.toThrow()
+  })
+})

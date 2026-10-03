@@ -1,7 +1,7 @@
 /**
  * Demo-mode explainer copy, keyed by the node representation on screen.
- * Audience: a prospect watching or playing a course during a sales demo —
- * capability framing, not authoring documentation (that's
+ * Audience: a prospect watching or playing a course during a sales demo,
+ * so capability framing, not authoring documentation (that's
  * lib/help/node-type-help.ts). CHECKPOINT has no entry on purpose: it
  * auto-advances invisibly and never renders a screen.
  */
@@ -9,12 +9,12 @@ export const DEMO_NODE_COPY: Record<string, { label: string; blurb: string }> = 
   FIXED: {
     label: "Authored content",
     blurb:
-      "This page is fixed, word for word, exactly as the course author wrote it. Every learner sees the identical text — used where precision matters: rules, procedures, factual course material.",
+      "This page is fixed, word for word, exactly as the course author wrote it. Every learner sees the identical text. Used where precision matters: rules, procedures, factual course material.",
   },
   GENERATED: {
     label: "AI-generated scene",
     blurb:
-      "The engine wrote this scene live, following the author's brief but adapting to this learner's earlier decisions. Two learners on different paths read different scenes here — consequences carry forward, so good and bad calls both visibly compound.",
+      "The engine wrote this scene live, following the author's brief but adapting to this learner's earlier decisions. Two learners on different paths read different scenes here: consequences carry forward, so good and bad calls both visibly compound.",
   },
   CHOICE: {
     label: "Decision point",
@@ -24,27 +24,27 @@ export const DEMO_NODE_COPY: Record<string, { label: string; blurb: string }> = 
   CHOICE_OPEN: {
     label: "Open decision",
     blurb:
-      "The learner answers in their own words and the engine routes the response to the right branch — no multiple-choice scaffolding, so the course tests recall and judgment, not recognition.",
+      "The learner answers in their own words and the engine routes the response to the right branch. No multiple-choice scaffolding, so the course tests recall and judgment, not recognition.",
   },
   SLIDE_DECK: {
     label: "Slide module",
     blurb:
-      "Classroom-style course material as a slide carousel — the format for replicating an organisation's existing deck-based training inside the same assessed, recorded experience.",
+      "Classroom-style course material as a slide carousel: the format for replicating an organisation's existing deck-based training inside the same assessed, recorded experience.",
   },
   DIALOGUE: {
     label: "Live conversation",
     blurb:
-      "A free-text conversation with an AI character who stays in role and pushes back realistically. The learner's actual words are retained and assessed — this is where the platform tests how someone holds a line, not just what they know.",
+      "A free-text conversation with an AI character who stays in role and pushes back realistically. The learner's actual words are retained and assessed. This is where the platform tests how someone holds a line, not just what they know.",
   },
   OBSERVED_DIALOGUE: {
     label: "Observed conversation",
     blurb:
-      "The learner watches a modelled conversation between characters — correct practice demonstrated before they have to do it themselves in a live dialogue.",
+      "The learner watches a modelled conversation between characters: correct practice demonstrated before they have to do it themselves in a live dialogue.",
   },
   EVALUATIVE: {
     label: "AI assessment",
     blurb:
-      "A rubric-based assessment of what the learner actually said and chose in the preceding scenes — the engine's narration is excluded as evidence. Each criterion returns a pass with cited evidence from the learner's own words.",
+      "A rubric-based assessment of what the learner actually said and chose in the preceding scenes. The engine's narration is excluded as evidence. Each criterion returns a status with cited evidence from the learner's own words, and anything the service could not assess is marked as such.",
   },
   ENDPOINT: {
     label: "Competence record",

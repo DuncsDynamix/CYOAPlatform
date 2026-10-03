@@ -22,17 +22,29 @@ export interface StageProgress {
 interface SegmentLike {
   label?: string
   order?: number
-  nodes?: { id: string }[]
+  nodes: { id: string }[]
+}
+
+/** Node entries with a string id; anything else (null, junk) is skipped. */
+function nodesOf(list: unknown): { id: string }[] {
+  return Array.isArray(list)
+    ? list.filter((n): n is { id: string } => typeof n === "object" && n !== null && typeof (n as { id?: unknown }).id === "string")
+    : []
 }
 
 function segmentsOf(src: StageSource): SegmentLike[] {
-  return Array.isArray(src.segments) ? (src.segments as SegmentLike[]) : []
+  if (!Array.isArray(src.segments)) return []
+  return src.segments
+    .filter((s): s is Record<string, unknown> => typeof s === "object" && s !== null && !Array.isArray(s))
+    .map((s) => ({
+      label: typeof s.label === "string" ? s.label : undefined,
+      order: typeof s.order === "number" ? s.order : undefined,
+      nodes: nodesOf(s.nodes),
+    }))
 }
 
 function nodeIds(src: StageSource): Set<string> {
-  const flat = Array.isArray(src.nodes) ? (src.nodes as { id: string }[]) : []
-  const segmented = segmentsOf(src).flatMap((s) => s.nodes ?? [])
-  return new Set([...flat, ...segmented].map((n) => n.id))
+  return new Set([...nodesOf(src.nodes), ...segmentsOf(src).flatMap((s) => s.nodes)].map((n) => n.id))
 }
 
 export function courseStages(src: StageSource): Stage[] {
@@ -42,8 +54,8 @@ export function courseStages(src: StageSource): Stage[] {
 
   return [...segmentsOf(src)]
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .filter((s) => s.label && s.nodes && s.nodes.length > 0)
-    .map((s) => ({ label: toDisplayText(s.label!), startsAt: s.nodes![0].id }))
+    .filter((s) => s.label && s.nodes.length > 0)
+    .map((s) => ({ label: toDisplayText(s.label!), startsAt: s.nodes[0].id }))
 }
 
 export function stageProgress(stages: Stage[], visitedNodeIds: readonly string[]): StageProgress | null {

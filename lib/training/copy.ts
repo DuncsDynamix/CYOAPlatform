@@ -1,5 +1,6 @@
 import type { AssessmentOutcome } from "@/lib/engine/client"
 import type { CompetencyResult } from "@/types/session"
+import type { FeedbackStyle, WaitTarget } from "./views"
 
 /** Fixed learner and record copy for the training delivery redesign. No em-dashes. */
 
@@ -45,3 +46,98 @@ export function verdictSummary(results: CompetencyResult[]): string {
   if (notAssessed > 0) parts.push(`${notAssessed} not assessed`)
   return parts.join(", ")
 }
+
+export const MCQ_HEADING: Record<"positive" | "developmental" | "neutral", string | null> = {
+  positive: "Correct",
+  developmental: "Not quite",
+  neutral: null,
+}
+
+export function feedbackHeading(style: FeedbackStyle, tone: "positive" | "developmental" | "neutral"): string | null {
+  return (style === "mcq" ? MCQ_HEADING : TONE_HEADING)[tone]
+}
+
+/** The waiting screen's line: what is being prepared, and where in the course. */
+export function waitLine(target: WaitTarget | null, stageLabel: string | null): string {
+  const at = (line: string) => (stageLabel ? `${line}: ${stageLabel}` : line)
+  switch (target?.kind) {
+    case "scene":
+      return at("Setting the scene")
+    case "conversation":
+      return at("Starting the conversation")
+    case "decision":
+      return "Preparing the next decision"
+    case "assessment":
+      if (!target.criteria) return "Reviewing your answers"
+      return `Reviewing your answers against ${target.criteria} ${target.criteria === 1 ? "criterion" : "criteria"}`
+    case "debrief":
+      return "Preparing your debrief"
+    default:
+      return "Opening the course"
+  }
+}
+
+export const HERO_KICKER = {
+  resume: "Continue where you left off",
+  start: "Start here",
+  record: "Your latest record",
+} as const
+
+export const HERO_ACTION = {
+  resume: "Resume",
+  start: "Start",
+  record: "Open evidence record",
+} as const
+
+export const COVER_COPY = {
+  start: "Start",
+  resume: "Resume",
+  startAgain: "Start again",
+  objectives: "You will practise",
+  record: "Evidence record at the end",
+  personalised: "This session adapts to your previous training.",
+} as const
+
+export function durationLabel(minutes: number): string {
+  return `About ${minutes} min`
+}
+
+export function conversationsLabel(count: number): string {
+  return `${count} conversation${count === 1 ? "" : "s"}`
+}
+
+/** `completedTurns` is the learner's turns so far; the label names the turn they are on. */
+export function turnLabel(completedTurns: number, maxTurns: number): string {
+  return `Turn ${Math.min(completedTurns + 1, maxTurns)} of up to ${maxTurns}`
+}
+
+export const DEBRIEF_COPY = {
+  recordTitle: "Your evidence record",
+  recordHint: "Ready to print or save as PDF",
+  openRecord: "Open evidence record",
+  backToLibrary: "Back to library",
+  coaching: "Coaching summary",
+  decisions: "Your decisions",
+} as const
+
+export function debriefGreeting(name: string | null): string {
+  const first = name?.trim().split(/\s+/)[0]
+  return first ? `Well done, ${first}` : "Well done"
+}
+
+/** MCQ score line. The pass mark is a score threshold, never the competence verdict. */
+export function scoreLine(score: { label: string; value: number; outOf: number; passMark: number }): string {
+  return `${score.label}: ${score.value} of ${score.outOf} (pass mark ${score.passMark})`
+}
+
+export function passMarkNote(reached: boolean): string {
+  return reached ? "Pass mark reached" : "Below the pass mark"
+}
+
+export const NOTES_EMPTY = "No course content yet. Notes collect here as you progress."
+export const OBJECTIVES_EMPTY = "No objectives defined."
+
+export const ERROR_COPY = {
+  tryAgain: "Try again",
+  restart: "Restart scenario",
+} as const

@@ -48,6 +48,14 @@ describe("deriveCourseStatus", () => {
     const done = session({ status: "completed", completedAt: new Date("2026-10-02T10:00:00Z") })
     expect(deriveCourseStatus(noAssess, [done])).toMatchObject({ kind: "completed", outcome: null })
   })
+
+  it("ignores malformed segment entries when deciding whether a course is assessed", () => {
+    const messy = { ...course, nodes: [], segments: [null, { nodes: [null, { id: "ev", type: "EVALUATIVE" }] }] }
+    const status = deriveCourseStatus(messy, [
+      session({ status: "completed", completedAt: new Date("2026-10-02T10:00:00Z"), state: { nodesVisited: ["ev"], competencyProfile: [] } }),
+    ])
+    expect(status).toMatchObject({ kind: "completed", outcome: "incomplete" })
+  })
 })
 
 describe("courseStatusLabel", () => {

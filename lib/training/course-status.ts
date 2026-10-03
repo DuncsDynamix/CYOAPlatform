@@ -25,12 +25,17 @@ export interface StatusCourse {
   segments: unknown
 }
 
+function nodeTypes(list: unknown): string[] {
+  if (!Array.isArray(list)) return []
+  return list.flatMap((n) =>
+    typeof n === "object" && n !== null && typeof (n as { type?: unknown }).type === "string" ? [(n as { type: string }).type] : []
+  )
+}
+
 function hasAssessment(course: StatusCourse): boolean {
-  const flat = Array.isArray(course.nodes) ? (course.nodes as { type?: string }[]) : []
-  const segmented = Array.isArray(course.segments)
-    ? (course.segments as { nodes?: { type?: string }[] }[]).flatMap((s) => s.nodes ?? [])
-    : []
-  return [...flat, ...segmented].some((n) => n.type === "EVALUATIVE")
+  const segments = Array.isArray(course.segments) ? course.segments : []
+  const segmented = segments.flatMap((s) => (typeof s === "object" && s !== null ? nodeTypes((s as { nodes?: unknown }).nodes) : []))
+  return [...nodeTypes(course.nodes), ...segmented].includes("EVALUATIVE")
 }
 
 export function deriveCourseStatus(course: StatusCourse, sessions: SessionSummary[]): CourseStatus {

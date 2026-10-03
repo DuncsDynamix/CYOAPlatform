@@ -765,14 +765,14 @@ const segments: Segment[] = [
   {
     id: "seg-morning",
     label: "Morning Shift",
-    description: "Water quality monitoring and record integrity — two decisions.",
+    description: "Water quality monitoring and record integrity: two decisions.",
     order: 0,
     nodes: nodes.filter((n) => MORNING_NODE_IDS.includes(n.id)),
   },
   {
     id: "seg-afternoon",
     label: "Afternoon Shift",
-    description: "Asset management and incident escalation — two decisions.",
+    description: "Asset management and incident escalation: two decisions.",
     order: 1,
     nodes: nodes.filter((n) => AFTERNOON_NODE_IDS.includes(n.id)),
   },
