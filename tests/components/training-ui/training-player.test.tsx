@@ -168,16 +168,63 @@ describe("TrainingPlayer flow", () => {
     expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual({ experienceSlug: "doorstep", restart: true })
   })
 
-  it("closes notes and objectives on a decision, and opens them on a scene", async () => {
+  const toolButtons = () => [screen.getByRole("button", { name: "View course notes" }), screen.getByRole("button", { name: "View learning objectives" })]
+
+  it("closes notes and objectives on a decision", async () => {
     stubStartAndNode(
       { sessionId: "sess-1", experienceTitle: "Permit Training", node: choiceNode, content: { type: "choice", prompt: "What do you do?" } },
       { node: endNode, content: endpointContent() }
     )
     render(<TrainingPlayer experienceSlug="permit" brand={brand} />)
     await screen.findByRole("radio", { name: /Check the permit first/ })
-    expect(screen.getByRole("button", { name: "View course notes" })).toBeDisabled()
-    expect(screen.getByRole("button", { name: "View learning objectives" })).toBeDisabled()
+    for (const b of toolButtons()) expect(b).toBeDisabled()
     expect(screen.getByText("Notes are closed while you decide")).toBeInTheDocument()
+  })
+
+  it("opens notes and objectives on a scene", async () => {
+    stubStartAndNode(
+      { sessionId: "sess-1", experienceTitle: "The Doorstep", node: introNode, content: { type: "prose", content: "Intro text." } },
+      { node: endNode, content: endpointContent() }
+    )
+    render(<TrainingPlayer experienceSlug="doorstep" brand={brand} />)
+    await screen.findByText("Intro text.")
+    for (const b of toolButtons()) expect(b).toBeEnabled()
+  })
+
+  it("opens notes and objectives on an observed conversation", async () => {
+    stubStartAndNode(
+      { sessionId: "sess-1", experienceTitle: "The Doorstep", node: { id: "obs-1", type: "OBSERVED_DIALOGUE", label: "Overheard", nextNodeId: "n2" }, content: { type: "observed_dialogue", exchanges: [{ speaker: "Pat", line: "Hello." }], nextNodeId: "n2" } },
+      { node: endNode, content: endpointContent() }
+    )
+    render(<TrainingPlayer experienceSlug="doorstep" brand={brand} />)
+    await screen.findByText("Hello.")
+    for (const b of toolButtons()) expect(b).toBeEnabled()
+  })
+
+  it("closes notes and objectives while waiting", async () => {
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) =>
+      String(input).includes("/engine/start")
+        ? jsonResponse({ sessionId: "sess-1", experienceTitle: "The Doorstep", node: introNode, content: { type: "prose", content: "Intro text." } })
+        : new Promise<Response>(() => {})
+    ))
+    render(<TrainingPlayer experienceSlug="doorstep" brand={brand} />)
+    await screen.findByText("Intro text.")
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }))
+    await screen.findByRole("status")
+    for (const b of toolButtons()) expect(b).toBeDisabled()
+  })
+
+  it("closes notes and objectives on the error screen", async () => {
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) =>
+      String(input).includes("/engine/start")
+        ? jsonResponse({ sessionId: "sess-1", experienceTitle: "The Doorstep", node: introNode, content: { type: "prose", content: "Intro text." } })
+        : jsonResponse({ error: "Temporarily unavailable. Try again in a moment.", retryable: true }, 503)
+    ))
+    render(<TrainingPlayer experienceSlug="doorstep" brand={brand} />)
+    await screen.findByText("Intro text.")
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }))
+    await screen.findByText(/Temporarily unavailable/)
+    for (const b of toolButtons()) expect(b).toBeDisabled()
   })
 
   it("shows the stage in the header and a waiting line for the coming scene", async () => {
