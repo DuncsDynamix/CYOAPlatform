@@ -15,6 +15,7 @@ describe("training copy", () => {
       ...Object.values(copy.NOT_ASSESSED_NOTE),
       ...Object.values(copy.TONE_HEADING).filter((s): s is string => s !== null),
       copy.CLOSED_BOOK_NOTE,
+      copy.VERDICT_PASS_RULE,
       copy.coverAssessmentNote("Gold Tap Training"),
       copy.verdictSummary([r("passed"), r("not_passed"), r("not_assessed")]),
     ]

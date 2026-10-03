@@ -4,8 +4,8 @@ import type { Experience, Node } from "@/types/experience"
 import type { CompetencyResult, ExperienceSession } from "@/types/session"
 import { buildSessionRecord, type SessionRecordStep } from "./record"
 import type { ResolvedBrandPack } from "./brand-pack"
-import type { ResolvedAccreditation } from "./accreditations"
-import { CRITERION_STATUS_LABEL, NOT_ASSESSED_NOTE, VERDICT_LABEL, verdictSummary } from "./copy"
+import { accreditationDisclaimer, type ResolvedAccreditation } from "./accreditations"
+import { CRITERION_STATUS_LABEL, NOT_ASSESSED_NOTE, VERDICT_LABEL, VERDICT_PASS_RULE, verdictSummary } from "./copy"
 import { toDisplayText } from "./display"
 
 /**
@@ -19,6 +19,8 @@ export interface RecordCriterionRow {
   label: string
   status: CompetencyResult["status"]
   statusLabel: string
+  /** The verdict turns on critical criteria only (see VERDICT_PASS_RULE). */
+  critical: boolean
   evidence: string
   reassessedAt?: string
 }
@@ -28,7 +30,13 @@ export interface RecordScore {
   value: number
   outOf: number
   passMark: number
-  passed: boolean
+  /** The score reached the pass mark. Not a competence verdict. */
+  meetsPassMark: boolean
+}
+
+export interface RecordAccreditation extends ResolvedAccreditation {
+  /** Fixed wording: this record is not a certificate from the awarding body. */
+  disclaimer: string
 }
 
 export interface RecordDocument {
@@ -37,11 +45,11 @@ export interface RecordDocument {
   learnerName: string
   courseTitle: string
   completedAt: string | null
-  verdict: { outcome: AssessmentOutcome; label: string; summary: string } | null
+  verdict: { outcome: AssessmentOutcome; label: string; summary: string; passRule: string } | null
   score: RecordScore | null
   criteria: RecordCriterionRow[]
   reflection: string | null
-  accreditations: ResolvedAccreditation[]
+  accreditations: RecordAccreditation[]
   appendix: SessionRecordStep[]
 }
 
@@ -58,7 +66,7 @@ export function recordScore(experience: Experience, session: ExperienceSession):
   const config = endpoint?.scoreConfig
   if (!config) return null
   const value = session.state.counters[config.counterKey] ?? 0
-  return { label: config.label ?? "Score", value, outOf: config.maxScore, passMark: config.passMark, passed: value >= config.passMark }
+  return { label: config.label ?? "Score", value, outOf: config.maxScore, passMark: config.passMark, meetsPassMark: value >= config.passMark }
 }
 
 export function buildRecordDocument(input: {
@@ -77,17 +85,20 @@ export function buildRecordDocument(input: {
     learnerName: input.learner.name?.trim() || input.learner.email,
     courseTitle: toDisplayText(record.experience.title),
     completedAt: record.session.completedAt,
-    verdict: outcome ? { outcome, label: VERDICT_LABEL[outcome], summary: verdictSummary(criteria) } : null,
+    verdict: outcome
+      ? { outcome, label: VERDICT_LABEL[outcome], summary: verdictSummary(criteria), passRule: VERDICT_PASS_RULE }
+      : null,
     score: recordScore(input.experience, input.session),
     criteria: criteria.map((c) => ({
       label: toDisplayText(c.criterionLabel),
       status: c.status,
       statusLabel: CRITERION_STATUS_LABEL[c.status],
+      critical: c.weight === "critical",
       evidence: c.status === "not_assessed" ? NOT_ASSESSED_NOTE.record : c.evidence,
       ...(c.reassessedAt && { reassessedAt: c.reassessedAt }),
     })),
     reflection: endpointSummary,
-    accreditations: input.accreditations,
+    accreditations: input.accreditations.map((a) => ({ ...a, disclaimer: accreditationDisclaimer(a.accreditation.awardingBody) })),
     appendix: record.timeline.map((step) => ({ ...step, label: toDisplayText(step.label) })),
   }
 }

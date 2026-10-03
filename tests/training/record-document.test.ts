@@ -17,7 +17,13 @@ const assessedNodes: Node[] = [
   { id: "end", type: "ENDPOINT", label: "End", endpointId: "e1" } as unknown as Node,
 ]
 
-function doc(results: CompetencyResult[], nodes: Node[] = assessedNodes, over: Record<string, unknown> = {}) {
+const accreditation = {
+  accreditation: { id: "eusr", name: "EUSR Water Hygiene", awardingBody: "EUSR", badge: "/brands/eusr.png" },
+  relationship: "prepares_for" as const,
+  relationshipLabel: "Prepares for",
+}
+
+function doc(results: CompetencyResult[], nodes: Node[] = assessedNodes, over: Record<string, unknown> = {}, accreditations = [] as typeof accreditation[]) {
   const experience = createTestExperience({ title: "The Doorstep", nodes, segments: [] })
   const session = createTestSession({
     id: SID, status: "completed", completedAt: new Date("2026-10-03T13:22:00Z"), endpointReached: "e1",
@@ -28,7 +34,7 @@ function doc(results: CompetencyResult[], nodes: Node[] = assessedNodes, over: R
     displayName: "Gold Tap Training", colours: { brand: "#C09F51", onBrand: "#1F2124", header: "dark", surfaceTone: "warm" },
     fonts: { heading: "montserrat", body: "open-sans" }, recordPrefix: "GT",
   } })
-  return buildRecordDocument({ session, experience, learner: { name: null, email: "sam@utility.example" }, brand, accreditations: [] })
+  return buildRecordDocument({ session, experience, learner: { name: null, email: "sam@utility.example" }, brand, accreditations })
 }
 
 describe("recordReference", () => {
@@ -46,7 +52,10 @@ describe("buildRecordDocument", () => {
     expect(d.issuerName).toBe("Gold Tap Training")
     expect(d.courseTitle).toBe("The Doorstep")
     expect(d.completedAt).toBe("2026-10-03T13:22:00.000Z")
-    expect(d.verdict).toEqual({ outcome: "passed", label: "Competence demonstrated", summary: "2 of 2 criteria demonstrated" })
+    expect(d.verdict).toEqual({
+      outcome: "passed", label: "Competence demonstrated", summary: "2 of 2 criteria demonstrated",
+      passRule: "Competence is demonstrated when every critical criterion is demonstrated.",
+    })
     expect(d.reflection).toBe("Well handled.")
   })
 
@@ -70,9 +79,25 @@ describe("buildRecordDocument", () => {
   it("keeps the assessor's evidence sentence and re-assessment time", () => {
     const d = doc([crit("a", "not_passed", { reassessedAt: "2026-10-03T14:00:00.000Z" })])
     expect(d.criteria[0]).toEqual({
-      label: "Criterion a", status: "not_passed", statusLabel: "Not yet demonstrated",
+      label: "Criterion a", status: "not_passed", statusLabel: "Not yet demonstrated", critical: true,
       evidence: "Evidence a", reassessedAt: "2026-10-03T14:00:00.000Z",
     })
+  })
+
+  it("explains a demonstrated verdict that sits beside a non-critical miss", () => {
+    const d = doc([crit("a", "passed"), crit("b", "passed"), crit("c", "not_passed", { weight: "major" })])
+    expect(d.verdict?.label).toBe("Competence demonstrated")
+    expect(d.verdict?.summary).toContain("1 not yet demonstrated")
+    expect(d.verdict?.passRule).toBe("Competence is demonstrated when every critical criterion is demonstrated.")
+    expect(d.criteria.map((c) => c.critical)).toEqual([true, true, false])
+    expect(d.criteria.find((c) => c.label === "Criterion c")).toMatchObject({ status: "not_passed", critical: false })
+  })
+
+  it("gives each accreditation its fixed not-a-certificate wording", () => {
+    const d = doc([crit("a", "passed")], assessedNodes, {}, [accreditation])
+    expect(d.accreditations).toEqual([
+      { ...accreditation, disclaimer: "This record evidences performance in this scenario. It is not a certificate from EUSR." },
+    ])
   })
 
   it("prefers the learner's name and cleans appendix labels", () => {
@@ -92,7 +117,7 @@ describe("recordScore", () => {
     ]
     const experience = createTestExperience({ nodes, segments: [] })
     const session = createTestSession({ endpointReached: "e1", state: { ...createTestSession().state, counters: { correct: 22 } } })
-    expect(recordScore(experience, session)).toEqual({ label: "Test score", value: 22, outOf: 25, passMark: 20, passed: true })
+    expect(recordScore(experience, session)).toEqual({ label: "Test score", value: 22, outOf: 25, passMark: 20, meetsPassMark: true })
     expect(recordScore(experience, createTestSession())).toBeNull()
   })
 })

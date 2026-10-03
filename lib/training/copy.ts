@@ -26,6 +26,9 @@ export const TONE_HEADING: Record<"positive" | "developmental" | "neutral", stri
   neutral: null,
 }
 
+/** Printed with every verdict: the engine's rule, so a demonstrated verdict beside a non-critical miss explains itself. */
+export const VERDICT_PASS_RULE = "Competence is demonstrated when every critical criterion is demonstrated."
+
 export const CLOSED_BOOK_NOTE = "Notes are closed while you decide"
 
 export function coverAssessmentNote(displayName: string): string {
