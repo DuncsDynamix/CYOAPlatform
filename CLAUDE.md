@@ -201,7 +201,7 @@ One component family, `components/training-ui/`, renders every learner surface: 
 - **Pages and loaders:** `app/(traverse-training)/scenario/page.tsx` (library), `scenario/[id]/page.tsx` (player; `?resume=1` resumes), `scenario/[id]/record/[sessionId]/page.tsx` (evidence record). Each calls a server loader in `lib/training/` (`library-page.ts`, `scenario-page.ts`, `record-page.ts`) that decides access and builds view models (`course-view.ts`, `wait-plan.ts`; types in `views.ts`). Components render what they are given and hold no rules.
 - **Branding:** `BrandScope` applies `brandTokens(resolveBrandPack(org))` as inline `--tg-*` properties (library: the learner's org; scenario and record: the course's org). Fonts come from `app/(traverse-training)/fonts.ts` (`next/font`, the six `FONT_KEYS` as `--tg-ff-*`, no preload).
 - **Styles:** `components/training-ui/styles/`. `tokens.css` holds every platform-fixed colour (assessment status, tone, avatars, overlays); it and `fonts.ts` are the only places a colour or font name may appear. One stylesheet per screen area. Class names are `tg-` string literals.
-- **Guards (`tests/training-ui/`):** `hardcoding.test.ts`, `class-sweep.test.ts` (every `tg-` class has a rule; every stylesheet is imported by the layout), `token-contrast.test.ts`, `fonts.test.ts`, `two-packs.test.tsx` (Gold Tap and Fernbrook render identical markup), `no-legacy-names.test.ts`.
+- **Guards (`tests/training-ui/`):** `hardcoding.test.ts`, `class-sweep.test.ts` (every `tg-` class has a rule; every stylesheet is imported by the layout), `token-contrast.test.ts`, `token-refs.test.ts`, `fonts.test.ts`, `two-packs.test.tsx` (Gold Tap and Fernbrook render identical markup), `no-legacy-names.test.ts`.
 - **Copy:** fixed learner and record strings live in `lib/training/copy.ts`; author strings shown to learners go through `toDisplayText`.
 
 ### Authoring Autosave
@@ -238,7 +238,7 @@ See `docs/platform_roadmap_vercel.md` for the full plan. As of 2026-03-30:
 | 1. Branding | ✅ Done | PageEngine → TraverseStories/TraverseStudio throughout |
 | 2. API versioning | ✅ Done | All routes at `/api/v1/`; old paths redirect via next.config.js |
 | 3. DB schema | ✅ Done | Org model added; User + Experience linked to Org |
-| 4. TraverseTraining MVP | ✅ Done | `/scenario/[id]` playable; CSS scoped; legacy components working |
+| 4. TraverseTraining MVP | ✅ Done | `/scenario/[id]` playable on the `components/training-ui/` family |
 | 5. Middleware | ✅ Done | `/scenario` paths protected behind org/operator gate |
 | 6. Tier strings | ✅ Done | New canonical values in `lib/subscriptions.ts` |
 

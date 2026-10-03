@@ -329,8 +329,6 @@
 .cpe-tab-description { font-family: system-ui, sans-serif; font-size: 0.82rem; color: var(--at2); line-height: 1.6; margin: 0; }
 .cpe-subsection-title { font-family: system-ui, sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--at2); padding-bottom: 0.5rem; border-bottom: 1px solid var(--abr); }
 
-
-
 /* ─── OBSERVED DIALOGUE (reader) ─────────────────────────────── */
 .observed-dialogue-label {
   display: flex;

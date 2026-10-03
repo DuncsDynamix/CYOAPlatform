@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest"
 import type { ReactElement } from "react"
+import path from "node:path"
 import { render } from "@testing-library/react"
 import { BrandScope } from "@/components/training-ui/BrandScope"
 import { DecisionScreen } from "@/components/training-ui/screens/DecisionScreen"
@@ -11,10 +12,14 @@ import { resolveBrandPack, type ResolvedBrandPack } from "@/lib/training/brand-p
 import { buildEvidenceRecord } from "@/lib/training/evidence"
 import { BRAND_PACKS, FERNBROOK_ORG_ID, GOLD_TAP_ORG_ID } from "@/prisma/seed-data/brand-packs"
 import type { CompetencyResult } from "@/types/session"
+import { REPO, read, rel, walk } from "../helpers/source-files"
 
 /**
- * The white-label promise: a second org's pack renders the same screens in
- * its own brand with no code change. Same markup, different tokens.
+ * The white-label promise, pinned two ways:
+ * 1. Given the same props, each screen renders identical markup under the Gold
+ *    Tap and Fernbrook packs, while the scope's tokens and data-header differ.
+ * 2. No source under components/training-ui or app/(traverse-training) names
+ *    an org, a brand or an org id, so a screen cannot hardcode one pack.
  */
 const goldTap = resolveBrandPack({ name: "Gold Tap Training", brandPack: BRAND_PACKS[GOLD_TAP_ORG_ID] })
 const fernbrook = resolveBrandPack({ name: "Fernbrook Care", brandPack: BRAND_PACKS[FERNBROOK_ORG_ID] })
@@ -55,7 +60,7 @@ const screens: [string, () => ReactElement][] = [
 function renderUnder(pack: ResolvedBrandPack, element: ReactElement) {
   const { container, unmount } = render(<BrandScope pack={pack}>{element}</BrandScope>)
   const scope = container.firstElementChild as HTMLElement
-  const out = { brand: scope.style.getPropertyValue("--tg-brand"), heading: scope.style.getPropertyValue("--tg-font-heading"), html: scope.innerHTML }
+  const out = { header: scope.getAttribute("data-header"), brand: scope.style.getPropertyValue("--tg-brand"), heading: scope.style.getPropertyValue("--tg-font-heading"), html: scope.innerHTML }
   unmount()
   return out
 }
@@ -64,8 +69,32 @@ describe("two brand packs, one product", () => {
   it.each(screens)("%s: same structure, different tokens", (_name, make) => {
     const a = renderUnder(goldTap, make())
     const b = renderUnder(fernbrook, make())
+    expect(a.header).toBe("dark")
+    expect(b.header).toBe("light")
     expect(a.brand).not.toBe(b.brand)
     expect(a.heading).not.toBe(b.heading)
     expect(a.html).toBe(b.html)
+  })
+})
+
+const BANNED = /Gold Tap|Fernbrook|Hartley|gold-tap|00000000-0000-0000-0000-0000000001[12]0|00000000-0000-0000-0000-000000000051/
+
+function offenders(lines: string[]): number[] {
+  return lines.flatMap((l, i) => (BANNED.test(l) ? [i + 1] : []))
+}
+
+describe("no org or brand named in training UI source", () => {
+  it("matcher catches names and org ids", () => {
+    expect(offenders(["ok", "Gold Tap", "x Fernbrook", "gold-tap.png", "Hartley & Voss", "00000000-0000-0000-0000-000000000110", "00000000-0000-0000-0000-000000000051", "fine"])).toEqual([2, 3, 4, 5, 6, 7])
+  })
+
+  it("finds none under components/training-ui or app/(traverse-training)", () => {
+    const found: string[] = []
+    for (const dir of ["components/training-ui", "app/(traverse-training)"]) {
+      for (const file of walk(path.join(REPO, dir)).filter((f) => /\.(ts|tsx|css)$/.test(f))) {
+        for (const n of offenders(read(file).split("\n"))) found.push(`${rel(file)}:${n}`)
+      }
+    }
+    expect(found).toEqual([])
   })
 })
