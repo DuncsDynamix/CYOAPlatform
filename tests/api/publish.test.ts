@@ -70,3 +70,32 @@ describe("POST /api/v1/experience/[id]/publish — graph validation", () => {
     expect(res.status).toBe(200)
   })
 })
+
+describe("POST /api/v1/experience/[id]/publish — org competency framework (C-minor)", () => {
+  function trainingExperienceWithRubric(orgId: string | null) {
+    const exp = createTestExperience({ authorId: "author-1", type: "l_and_d", orgId } as never)
+    exp.contextPack = { ...(exp.contextPack as object), extension: { kind: "training", learningObjectives: ["A"] } } as never
+    exp.nodes = [
+      ...exp.nodes,
+      { id: "ev", type: "EVALUATIVE", label: "Assess", assessesNodeIds: ["choice-1"], nextNodeId: "endpoint-1", rubric: [{ id: "c1", label: "Check ID", description: "d", weight: "major", competencyId: "not-in-framework" }] },
+    ] as never
+    return exp
+  }
+
+  it("warns on a rubric competency missing from the org's framework", async () => {
+    mockFindExperience.mockResolvedValue(trainingExperienceWithRubric("org-1") as never)
+    vi.mocked(db.org.findUnique).mockResolvedValue({ competencyFramework: [{ id: "id-check", label: "Identity verification" }] } as never)
+    mockUpdateExperience.mockResolvedValue({ status: "published" } as never)
+    const res = await publishExperience(publishRequest(), params)
+    expect(res.status).toBe(200)
+    expect((await res.json()).warnings).toContainEqual(expect.objectContaining({ code: "unknown_competency" }))
+  })
+
+  it("does not check competencies for an experience with no org", async () => {
+    mockFindExperience.mockResolvedValue(trainingExperienceWithRubric(null) as never)
+    mockUpdateExperience.mockResolvedValue({ status: "published" } as never)
+    const res = await publishExperience(publishRequest(), params)
+    expect((await res.json()).warnings).not.toContainEqual(expect.objectContaining({ code: "unknown_competency" }))
+    expect(db.org.findUnique).not.toHaveBeenCalled()
+  })
+})

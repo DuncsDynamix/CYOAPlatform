@@ -79,6 +79,10 @@ describe("reassessNode merge", () => {
     gen.mockResolvedValueOnce({ results: [na("c1"), { ...res("ev1", "c2"), status: "not_passed", passed: false }], feedback: "f" })
     const ok = await reassessNode("s1", "ev1", exp)
     expect(ok.results.map((r) => [r.rubricCriterionId, r.status])).toEqual([["c1", "passed"], ["c2", "not_passed"]])
+    // I1: results produced by the re-run are stamped; retained ones are not.
+    expect(ok.results[0].reassessedAt).toBeUndefined()
+    expect(ok.results[1].reassessedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    expect(replace).toHaveBeenLastCalledWith("s1", "ev1", ok.results)
     vi.doUnmock("@/lib/engine/generator")
     vi.doUnmock("@/lib/engine/session")
   })

@@ -19,6 +19,7 @@ export type EventType =
   | "checkpoint_reached"
   | "scaffold_generation_failed"
   | "pre_generation_failed"
+  | "assessment_rerun"
   | "error"
 
 // Typed properties per event — used for callsite type safety
@@ -131,6 +132,15 @@ export interface EventProperties {
     nodeId: string
     experienceId?: string
     error: string
+  }
+  assessment_rerun: {
+    sessionId: string
+    nodeId: string
+    userId: string
+    /** True when the caller is an editor of the experience (editors may re-run fully assessed nodes). */
+    byEditor: boolean
+    /** The re-run's outcome, or "error" when the engine call failed. */
+    outcome: string
   }
   error: {
     message: string

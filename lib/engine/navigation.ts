@@ -2,10 +2,14 @@ import type { Node, CheckpointNode, DialogueNode } from "@/types/experience"
 import type { SessionState } from "@/types/session"
 import { evaluateCondition } from "./conditions"
 
-/** First branch whose conditions all hold wins; otherwise the default route. */
+/**
+ * First branch whose conditions all hold wins; otherwise the default route.
+ * A branch with no target is skipped (validation flags it; at runtime it must
+ * never strand a matching learner).
+ */
 export function resolveCheckpointTarget(node: CheckpointNode, state: SessionState): { nextNodeId: string; branchIndex: number | null } {
   const branches = node.branches ?? []
-  const i = branches.findIndex((b) => b.when.length > 0 && b.when.every((c) => evaluateCondition(c, state)))
+  const i = branches.findIndex((b) => !!b.nextNodeId && b.when.length > 0 && b.when.every((c) => evaluateCondition(c, state)))
   return i >= 0 ? { nextNodeId: branches[i].nextNodeId, branchIndex: i } : { nextNodeId: node.nextNodeId, branchIndex: null }
 }
 

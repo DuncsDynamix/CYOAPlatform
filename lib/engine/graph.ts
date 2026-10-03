@@ -63,6 +63,8 @@ export function getChildLinks(node: Node): ChildLink[] {
 function isRequiredHandle(node: Node, handle: string): boolean {
   if (node.type === "CHOICE") return handle.startsWith("option:")
   if (node.type === "DIALOGUE") return handle === "next"
+  // A personalised route with no target would strand the learners it matches.
+  if (node.type === "CHECKPOINT") return handle.startsWith("branch:")
   return false
 }
 

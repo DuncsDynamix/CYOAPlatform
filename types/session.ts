@@ -54,6 +54,8 @@ export interface CompetencyResult {
   evidence: string
   weight: "critical" | "major" | "minor"
   competencyId?: string
+  /** ISO time, set on results produced by a re-run (POST /api/v1/engine/reassess). */
+  reassessedAt?: string
 }
 
 // ─── NARRATIVE SCAFFOLD ───────────────────────────────────────

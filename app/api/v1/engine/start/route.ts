@@ -6,7 +6,7 @@ import { hasTrainingTier } from "@/lib/subscriptions"
 import { db } from "@/lib/db/prisma"
 import { checkEngineLimit, checkGenerationLimit } from "@/lib/security/ratelimit"
 import { trackEvent } from "@/lib/analytics"
-import { buildSessionContext } from "@/lib/training/learner-profile"
+import { buildSessionContext, parseCompetencyFramework } from "@/lib/training/learner-profile"
 import { StartSessionSchema } from "@/lib/validation"
 import { validateExperienceGraph } from "@/lib/authoring/graph"
 import { engineErrorResponse } from "@/lib/api/errors"
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       context = await buildSessionContext({
         userId: user.id,
         orgId: experience.orgId,
-        framework: (org.competencyFramework ?? []) as { id: string; label: string }[],
+        framework: parseCompetencyFramework(org.competencyFramework),
       })
     }
   }
@@ -154,4 +154,6 @@ export async function POST(req: NextRequest) {
 
 // Generation calls run 10-30s+; serverless platforms kill functions at their
 // default timeout without this. 60s fits every plan tier including Vercel Hobby.
+// (Start only arrives at a starting node, never an assessment or endpoint, so
+// it does not need the 120s the advancing routes have.)
 export const maxDuration = 60

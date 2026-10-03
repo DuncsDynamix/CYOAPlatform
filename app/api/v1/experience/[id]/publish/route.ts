@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db/prisma"
 import { requireAuth, canEditExperience } from "@/lib/auth"
 import { validateExperience, type ValidationIssue } from "@/lib/engine"
+import { parseCompetencyFramework } from "@/lib/training/learner-profile"
 import type { Experience } from "@/types/experience"
 
 type Params = { params: Promise<{ id: string }> }
@@ -23,7 +24,13 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   let warnings: ValidationIssue[] = []
   if (isPublish) {
-    const result = validateExperience(experience as unknown as Experience)
+    // Org content: check rubric competency tags against the org's framework.
+    let competencyIds: string[] | undefined
+    if (experience.orgId) {
+      const org = await db.org.findUnique({ where: { id: experience.orgId }, select: { competencyFramework: true } })
+      competencyIds = parseCompetencyFramework(org?.competencyFramework).map((c) => c.id)
+    }
+    const result = validateExperience(experience as unknown as Experience, { competencyIds })
     if (result.errors.length > 0) {
       return NextResponse.json(
         { error: "This experience has problems that would break playthroughs", errors: result.errors, warnings: result.warnings },

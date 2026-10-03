@@ -73,6 +73,14 @@ describe("validateExperience no_default_route", () => {
     const r = validateExperience(story({ nodes }))
     expect(r.errors.find((i) => i.code === "no_default_route" && i.nodeId === "cp-x")?.message).toContain("no default route")
   })
+  it("flags a checkpoint branch with an empty target as a dangling link (I2)", () => {
+    const nodes = [
+      ...createTestNodeGraph().map((n) => (n.id === "node-2a" ? { ...n, nextNodeId: "cp-y" } : n)),
+      { id: "cp-y", type: "CHECKPOINT", label: "Gate", visible: false, marksCompletionOf: "", unlocks: [], nextNodeId: "endpoint-1", branches: [{ when: [cond], nextNodeId: "" }] },
+    ]
+    const r = validateExperience(story({ nodes }))
+    expect(r.errors).toContainEqual(expect.objectContaining({ code: "dangling_link", nodeId: "cp-y" }))
+  })
   it("flags a choice whose every option needs a profile", () => {
     const nodes = [
       ...createTestNodeGraph(),

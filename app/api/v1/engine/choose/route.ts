@@ -202,6 +202,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Generation calls run 10-30s+; serverless platforms kill functions at their
-// default timeout without this. 60s fits every plan tier including Vercel Hobby.
-export const maxDuration = 60
+// This route can arrive at an EVALUATIVE node (two assessment attempts, each
+// a 50s SDK timeout with one retry) or an ENDPOINT (summary call), so it gets
+// 120s. Vercel Hobby caps functions at 60s: deploy on a plan that allows 120.
+export const maxDuration = 120

@@ -1,8 +1,25 @@
+import { z } from "zod"
 import { db } from "@/lib/db/prisma"
 import { parseSessionState, type LearnerProfileEntry, type SessionContext } from "@/lib/engine"
 import type { CompetencyResult } from "@/types/session"
 
-/** Most recent assessed result per competency wins; not_assessed never counts. */
+const CompetencyFrameworkSchema = z.array(
+  z.object({ id: z.string().min(1), label: z.string(), description: z.string().optional() })
+)
+export type CompetencyFramework = z.infer<typeof CompetencyFrameworkSchema>
+
+/** Org.competencyFramework is free JSON: anything malformed is treated as an empty framework. */
+export function parseCompetencyFramework(raw: unknown): CompetencyFramework {
+  const parsed = CompetencyFrameworkSchema.safeParse(raw ?? [])
+  return parsed.success ? parsed.data : []
+}
+
+/**
+ * The newest session with an assessed result for a competency decides it:
+ * developing if ANY of that session's results for the competency is
+ * not_passed (several criteria can share one competency), else strength.
+ * not_assessed never counts.
+ */
 export function buildLearnerProfile(
   framework: { id: string; label: string }[],
   records: { completedAt: Date; results: CompetencyResult[] }[]
@@ -10,10 +27,11 @@ export function buildLearnerProfile(
   const newestFirst = [...records].sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime())
   return framework.map(({ id, label }) => {
     for (const rec of newestFirst) {
-      const hit = rec.results.find((r) => r.competencyId === id && r.status !== "not_assessed")
-      if (hit) {
-        return { competencyId: id, label, status: hit.status === "passed" ? "strength" : "developing", evidence: hit.evidence.slice(0, 200) }
-      }
+      const assessed = rec.results.filter((r) => r.competencyId === id && r.status !== "not_assessed")
+      if (assessed.length === 0) continue
+      const failed = assessed.find((r) => r.status === "not_passed")
+      const decisive = failed ?? assessed[0]
+      return { competencyId: id, label, status: failed ? "developing" : "strength", evidence: decisive.evidence.slice(0, 200) }
     }
     return { competencyId: id, label, status: "not_yet_seen" }
   })

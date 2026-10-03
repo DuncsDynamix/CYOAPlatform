@@ -33,6 +33,13 @@ describe("checkpoint branches", () => {
     expect(resolveCheckpointTarget(checkpoint, base)).toEqual({ nextNodeId: "default", branchIndex: null })
     expect(getAdvanceTarget(checkpoint, base)).toBe("default")
   })
+  it("skips a matching branch with no target and falls through (I2)", () => {
+    const cp: CheckpointNode = { ...checkpoint, branches: [{ when: [cond], nextNodeId: "" }, { when: [cond], nextNodeId: "second" }] }
+    expect(resolveCheckpointTarget(cp, developing)).toEqual({ nextNodeId: "second", branchIndex: 1 })
+    const onlyEmpty: CheckpointNode = { ...checkpoint, branches: [{ when: [cond], nextNodeId: "" }] }
+    expect(resolveCheckpointTarget(onlyEmpty, developing)).toEqual({ nextNodeId: "default", branchIndex: null })
+    expect(getAdvanceTarget(onlyEmpty, developing)).toBe("default")
+  })
   it("takes the first matching branch", () => {
     expect(resolveCheckpointTarget(checkpoint, developing)).toEqual({ nextNodeId: "extra-practice", branchIndex: 0 })
   })

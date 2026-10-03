@@ -206,3 +206,29 @@ describe("evaluative assessment reads dialogue transcripts", () => {
     expect(prompt).toContain("Just flush the run")
   })
 })
+
+// ─── SESSION CASE DATA REACHES CHARACTERS (spec §2.1) ─────────
+
+describe("session caseData reaches the characters audience", () => {
+  function sessionWithCaseData() {
+    const session = sessionWithHistory()
+    session.context = {
+      caseData: [{ id: "acct", label: "Customer account", role: "case_data", priority: "must", source: { kind: "text", text: "ACCOUNT-7781 has two missed visits." } }],
+    }
+    return session
+  }
+
+  it("shows session case data to the dialogue opener and responder", async () => {
+    await generateDialogueOpener(dialogueNode, actor, sessionWithCaseData(), createTestExperience())
+    expect(mockMessagesCreate.mock.calls[0][0].system).toContain("ACCOUNT-7781 has two missed visits.")
+    await generateDialogueResponse(dialogueNode, actor, [{ role: "participant", content: "Hi", timestamp: "t" }], sessionWithCaseData(), createTestExperience())
+    expect(mockMessagesCreate.mock.calls[1][0].system).toContain("ACCOUNT-7781 has two missed visits.")
+  })
+
+  it("shows session case data to an observed dialogue", async () => {
+    mockMessagesCreate.mockResolvedValue(textResponse(JSON.stringify([{ speaker: "A", line: "x" }, { speaker: "B", line: "y" }])))
+    const obs: ObservedDialogueNode = { id: "o1", type: "OBSERVED_DIALOGUE", label: "Obs", actorAId: "A", actorBId: "B", purpose: "p", turns: 2, nextNodeId: "n" }
+    await generateObservedDialogue(obs, { ...actor, name: "A" }, { ...actor, name: "B" }, sessionWithCaseData(), createTestExperience())
+    expect(mockMessagesCreate.mock.calls[0][0].system).toContain("ACCOUNT-7781 has two missed visits.")
+  })
+})

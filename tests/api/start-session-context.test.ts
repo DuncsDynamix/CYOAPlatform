@@ -12,7 +12,10 @@ vi.mock("@/lib/security/ratelimit", () => ({
   checkEngineLimit: vi.fn().mockResolvedValue({ success: true }),
   checkGenerationLimit: vi.fn().mockResolvedValue({ success: true }),
 }))
-vi.mock("@/lib/training/learner-profile", () => ({ buildSessionContext: vi.fn() }))
+vi.mock("@/lib/training/learner-profile", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/training/learner-profile")>()
+  return { ...actual, buildSessionContext: vi.fn() }
+})
 vi.mock("@/lib/auth", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/auth")>()
   return { ...actual, requireAuth: vi.fn(), getAnthropicKey: vi.fn().mockReturnValue("test-key") }
@@ -69,5 +72,21 @@ describe("POST /api/v1/engine/start session context", () => {
     expect(buildSessionContext).toHaveBeenCalledWith({ userId: "user-1", orgId: ORG, framework })
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({ context: ctx }))
     expect((await res.json()).personalised).toBe(true)
+  })
+
+  it("treats a malformed competency framework as empty (C-minor)", async () => {
+    vi.mocked(db.org.findUnique).mockResolvedValue({ trainingTier: "training_pilot", personalisationEnabled: true, competencyFramework: [{ id: 7 }, "junk"] } as never)
+    vi.mocked(buildSessionContext).mockResolvedValue({ profile: [] })
+    const res = await startSession(req())
+    expect(res.status).toBe(200)
+    expect(buildSessionContext).toHaveBeenCalledWith({ userId: "user-1", orgId: ORG, framework: [] })
+  })
+
+  it("passes a well-formed framework through, description included", async () => {
+    const fw = [{ id: "calm", label: "De-escalation", description: "Keeps it level" }]
+    vi.mocked(db.org.findUnique).mockResolvedValue({ trainingTier: "training_pilot", personalisationEnabled: true, competencyFramework: fw } as never)
+    vi.mocked(buildSessionContext).mockResolvedValue({ profile: [] })
+    await startSession(req())
+    expect(buildSessionContext).toHaveBeenCalledWith({ userId: "user-1", orgId: ORG, framework: fw })
   })
 })

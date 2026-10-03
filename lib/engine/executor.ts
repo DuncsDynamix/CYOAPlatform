@@ -148,10 +148,14 @@ export async function reassessNode(
   const fresh = await generateEvaluativeAssessment(evalNode, entries, session, experience, apiKey)
   // A failed re-run must never erase criteria that were already assessed.
   const stored = session.state.competencyProfile.filter((r) => r.nodeId === nodeId)
-  const results = fresh.results.map((r) => {
-    if (r.status !== "not_assessed") return r
-    const prior = stored.find((s) => s.rubricCriterionId === r.rubricCriterionId)
-    return prior && prior.status !== "not_assessed" ? prior : r
+  const reassessedAt = new Date().toISOString()
+  const results = fresh.results.map((r): CompetencyResult => {
+    if (r.status === "not_assessed") {
+      const prior = stored.find((s) => s.rubricCriterionId === r.rubricCriterionId)
+      if (prior && prior.status !== "not_assessed") return prior
+    }
+    // Produced by this re-run: stamped so the record shows it was re-assessed.
+    return { ...r, reassessedAt }
   })
   await replaceCompetencyResults(sessionId, nodeId, results)
   const anyFresh = fresh.results.some((r) => r.status !== "not_assessed")

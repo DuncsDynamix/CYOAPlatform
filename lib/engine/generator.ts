@@ -157,7 +157,7 @@ export async function generateDialogueOpener(
   apiKey?: string
 ): Promise<string> {
   const pack = getContextPack(experience)
-  const characterRefs = buildReferenceBlock(pack, "characters")
+  const characterRefs = buildReferenceBlock(pack, "characters", session.context?.caseData)
   const learnerBlock = buildLearnerBlock(session.context, "characters")
 
   const systemPrompt = `You are ${actor.name}, ${actor.role}. ${actor.personality}
@@ -207,7 +207,7 @@ export async function generateDialogueResponse(
   apiKey?: string
 ): Promise<string> {
   const pack = getContextPack(experience)
-  const characterRefs = buildReferenceBlock(pack, "characters")
+  const characterRefs = buildReferenceBlock(pack, "characters", session.context?.caseData)
   const learnerBlock = buildLearnerBlock(session.context, "characters")
 
   const systemPrompt = `You are ${actor.name}, ${actor.role}. ${actor.personality}
@@ -317,7 +317,7 @@ export async function generateObservedDialogue(
 
   try {
     const pack = getContextPack(experience)
-    const characterRefs = buildReferenceBlock(pack, "characters")
+    const characterRefs = buildReferenceBlock(pack, "characters", session.context?.caseData)
 
     const systemPrompt = `You are writing a realistic workplace conversation for a training scenario.
 Setting: ${pack.core.setting.summary || "a professional workplace"}

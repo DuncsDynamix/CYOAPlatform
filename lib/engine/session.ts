@@ -48,6 +48,7 @@ const CompetencyResultSchema = z.object({
   evidence: z.string(),
   weight: z.enum(["critical", "major", "minor"]),
   competencyId: z.string().optional(),
+  reassessedAt: z.string().optional(),
 }).transform((r): CompetencyResult => ({
   ...r,
   // Legacy results stored no status. The old silent fallback evidence marks

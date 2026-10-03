@@ -16,4 +16,15 @@ describe("buildLearnerProfile", () => {
     expect(profile.find((p) => p.competencyId === "calm")?.status).toBe("developing") // not_assessed ignored
     expect(profile.find((p) => p.competencyId === "hyg")?.status).toBe("not_yet_seen")
   })
+
+  it("is developing when any of the newest session's results for a competency failed, whatever the criterion order (I3)", () => {
+    const pass = { ...res("id-check", "passed"), evidence: "checked the card" }
+    const fail = { ...res("id-check", "not_passed"), rubricCriterionId: "id-2", evidence: "skipped the callback" }
+    for (const results of [[pass, fail], [fail, pass]]) {
+      const profile = buildLearnerProfile(fw, [{ completedAt: new Date("2026-09-20"), results }])
+      const entry = profile.find((p) => p.competencyId === "id-check")
+      expect(entry?.status).toBe("developing")
+      expect(entry?.evidence).toBe("skipped the callback")
+    }
+  })
 })
