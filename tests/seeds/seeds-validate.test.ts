@@ -1,17 +1,45 @@
 import { describe, it, expect, vi } from "vitest"
 import { validateExperience } from "@/lib/engine/client"
 import { GOLDTAP_COMPETENCIES } from "@/prisma/seed-data/goldtap-competencies"
+import * as seed from "@/prisma/seed"
+import * as seedLibrary from "@/prisma/seed-library"
+import * as seedClearconnect from "@/prisma/seed-clearconnect"
+import * as seedFernbrook from "@/prisma/seed-fernbrook-safeguarding"
+import * as seedGoldtap from "@/prisma/seed-goldtap"
+import * as seedGoldtapDoorstep from "@/prisma/seed-goldtap-doorstep"
+import * as seedGoldtapWaterQuality from "@/prisma/seed-goldtap-water-quality"
+import * as seedHartleyvoss from "@/prisma/seed-hartleyvoss-ransomware"
+import * as seedNwh from "@/prisma/seed-nwh"
+import * as seedNwhInteractive from "@/prisma/seed-nwh-interactive"
+import * as seedNwhSlides from "@/prisma/seed-nwh-slides"
+import * as seedThamesWater from "@/prisma/seed-thames-water"
 
 vi.mock("@prisma/client", () => ({ PrismaClient: vi.fn().mockImplementation(() => ({})) }))
 
-const SEEDS = [
-  "seed", "seed-library", "seed-clearconnect", "seed-fernbrook-safeguarding", "seed-goldtap", "seed-goldtap-doorstep",
-  "seed-goldtap-water-quality", "seed-hartleyvoss-ransomware", "seed-nwh", "seed-nwh-interactive", "seed-nwh-slides", "seed-thames-water",
+type Exp = Parameters<typeof validateExperience>[0] & { presentation?: { useCaseCategory?: string } }
+
+const SEEDS: Record<string, { experiences: Exp[] }> = {
+  "seed": seed,
+  "seed-library": seedLibrary,
+  "seed-clearconnect": seedClearconnect,
+  "seed-fernbrook-safeguarding": seedFernbrook,
+  "seed-goldtap": seedGoldtap,
+  "seed-goldtap-doorstep": seedGoldtapDoorstep,
+  "seed-goldtap-water-quality": seedGoldtapWaterQuality,
+  "seed-hartleyvoss-ransomware": seedHartleyvoss,
+  "seed-nwh": seedNwh,
+  "seed-nwh-interactive": seedNwhInteractive,
+  "seed-nwh-slides": seedNwhSlides,
+  "seed-thames-water": seedThamesWater,
+}
+
+// Seeds whose experiences sit on a shelf category via presentation.useCaseCategory.
+const CATEGORISED = [
+  "seed-goldtap-doorstep", "seed-goldtap-water-quality", "seed-nwh", "seed-nwh-interactive", "seed-nwh-slides", "seed-thames-water",
 ]
 
-describe.each(SEEDS)("%s", (name) => {
-  it("every experience is a valid v2 experience with no blocking errors", async () => {
-    const mod = (await import(`@/prisma/${name}`)) as { experiences: Parameters<typeof validateExperience>[0][] }
+describe.each(Object.entries(SEEDS))("%s", (name, mod) => {
+  it("every experience is a valid v2 experience with no blocking errors", () => {
     expect(mod.experiences.length).toBeGreaterThan(0)
     for (const exp of mod.experiences) {
       expect((exp.contextPack as { contractVersion?: number }).contractVersion).toBe(2)
@@ -19,4 +47,10 @@ describe.each(SEEDS)("%s", (name) => {
       expect(errors).toEqual([])
     }
   })
+
+  if (CATEGORISED.includes(name)) {
+    it("exports a non-empty presentation.useCaseCategory", () => {
+      for (const exp of mod.experiences) expect(exp.presentation?.useCaseCategory).toMatch(/\S/)
+    })
+  }
 })

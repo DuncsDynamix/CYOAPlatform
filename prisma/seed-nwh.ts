@@ -1128,7 +1128,7 @@ const shape: ShapeDefinition = {
   displaySteps: 43,
 }
 
-export const experiences = [{ type: "l_and_d", contextPack, nodes: nodes, segments: [] }]
+export const experiences = [{ type: "l_and_d", contextPack, presentation: { useCaseCategory: "course_replication" }, nodes: nodes, segments: [] }]
 
 // ─── SEED ────────────────────────────────────────────────────────────────────
 
@@ -1159,6 +1159,7 @@ async function main() {
       publishedAt: new Date(),
       useCasePack: USE_CASE_PACKS["l_and_d"] as object,
       contextPack: contextPack as object,
+      presentation: { useCaseCategory: "course_replication" },
       nodes: nodes as object[],
       shape: shape as object,
     },
@@ -1175,6 +1176,7 @@ async function main() {
       publishedAt: new Date(),
       useCasePack: USE_CASE_PACKS["l_and_d"] as object,
       contextPack: contextPack as object,
+      presentation: { useCaseCategory: "course_replication" },
       nodes: nodes as object[],
       shape: shape as object,
     },

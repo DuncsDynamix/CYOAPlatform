@@ -778,7 +778,7 @@ const segments: Segment[] = [
   },
 ]
 
-export const experiences = [{ type: "l_and_d", contextPack, nodes: nodes, segments: segments }]
+export const experiences = [{ type: "l_and_d", contextPack, presentation: { useCaseCategory: "assessed_training" }, nodes: nodes, segments: segments }]
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
@@ -840,6 +840,7 @@ async function main() {
       segments: segments as object[],
       useCasePack: USE_CASE_PACKS.l_and_d as object,
       contextPack: contextPack as object,
+      presentation: { useCaseCategory: "assessed_training" },
       shape: shape as object,
       status: "published",
       publishedAt: new Date(),
@@ -859,6 +860,7 @@ async function main() {
       renderingTheme: "training",
       useCasePack: USE_CASE_PACKS.l_and_d as object,
       contextPack: contextPack as object,
+      presentation: { useCaseCategory: "assessed_training" },
       shape: shape as object,
       nodes: nodes as object[],
       segments: segments as object[],

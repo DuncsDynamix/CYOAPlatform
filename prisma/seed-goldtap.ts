@@ -203,6 +203,7 @@ const nodes: Node[] = [
       },
       {
         id: "crit-customer-care",
+        competencyId: "customer-communication",
         label: "Respectful handling",
         description:
           "Learner handled (or planned to handle) the refusal without humiliating the customer: low-key, alternatives offered, no audience.",

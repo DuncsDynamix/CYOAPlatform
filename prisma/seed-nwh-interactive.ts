@@ -459,6 +459,7 @@ If you discover or suspect a contamination risk: **stop work immediately, report
     rubric: [
       {
         id: "stop-work",
+        competencyId: "incident-escalation",
         label: "Stop work immediately",
         description:
           "The learner stopped current maintenance activities and did not proceed with any further work on the reservoir before the structural issue was formally assessed.",
@@ -466,6 +467,7 @@ If you discover or suspect a contamination risk: **stop work immediately, report
       },
       {
         id: "immediate-report",
+        competencyId: "incident-escalation",
         label: "Reported to supervisor immediately",
         description:
           "The learner reported the situation to Pat Doherty immediately — not at end of shift, not after finishing a section, but at the point of discovery.",
@@ -473,6 +475,7 @@ If you discover or suspect a contamination risk: **stop work immediately, report
       },
       {
         id: "asset-isolation",
+        competencyId: "incident-escalation",
         label: "Understood asset must not return to supply",
         description:
           "The learner recognised or demonstrated understanding that the reservoir must not be returned to supply until the structural issue and any contamination risk has been assessed and cleared.",
@@ -480,6 +483,7 @@ If you discover or suspect a contamination risk: **stop work immediately, report
       },
       {
         id: "contamination-pathway",
+        competencyId: "water-hygiene",
         label: "Identified the contamination pathway",
         description:
           "The learner understood or articulated that the adjacent dairy farm represents a contamination risk (animal waste, Cryptosporidium) through the crack, and that this is the specific reason the situation is serious.",
@@ -579,6 +583,7 @@ Only products approved under **Regulation 31** (England) or **Regulation 33** (S
     rubric: [
       {
         id: "clothing-separation",
+        competencyId: "water-hygiene",
         label: "Clothing separation",
         description:
           "The learner correctly stated that separate sets of clothing must be used for sewage work and drinking water supply work, and that these must never be combined.",
@@ -586,6 +591,7 @@ Only products approved under **Regulation 31** (England) or **Regulation 33** (S
       },
       {
         id: "storage-fittings",
+        competencyId: "water-hygiene",
         label: "Correct fittings storage",
         description:
           "The learner correctly stated that small fittings must be stored in sealed, labelled bags and kept off the van floor.",
@@ -593,6 +599,7 @@ Only products approved under **Regulation 31** (England) or **Regulation 33** (S
       },
       {
         id: "fuel-separation",
+        competencyId: "water-hygiene",
         label: "Fuel and chemical separation",
         description:
           "The learner correctly stated that fuel must be stored in a separate bunded area, away from pipes and fittings, to prevent permeation and contamination.",
@@ -600,6 +607,7 @@ Only products approved under **Regulation 31** (England) or **Regulation 33** (S
       },
       {
         id: "storage-pipes",
+        competencyId: "water-hygiene",
         label: "Correct pipe storage",
         description:
           "The learner correctly stated that pipes must be capped at both ends and stored off the ground in a secure area.",
@@ -607,6 +615,7 @@ Only products approved under **Regulation 31** (England) or **Regulation 33** (S
       },
       {
         id: "hand-hygiene",
+        competencyId: "water-hygiene",
         label: "Hand hygiene requirements",
         description:
           "The learner demonstrated knowledge of when hand washing is required: before and after restricted operations, after toilet use, and after contact with soil or contaminated materials.",
@@ -1298,7 +1307,7 @@ const shape: ShapeDefinition = {
   displaySteps: 42,
 }
 
-export const experiences = [{ type: "l_and_d", contextPack, nodes, segments: [] }]
+export const experiences = [{ type: "l_and_d", contextPack, presentation: { useCaseCategory: "assessed_training" }, nodes, segments: [] }]
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────
 
@@ -1329,6 +1338,7 @@ async function main() {
       publishedAt: new Date(),
       useCasePack: USE_CASE_PACKS["l_and_d"] as object,
       contextPack: contextPack as object,
+      presentation: { useCaseCategory: "assessed_training" },
       nodes: nodes as object[],
       shape: shape as object,
     },
@@ -1345,6 +1355,7 @@ async function main() {
       publishedAt: new Date(),
       useCasePack: USE_CASE_PACKS["l_and_d"] as object,
       contextPack: contextPack as object,
+      presentation: { useCaseCategory: "assessed_training" },
       nodes: nodes as object[],
       shape: shape as object,
     },
