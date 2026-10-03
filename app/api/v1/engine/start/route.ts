@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Session context is supplied by the server, not the client" }, { status: 400 })
   }
 
-  const { experienceId, experienceSlug } = parsed.data
+  const { experienceId, experienceSlug, restart } = parsed.data
 
   const user = await requireAuth(req, { allowAnonymous: true })
 
@@ -102,6 +102,15 @@ export async function POST(req: NextRequest) {
       code: "graph_invalid_at_start",
       experienceId: experience.id,
       orgId: experience.orgId ?? undefined,
+    })
+  }
+
+  // "Start again" on the cover: earlier unfinished attempts stop counting as
+  // in progress (library status, resume).
+  if (restart && user?.id) {
+    await db.experienceSession.updateMany({
+      where: { userId: user.id, experienceId: experience.id, status: "active" },
+      data: { status: "abandoned" },
     })
   }
 

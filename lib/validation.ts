@@ -6,6 +6,8 @@ export const StartSessionSchema = z
   .object({
     experienceId: z.string().uuid().optional(),
     experienceSlug: z.string().min(1).max(100).optional(),
+    // Start again: abandon this learner's earlier unfinished sessions of the course
+    restart: z.boolean().optional(),
     // Declared only so the route can reject it: context is built server-side.
     sessionContext: z.unknown().optional(),
   })
