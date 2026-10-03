@@ -1,3 +1,4 @@
+import type { ExperienceContextPack } from "./legacy-seed-types"
 /**
  * NWH certification training — slide-deck variant (Experience ID: ...0042)
  *
@@ -11,7 +12,7 @@ import { PrismaClient } from "@prisma/client"
 import { copyFile, mkdir } from "fs/promises"
 import { existsSync } from "fs"
 import path from "path"
-import type { Node, ExperienceContextPack, ShapeDefinition } from "../types/experience"
+import type { Node, ShapeDefinition } from "../types/experience"
 import { USE_CASE_PACKS } from "../lib/engine/usecases"
 
 const db = new PrismaClient()

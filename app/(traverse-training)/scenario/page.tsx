@@ -5,7 +5,8 @@ import { createServerClient } from "@supabase/ssr"
 import { db } from "@/lib/db/prisma"
 import { resolveBrand } from "@/lib/branding"
 import { groupCoursesByCategory } from "@/lib/training/use-case-categories"
-import type { ExperienceContextPack, ShapeDefinition } from "@/types/experience"
+import type { ShapeDefinition } from "@/types/experience"
+import { normaliseContextPack } from "@/lib/engine/contract"
 
 // DB-backed page: render per request, never at build time
 export const dynamic = "force-dynamic"
@@ -53,7 +54,7 @@ export default async function TrainingLibraryPage() {
   const courses = await db.experience.findMany({
     where: { orgId: user.orgId, renderingTheme: "training", status: "published" },
     orderBy: { createdAt: "asc" },
-    select: { slug: true, title: true, description: true, contextPack: true, shape: true },
+    select: { slug: true, type: true, title: true, description: true, contextPack: true, shape: true },
   })
 
   return (
@@ -83,8 +84,8 @@ export default async function TrainingLibraryPage() {
               <p className="t-lib-section-blurb">{category.blurb}</p>
               <div className="t-lib-grid">
                 {sectionCourses.map((c) => {
-                  const cp = c.contextPack as ExperienceContextPack | null
-                  const objectives = cp?.learningObjectives ?? []
+                  const pack = normaliseContextPack(c.contextPack, c.type).pack
+                  const objectives = pack.extension.kind === "training" ? pack.extension.learningObjectives : []
                   return (
                     <Link key={c.slug} href={`/scenario/${c.slug}`} className="t-lib-card">
                       <h3 className="t-lib-card-title">{c.title}</h3>

@@ -3,6 +3,7 @@ import { db } from "@/lib/db/prisma"
 import { requireAuth } from "@/lib/auth"
 import { CreateExperienceSchema } from "@/lib/validation"
 import { USE_CASE_PACKS } from "@/lib/engine/usecases"
+import { emptyContextPack } from "@/lib/engine/contract"
 
 function slugify(title: string): string {
   return title
@@ -70,21 +71,6 @@ export async function POST(req: NextRequest) {
 
   const defaultUseCasePack = USE_CASE_PACKS[type] ?? USE_CASE_PACKS.cyoa_story
 
-  const defaultContextPack = {
-    world: { description: "", rules: "", atmosphere: "" },
-    actors: [],
-    protagonist: { perspective: "you", role: "", knowledge: "", goal: "" },
-    style: {
-      tone: "",
-      language: "en-GB",
-      register: "literary",
-      targetLength: { min: 150, max: 250 },
-      styleNotes: "",
-    },
-    groundTruth: [],
-    scripts: [],
-  }
-
   const defaultShape = {
     totalDepthMin: 6,
     totalDepthMax: 12,
@@ -106,7 +92,7 @@ export async function POST(req: NextRequest) {
       genre: genre ?? null,
       type,
       useCasePack: defaultUseCasePack as object,
-      contextPack: defaultContextPack,
+      contextPack: emptyContextPack(type) as object,
       shape: defaultShape,
       nodes: [],
       segments: [],

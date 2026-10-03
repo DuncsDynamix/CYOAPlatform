@@ -1,3 +1,4 @@
+import type { ExperienceContextPack } from "./legacy-seed-types"
 import { PrismaClient } from "@prisma/client"
 import { copyFile, mkdir } from "fs/promises"
 import { existsSync } from "fs"
@@ -5,7 +6,6 @@ import path from "path"
 import type {
   Node,
   Segment,
-  ExperienceContextPack,
   ShapeDefinition,
 } from "../types/experience"
 import { USE_CASE_PACKS } from "../lib/engine/usecases"

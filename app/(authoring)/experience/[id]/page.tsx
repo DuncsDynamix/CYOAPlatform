@@ -1,14 +1,15 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
-import type { Experience, ExperienceContextPack, Node, Segment } from "@/types/experience"
+import type { Experience, Node, Segment } from "@/types/experience"
 import { ExperienceForm } from "@/components/authoring/ExperienceForm"
 import { ContextPackEditor } from "@/components/authoring/ContextPackEditor"
 import { NodeGraph } from "@/components/authoring/NodeGraph"
 import { NodeEditor } from "@/components/authoring/NodeEditor"
 import { HelpPanel } from "@/components/authoring/HelpPanel"
 import { makeNode } from "@/lib/authoring/graph"
+import { normaliseContextPack } from "@/lib/engine/contract"
 
 type Tab = "details" | "context" | "nodes"
 
@@ -28,6 +29,11 @@ export default function ExperienceEditorPage() {
   const [helpOpen, setHelpOpen] = useState(false)
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved")
+  const contextPackV2 = useMemo(
+    () => (experience ? normaliseContextPack(experience.contextPack, experience.type).pack : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [experience?.contextPack, experience?.type]
+  )
   const [publishing, setPublishing] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -288,8 +294,7 @@ export default function ExperienceEditorPage() {
 
         {tab === "context" && (
           <ContextPackEditor
-            // Task 2c converts the editor to v2; until then it still edits the stored legacy shape.
-            data={experience.contextPack as ExperienceContextPack}
+            data={contextPackV2 ?? normaliseContextPack(experience.contextPack, experience.type).pack}
             onChange={(cp) => updateExperience({ contextPack: cp })}
           />
         )}

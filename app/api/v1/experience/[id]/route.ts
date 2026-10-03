@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db/prisma"
 import { requireAuth, canEditExperience, canDeleteExperience } from "@/lib/auth"
 import { UpdateExperienceSchema } from "@/lib/validation"
+import { normaliseContextPack } from "@/lib/engine/contract"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -50,7 +51,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
       ...(type !== undefined && { type }),
       ...(renderingTheme !== undefined && { renderingTheme }),
       ...(coverImageUrl !== undefined && { coverImageUrl }),
-      ...(contextPack !== undefined && { contextPack: contextPack as object }),
+      ...(contextPack !== undefined && {
+        contextPack: normaliseContextPack(contextPack, type ?? experience.type).pack as object,
+      }),
       ...(shape !== undefined && { shape: shape as object }),
       ...(nodes !== undefined && { nodes: nodes as object[] }),
       ...(segments !== undefined && { segments: segments as object[] }),

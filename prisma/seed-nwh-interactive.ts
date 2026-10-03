@@ -1,3 +1,4 @@
+import type { ExperienceContextPack } from "./legacy-seed-types"
 /**
  * seed-nwh-interactive.ts
  *
@@ -20,7 +21,6 @@
 import { PrismaClient } from "@prisma/client"
 import { USE_CASE_PACKS } from "@/lib/engine/usecases"
 import type {
-  ExperienceContextPack,
   ShapeDefinition,
 } from "@/types/experience"
 

@@ -377,12 +377,3 @@ export interface Experience {
   createdAt: Date
   updatedAt: Date
 }
-
-/** @deprecated Removed in Task 2c once client components read v2 packs. */
-export type ExperienceContextPack = import("./legacy-pack").LegacyContextPackV1
-/** @deprecated Removed in Task 2c once client components read v2 packs. */
-export type Actor = import("./legacy-pack").Actor
-/** @deprecated Removed in Task 2c once client components read v2 packs. */
-export type GroundTruthSource = import("./legacy-pack").GroundTruthSource
-/** @deprecated Removed in Task 2c once client components read v2 packs. */
-export type ContextScript = import("./legacy-pack").ContextScript

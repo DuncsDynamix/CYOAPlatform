@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
       node: arrival.node,
       content: arrival.content,
       experienceTitle: experience.title,
-      // Trimmed on purpose: groundTruth, actors and scripts are authored
+      // Trimmed on purpose: references, characters and rules are authored
       // internals (they contain the answers) and must never reach the client.
       contextPack: { learningObjectives: pack.extension.kind === "training" ? pack.extension.learningObjectives : [] },
       shape: {

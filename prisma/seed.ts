@@ -1,8 +1,8 @@
+import type { ExperienceContextPack } from "./legacy-seed-types"
 import { PrismaClient } from "@prisma/client"
 import type {
   Node,
   Segment,
-  ExperienceContextPack,
   ShapeDefinition,
 } from "../types/experience"
 import { USE_CASE_PACKS } from "../lib/engine/usecases"

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { getBinderyPack } from "@/lib/library/bindery-packs"
 import { normalizeGenre } from "@/lib/library/halls"
-import type { ExperienceContextPack } from "@/types/experience"
+import { emptyContextPack, normaliseContextPack, type ContextPack } from "@/lib/engine/contract"
 import { Drawer, type DraftListItem } from "./Drawer"
 import { SheetTitle, type SheetTitleFields } from "./SheetTitle"
 import { SheetPremise } from "./SheetPremise"
@@ -36,33 +36,12 @@ const SAVE_COPY: Record<SaveStatus, string> = {
 
 type SheetFields = { title: string; genre: string; description: string }
 
-const DEFAULT_CONTEXT_PACK: ExperienceContextPack = {
-  world: { description: "", rules: "", atmosphere: "" },
-  actors: [],
-  protagonist: { perspective: "second", role: "", knowledge: "", goal: "" },
-  style: {
-    tone: "",
-    language: "en-GB",
-    register: "literary",
-    targetLength: { min: 150, max: 250 },
-    styleNotes: "",
-  },
-  groundTruth: [],
-  scripts: [],
-}
+const DEFAULT_CONTEXT_PACK: ContextPack = emptyContextPack("cyoa_story")
 
-// A resumed draft's contextPack may be missing sub-objects (older drafts,
-// test fixtures) — fill in defaults for anything absent rather than let
-// SheetPremise dereference undefined.
-function mergeContextPack(raw: unknown): ExperienceContextPack {
-  const r = (raw && typeof raw === "object" ? raw : {}) as Partial<ExperienceContextPack>
-  return {
-    ...DEFAULT_CONTEXT_PACK,
-    ...r,
-    world: { ...DEFAULT_CONTEXT_PACK.world, ...r.world },
-    protagonist: { ...DEFAULT_CONTEXT_PACK.protagonist, ...r.protagonist },
-    style: { ...DEFAULT_CONTEXT_PACK.style, ...r.style },
-  }
+// A resumed draft's contextPack may be legacy or partial (older drafts, test
+// fixtures); the normaliser always yields a complete v2 pack.
+function mergeContextPack(raw: unknown): ContextPack {
+  return normaliseContextPack(raw, "cyoa_story").pack
 }
 
 function getCoverVariant(shape: unknown): number {
@@ -84,7 +63,7 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
   const [description, setDescription] = useState("")
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved")
 
-  const [contextPack, setContextPack] = useState<ExperienceContextPack>(DEFAULT_CONTEXT_PACK)
+  const [contextPack, setContextPack] = useState<ContextPack>(DEFAULT_CONTEXT_PACK)
   const [shape, setShape] = useState<unknown>({})
   const [segments, setSegments] = useState<unknown>([])
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null)
@@ -239,7 +218,7 @@ export function Desk({ drafts, packId }: { drafts: DraftListItem[]; packId?: str
     }
   }
 
-  function handleContextPackChange(pack: ExperienceContextPack) {
+  function handleContextPackChange(pack: ContextPack) {
     setContextPack(pack)
     setSaveStatus("unsaved")
     if (contextPackDebounceRef.current) clearTimeout(contextPackDebounceRef.current)

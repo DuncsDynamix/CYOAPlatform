@@ -2,22 +2,9 @@ import { describe, it, expect, vi } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 import { SheetPremise } from "@/components/library/bindery/SheetPremise"
 import { SheetCover } from "@/components/library/bindery/SheetCover"
-import type { ExperienceContextPack } from "@/types/experience"
+import { emptyContextPack, type ContextPack } from "@/lib/engine/contract"
 
-const FULL_PACK: ExperienceContextPack = {
-  world: { description: "", rules: "", atmosphere: "" },
-  actors: [],
-  protagonist: { perspective: "second", role: "", knowledge: "", goal: "" },
-  style: {
-    tone: "",
-    language: "en-GB",
-    register: "literary",
-    targetLength: { min: 150, max: 250 },
-    styleNotes: "",
-  },
-  groundTruth: [],
-  scripts: [],
-}
+const FULL_PACK: ContextPack = emptyContextPack("cyoa_story")
 
 describe("SheetPremise", () => {
   it("round-trips a field onto the contextPack shape", () => {
@@ -29,8 +16,8 @@ describe("SheetPremise", () => {
     })
 
     expect(onChange).toHaveBeenCalled()
-    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0] as ExperienceContextPack
-    expect(lastCall.world.rules).toBe("No one may lie beneath the library's roof.")
+    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0] as ContextPack
+    expect(lastCall.core.setting.details).toBe("No one may lie beneath the library's roof.")
   })
 })
 

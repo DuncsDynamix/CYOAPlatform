@@ -9,7 +9,7 @@ import { FeedbackPanel } from "./FeedbackPanel"
 import { DebriefScreen } from "./DebriefScreen"
 import { LoadingModule } from "./LoadingModule"
 import type { TrainingPlayerStatus, LearningObjective, DecisionReview, CompetencyProfile, CourseNote } from "@/types/engine"
-import type { ChoiceOption, ExperienceContextPack, FixedNode, GeneratedNode } from "@/types/experience"
+import type { ChoiceOption, FixedNode, GeneratedNode } from "@/types/experience"
 import type { ResolvedContent } from "@/types/engine"
 import type { Node } from "@/types/experience"
 import type { DialogueTurn, CompetencyResult } from "@/types/session"
@@ -127,7 +127,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
         node: Node
         content: ResolvedContent
         experienceTitle?: string
-        contextPack?: ExperienceContextPack
+        contextPack?: { learningObjectives?: string[] }
         shape?: { totalDepthMax?: number; displaySteps?: number }
       }
 

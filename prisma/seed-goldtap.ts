@@ -1,3 +1,4 @@
+import type { ExperienceContextPack } from "./legacy-seed-types"
 /**
  * Gold Tap Training — anchor design partner seed.
  *
@@ -13,7 +14,7 @@
  */
 import { db } from "../lib/db/prisma"
 import { USE_CASE_PACKS } from "../lib/engine/usecases"
-import type { Node, ExperienceContextPack, ShapeDefinition } from "../types/experience"
+import type { Node, ShapeDefinition } from "../types/experience"
 
 const ORG_ID = "00000000-0000-0000-0000-000000000051"
 const EXPERIENCE_ID = "00000000-0000-0000-0000-000000000050"
