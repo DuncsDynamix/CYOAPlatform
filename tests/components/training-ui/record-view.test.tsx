@@ -81,6 +81,12 @@ describe("RecordView", () => {
     expect(within(appendix).getByText("Margaret Hale:")).toBeInTheDocument()
   })
 
+  it("shows an open-response answer exactly as the learner typed it", () => {
+    const typed = "I'd ask — calmly — for ID"
+    render(<RecordView doc={{ ...base, appendix: [{ kind: "decision", nodeId: "c2", label: "Open", prompt: "What now?", chosen: typed }] }} />)
+    expect(screen.getByText(typed)).toBeInTheDocument()
+  })
+
   it("offers Download PDF and Back on screen", () => {
     render(<RecordView doc={base} />)
     expect(screen.getByRole("button", { name: "Download PDF" })).toBeInTheDocument()

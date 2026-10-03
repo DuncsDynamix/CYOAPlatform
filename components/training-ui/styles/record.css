@@ -155,6 +155,10 @@
   color: var(--tg-text-muted);
 }
 
+.tg-record-appendix-ref {
+  font-size: var(--tg-fs-xs);
+  color: var(--tg-text-muted);
+}
 .tg-appendix-scene {
   font-size: var(--tg-fs-sm);
   color: var(--tg-text-muted);
@@ -162,7 +166,7 @@
 .tg-appendix-block {
   margin-top: var(--tg-space-3);
   font-size: var(--tg-fs-sm);
-  break-inside: avoid-page;
+  break-inside: avoid;
 }
 .tg-appendix-label {
   font-family: var(--tg-font-heading);

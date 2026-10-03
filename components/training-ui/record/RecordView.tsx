@@ -16,8 +16,6 @@ import { PrintButton } from "./PrintButton"
 export function RecordView({ doc, logo }: { doc: RecordDocument; logo?: string }) {
   return (
     <div className="tg-record-page">
-      {/* The reference on every printed page; the format is fixed ([A-Z]{2,4}-XXXX-XXXX), so it is safe to inline. */}
-      <style>{`@page { @bottom-left { content: "Evidence record ${doc.reference}"; } }`}</style>
       <div className="tg-record-toolbar tg-no-print">
         <Link className="tg-btn tg-btn--secondary" href="/scenario">
           Back
@@ -113,6 +111,7 @@ export function RecordView({ doc, logo }: { doc: RecordDocument; logo?: string }
             <h2 className="tg-kicker" id="record-appendix">
               Appendix: session transcript
             </h2>
+            <p className="tg-record-appendix-ref">Ref {doc.reference}</p>
             {doc.appendix.map((step, i) => (
               <AppendixStep key={i} step={step} learnerName={doc.learnerName} />
             ))}
@@ -134,7 +133,7 @@ function AppendixStep({ step, learnerName }: { step: SessionRecordStep; learnerN
           <p className="tg-appendix-label">{step.label}</p>
           {step.prompt && <p>{step.prompt}</p>}
           <p>
-            <strong>Chose:</strong> <span>{toDisplayText(step.chosen)}</span>
+            <strong>Chose:</strong> <span>{step.chosen}</span>
           </p>
         </div>
       )
