@@ -1,0 +1,125 @@
+/* Course cover: hero beside its details on laptops, stacked on phones. */
+
+.tg-cover {
+  flex: 1 0 auto;
+  width: 100%;
+  max-width: var(--tg-page-width);
+  margin: 0 auto;
+}
+@media (min-width: 960px) {
+  .tg-cover {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--tg-space-8);
+    padding: var(--tg-space-8) var(--tg-space-4);
+    align-items: start;
+  }
+}
+.tg-cover-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 200px;
+  overflow: hidden;
+  background: var(--tg-header-bg);
+}
+@media (min-width: 960px) {
+  .tg-cover-hero {
+    min-height: 360px;
+    border-radius: var(--tg-radius-lg);
+    position: sticky;
+    top: var(--tg-space-8);
+  }
+}
+.tg-cover-hero--plain {
+  border-bottom: 4px solid var(--tg-brand);
+}
+.tg-cover-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tg-cover-title {
+  position: relative;
+  width: 100%;
+  padding: var(--tg-space-10) var(--tg-space-4) var(--tg-space-4);
+  background: var(--tg-image-scrim);
+  color: var(--tg-on-image);
+  font-size: var(--tg-fs-xl);
+}
+.tg-cover-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tg-space-4);
+  padding: var(--tg-space-5) var(--tg-space-4) var(--tg-space-8);
+}
+@media (min-width: 960px) {
+  .tg-cover-details {
+    padding: 0;
+  }
+}
+.tg-cover-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tg-space-2) var(--tg-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-text-muted);
+}
+.tg-cover-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tg-space-1);
+}
+.tg-cover-desc {
+  font-size: var(--tg-fs-read);
+}
+.tg-cover-stages {
+  display: flex;
+  gap: var(--tg-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tg-cover-stage {
+  flex: 1;
+  min-width: 0;
+  padding: var(--tg-space-2) var(--tg-space-1);
+  border: 1px solid var(--tg-border);
+  border-radius: var(--tg-radius-sm);
+  background: var(--tg-surface-raised);
+  font-family: var(--tg-font-heading);
+  font-weight: 600;
+  font-size: var(--tg-fs-xs);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.tg-cover-section {
+  display: block;
+}
+.tg-accred {
+  display: flex;
+  align-items: center;
+  gap: var(--tg-space-3);
+  padding: var(--tg-space-2) var(--tg-space-3);
+  border-radius: var(--tg-radius-md);
+  background: var(--tg-surface-raised);
+  box-shadow: var(--tg-shadow-card);
+}
+.tg-accred-badge {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+.tg-accred-text {
+  font-size: var(--tg-fs-sm);
+}
+.tg-cover-note {
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-text-muted);
+}
