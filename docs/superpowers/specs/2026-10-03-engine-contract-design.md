@@ -160,7 +160,9 @@ interface SessionContext {
 }
 ```
 
-Stored on `ExperienceSession` in a new column `context Json @default("{}")`, so the session record shows what the engine was told. Validated with Zod at the start route; invalid context is a 400.
+Stored on `ExperienceSession` in a new column `context Json @default("{}")`, so the session record shows what the engine was told.
+
+**Who may supply it.** The engine's `createSession` accepts a `SessionContext`. In this app the browser calls `POST /api/v1/engine/start` directly, so that route **rejects** a client-supplied `sessionContext` (400) and builds the context server-side from the org's settings and the learner's own records. Accepting it from a browser would let a learner forge their profile and inject free text into prompts. An API-key-authenticated route for external consumers is future work.
 
 ### 1.4 Competencies
 
@@ -306,7 +308,8 @@ New module `lib/engine/models.ts`: one entry per call kind, each with `model`, `
 |---|---|---|---|
 | `prose`, `dialogue_opener`, `dialogue_response`, `observed_dialogue`, `summary` | `claude-sonnet-5-5` | `thinking: { type: "between_tools" }` (thinking off; effort default `high`) | Existing small `max_tokens` budgets kept |
 | `evaluative` | `claude-sonnet-5-5` | adaptive thinking, effort `medium` | Structured output; `max_tokens` 8,000. Switching to `claude-opus-5-5` is a one-line change if quality warrants |
-| `scaffold`, `breakthrough`, `router` | `claude-haiku-4-5` | none | Cheap, per-turn extraction; stays Haiku unless measured accuracy disappoints |
+| `router` | `claude-sonnet-5-5` | thinking off | Already Sonnet today; routing a learner's free text is consequential |
+| `scaffold`, `breakthrough` | `claude-haiku-4-5` | none | Cheap, per-turn extraction; stays Haiku unless measured accuracy disappoints |
 | Bindery drafting kinds | unchanged models, read from the map | as today, adjusted for Sonnet 5.5's thinking rules | Called from `lib/library/` via the engine's public entry point |
 
 Required with this change:
