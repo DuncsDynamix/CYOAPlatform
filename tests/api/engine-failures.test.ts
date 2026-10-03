@@ -47,6 +47,7 @@ import { getSession, commitSessionMutation } from "@/lib/engine/session"
 import { arriveAtNode, findNode } from "@/lib/engine/executor"
 import { generateDialogueResponse, assessDialogueBreakthrough } from "@/lib/engine/generator"
 import { createTestExperience, createTestSession } from "../helpers/factories"
+import { ModelCallError } from "@/lib/engine/llm"
 import type { ContextPack } from "@/types/experience"
 
 const mockGetExperienceById = vi.mocked(getExperienceById)
@@ -147,6 +148,19 @@ describe("POST /api/v1/engine/choose — atomic writes and failure envelopes", (
     expect(res.status).toBe(429)
     const body = await res.json()
     expect(body.retryable).toBe(true)
+  })
+
+  it("returns a retryable envelope when a model call fails (truncated, empty or refused) (C1)", async () => {
+    const { session } = setupClosedChoice()
+    mockArriveAtNode.mockRejectedValue(new ModelCallError("max_tokens", "Model output truncated (prose)"))
+    let res = await submitChoice(chooseRequest(session.id))
+    expect(res.status).toBe(503)
+    expect((await res.json()).retryable).toBe(true)
+
+    mockArriveAtNode.mockRejectedValue(new ModelCallError("refusal", "Model declined (prose)"))
+    res = await submitChoice(chooseRequest(session.id))
+    expect(res.status).toBe(502)
+    expect((await res.json()).retryable).toBe(true)
   })
 
   it("returns a non-retryable 500 envelope on unexpected errors", async () => {

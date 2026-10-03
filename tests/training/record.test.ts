@@ -152,6 +152,23 @@ describe("buildSessionRecord", () => {
     expect(record.session.completedAt).toBe("2026-08-06T10:00:00.000Z")
   })
 
+  it("has no verdict for an experience without an assessment and no results (A5)", () => {
+    const { session, experience } = wireSession()
+    session.state.competencyProfile = []
+    experience.nodes = (experience.nodes as Node[]).filter((n) => n.type !== "EVALUATIVE")
+    const record = buildSessionRecord(session, experience)
+    expect(record.evaluation.outcome).toBeNull()
+    expect(record.evaluation.passed).toBe(false)
+  })
+
+  it("is incomplete, never passed, when the experience has an assessment but no results (A5)", () => {
+    const { session, experience } = wireSession()
+    session.state.competencyProfile = []
+    const record = buildSessionRecord(session, experience)
+    expect(record.evaluation.outcome).toBe("incomplete")
+    expect(record.evaluation.passed).toBe(false)
+  })
+
   it("marks generated scenes whose prose was not retained instead of omitting them", () => {
     const { session, experience } = wireSession()
     session.narrativeHistory = session.narrativeHistory.filter((e) => e.nodeId !== "n2")

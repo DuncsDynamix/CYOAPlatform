@@ -15,6 +15,12 @@ export type ResolvedContent =
       closingLine: string
       summary: string
       outcomeCard: OutcomeCardData
+      /**
+       * The session's stored assessment results (authoritative for the
+       * evidence record). Present only when the experience has an
+       * EVALUATIVE node; absent means "no assessment, no verdict".
+       */
+      assessment?: { results: CompetencyResult[] }
     }
   | {
       type: "dialogue"

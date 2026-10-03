@@ -29,6 +29,7 @@ function transcriptEntry(node: DialogueNode, turns: DialogueTurn[], breakthrough
     },
     generatedAt: new Date().toISOString(),
     transcript: turns,
+    actorName: node.actorId,
   }
 }
 
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
   const genLimit = await checkGenerationLimit(user?.id ?? sessionId)
   if (!genLimit.success) {
     return NextResponse.json(
-      { error: "Generation limit reached — try again in a minute.", retryable: true },
+      { error: "Generation limit reached. Try again in a minute.", retryable: true },
       { status: 429 }
     )
   }
@@ -193,7 +194,7 @@ export async function POST(req: NextRequest) {
 
   if (!characterLine || characterLine.trim().length === 0) {
     return NextResponse.json(
-      { error: "The character had nothing to say — try again.", retryable: true },
+      { error: "The character had nothing to say. Try again.", retryable: true },
       { status: 502 }
     )
   }

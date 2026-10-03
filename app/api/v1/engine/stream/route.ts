@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   // This route triggers the largest generation fan-out of any endpoint
   const genLimit = await checkGenerationLimit(user?.id ?? sessionId)
   if (!genLimit.success) {
-    return new Response("Generation limit reached — try again in a minute.", { status: 429 })
+    return new Response("Generation limit reached. Try again in a minute.", { status: 429 })
   }
 
   const experience = await getExperienceById(session.experienceId)

@@ -13,7 +13,7 @@ function weightLabel(weight: CompetencyResult["weight"]): string {
   return "Minor"
 }
 
-const VERDICT: Record<EvidenceRecord["outcome"], { text: string; modifier: string }> = {
+const VERDICT: Record<NonNullable<EvidenceRecord["outcome"]>, { text: string; modifier: string }> = {
   passed: { text: "Competence demonstrated", modifier: "pass" },
   not_passed: { text: "Not yet demonstrated", modifier: "develop" },
   incomplete: { text: "Assessment incomplete", modifier: "incomplete" },
@@ -41,9 +41,11 @@ export function EvidenceReport({ record }: { record: EvidenceRecord }) {
             {record.outcomeLabel} · Completed {formatDate(record.completedAt)}
           </div>
         </div>
-        <div className={`tt-evidence-verdict tt-evidence-verdict--${VERDICT[record.outcome].modifier}`}>
-          {VERDICT[record.outcome].text}
-        </div>
+        {record.outcome && (
+          <div className={`tt-evidence-verdict tt-evidence-verdict--${VERDICT[record.outcome].modifier}`}>
+            {VERDICT[record.outcome].text}
+          </div>
+        )}
       </header>
 
       <div className="tt-evidence-criteria">

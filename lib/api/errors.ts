@@ -25,25 +25,53 @@ function isConnectionFailure(err: unknown): boolean {
   return err instanceof Error && /timeout|connection/i.test(err.name)
 }
 
+/**
+ * The engine's ModelCallError (lib/engine/llm.ts), matched by name rather
+ * than instanceof: Next dev compiles each route as its own module graph, so
+ * the class identity is not reliable across them.
+ */
+function modelCallReason(err: unknown): string | undefined {
+  if (err instanceof Error && err.name === "ModelCallError" && "reason" in err) {
+    return String((err as { reason: unknown }).reason)
+  }
+  return undefined
+}
+
 export function classifyEngineError(err: unknown): { status: number; body: EngineErrorEnvelope } {
   const providerStatus = providerStatusOf(err)
+  const modelReason = modelCallReason(err)
 
+  // A model call that came back unusable (declined, truncated, empty) is
+  // transient from the learner's point of view: a second attempt usually
+  // succeeds. Never strand them behind a non-retryable error.
+  if (modelReason === "refusal") {
+    return {
+      status: 502,
+      body: { error: "The writing service could not produce this part. Try again.", retryable: true },
+    }
+  }
+  if (modelReason !== undefined) {
+    return {
+      status: 503,
+      body: { error: "The writing service returned an incomplete response. Try again.", retryable: true },
+    }
+  }
   if (providerStatus === 429) {
     return {
       status: 429,
-      body: { error: "The engine is handling a lot of requests right now — try again in a moment.", retryable: true },
+      body: { error: "The engine is handling a lot of requests right now. Try again in a moment.", retryable: true },
     }
   }
   if (providerStatus !== undefined && providerStatus >= 500) {
     return {
       status: 502,
-      body: { error: "The generation service had a temporary problem — try again.", retryable: true },
+      body: { error: "The generation service had a temporary problem. Try again.", retryable: true },
     }
   }
   if (isConnectionFailure(err)) {
     return {
       status: 503,
-      body: { error: "Generation is taking longer than usual — try again.", retryable: true },
+      body: { error: "Generation is taking longer than usual. Try again.", retryable: true },
     }
   }
   if (providerStatus !== undefined) {

@@ -44,13 +44,23 @@ describe("callModel", () => {
 
   it("sends the model map's settings and never disabled thinking", async () => {
     create.mockResolvedValue({ content: [{ type: "text", text: "x" }], stop_reason: "end_turn", usage: { input_tokens: 1, output_tokens: 1 } })
-    await callModel(base)
+    await callModel({ ...base, kind: "dialogue_response" })
     const params = create.mock.calls[0][0]
     expect(params.model).toBe("claude-sonnet-5-5")
-    expect(params.max_tokens).toBe(800)
+    expect(params.max_tokens).toBe(340)
     expect(params.thinking).toEqual({ type: "between_tools" })
     expect(params.fallbacks).toBe("default")
     expect(params.betas).toContain("server-side-fallback-2026-07-01")
+  })
+
+  it("sends prose with adaptive thinking at low effort", async () => {
+    create.mockResolvedValue({ content: [{ type: "thinking", thinking: "..." }, { type: "text", text: "x" }], stop_reason: "end_turn", usage: { input_tokens: 1, output_tokens: 1 } })
+    const { text } = await callModel(base)
+    const params = create.mock.calls[0][0]
+    expect(params.max_tokens).toBe(2000)
+    expect(params.thinking).toEqual({ type: "adaptive" })
+    expect(params.output_config).toEqual({ effort: "low" })
+    expect(text).toBe("x")
   })
 
   it("passes an output schema as structured output and honours a maxTokens override", async () => {

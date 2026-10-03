@@ -27,6 +27,9 @@ import type {
 import type { ExperienceSession, NarrativeHistoryEntry, NarrativeScaffold, CompetencyResult } from "@/types/session"
 import type { ArrivalResult, ResolvedContent, OutcomeCardData } from "@/types/engine"
 
+/** Stored and shown when the closing reflection cannot be generated. */
+export const FALLBACK_ENDPOINT_SUMMARY = "Your session is complete. A written reflection could not be generated."
+
 // ─── PURE HELPER FUNCTIONS ────────────────────────────────────
 
 /**
@@ -178,6 +181,11 @@ export function getReachableGeneratedChildren(
   node: Node,
   nodes: Node[]
 ): GeneratedNode[] {
+  // A conversation's follow-on scene depends on what the learner says in it.
+  // Pre-generating it on arrival at the DIALOGUE (before a word is spoken)
+  // produced scenes written blind, which leaked "I can't write this yet".
+  if (node.type === "DIALOGUE") return []
+
   const directChildIds = getImmediateChildIds(node)
   const results: GeneratedNode[] = []
 
@@ -287,8 +295,27 @@ async function resolveNodeContent(
   apiKey?: string
 ): Promise<ResolvedContent> {
   switch (node.type) {
-    case "FIXED":
-      return { type: "prose", content: (node as FixedNode).content }
+    case "FIXED": {
+      const fixedNode = node as FixedNode
+      // Authored pages enter narrative history too, so the generated page
+      // that follows keeps continuity with them. No model call: the content
+      // is verbatim and the scaffold is minimal. appendNarrativeHistory is
+      // idempotent per node, so re-arrival never duplicates the page.
+      await appendNarrativeHistory(session.id, {
+        nodeId: node.id,
+        content: fixedNode.content,
+        scaffold: {
+          nodeId: node.id,
+          nodeLabel: node.label,
+          beatAchieved: node.label,
+          keyFactsEstablished: [],
+          stateSnapshot: {},
+        },
+        generatedAt: new Date().toISOString(),
+        kind: "authored",
+      })
+      return { type: "prose", content: fixedNode.content }
+    }
 
     case "GENERATED": {
       const generatedNode = node as GeneratedNode
@@ -395,13 +422,29 @@ async function resolveNodeContent(
       const effectiveSummaryInstruction = variant?.summaryInstruction ?? endpointNode.summaryInstruction
       const effectiveOutcomeLabel = variant?.outcomeLabel ?? endpointNode.outcomeLabel
 
-      const summary = await generateEndpointSummary(
-        endpointNode,
-        effectiveSummaryInstruction,
-        session,
-        experience,
-        apiKey
-      )
+      // The reflection is a nicety; the completed session and its evidence
+      // record are the product. A failed summary call must never strand a
+      // learner at the endpoint with nothing recorded.
+      let summary: string
+      try {
+        summary = await generateEndpointSummary(
+          endpointNode,
+          effectiveSummaryInstruction,
+          session,
+          experience,
+          apiKey
+        )
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        console.warn(`[executor] endpoint summary failed for session ${session.id}: ${message}`)
+        trackEvent("error", {
+          message,
+          code: "endpoint_summary_failed",
+          sessionId: session.id,
+          experienceId: experience.id,
+        })
+        summary = FALLBACK_ENDPOINT_SUMMARY
+      }
       await markSessionComplete(session.id, endpointNode.endpointId, summary)
 
       trackEvent("session_completed", {
@@ -416,10 +459,15 @@ async function resolveNodeContent(
         ),
       })
 
+      // The session's stored results are authoritative for the evidence
+      // record (the player must not rebuild it from its own client state).
+      const hasAssessment = getAllNodes(experience).some((n) => n.type === "EVALUATIVE")
+
       return {
         type: "endpoint",
         closingLine: effectiveClosingLine,
         summary,
+        ...(hasAssessment && { assessment: { results: session.state.competencyProfile } }),
         outcomeCard: buildOutcomeCard(
           { ...endpointNode, outcomeLabel: effectiveOutcomeLabel, closingLine: effectiveClosingLine },
           session,
@@ -506,11 +554,13 @@ async function resolveNodeContent(
       const cached = await getFromCache(session.id, node.id)
       if (cached) {
         const exchanges = JSON.parse(cached) as { speaker: string; line: string }[]
+        await appendObservedHistory(session.id, obsNode, exchanges)
         return { type: "observed_dialogue", exchanges, openingContext: obsNode.openingContext, nextNodeId: obsNode.nextNodeId }
       }
 
       const exchanges = await generateObservedDialogue(obsNode, actorA, actorB, session, experience, apiKey)
       await writeToCache(session.id, node.id, JSON.stringify(exchanges))
+      await appendObservedHistory(session.id, obsNode, exchanges)
 
       return {
         type: "observed_dialogue",
@@ -525,6 +575,31 @@ async function resolveNodeContent(
       return { type: "slide_deck", slides: deckNode.slides, nextNodeId: deckNode.nextNodeId }
     }
   }
+}
+
+/**
+ * An observed exchange is part of what the learner has witnessed, so later
+ * scenes and conversations must see it. Idempotent per node (re-arrival and
+ * the cached path never duplicate the entry).
+ */
+async function appendObservedHistory(
+  sessionId: string,
+  node: ObservedDialogueNode,
+  exchanges: { speaker: string; line: string }[]
+): Promise<void> {
+  await appendNarrativeHistory(sessionId, {
+    nodeId: node.id,
+    content: exchanges.map((e) => `${e.speaker}: ${e.line}`).join("\n"),
+    scaffold: {
+      beatAchieved: node.purpose,
+      keyFactsEstablished: [],
+      nodeLabel: node.label,
+      nodeId: node.id,
+      stateSnapshot: {},
+    },
+    generatedAt: new Date().toISOString(),
+    kind: "observed",
+  })
 }
 
 async function generateChildrenInParallel(

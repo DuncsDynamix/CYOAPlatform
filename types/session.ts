@@ -93,6 +93,14 @@ export interface NarrativeHistoryEntry {
    * words) and as audit evidence attached to the session record.
    */
   transcript?: DialogueTurn[]
+  /** DIALOGUE entries: the character's name, used to label transcript lines in later prompts. */
+  actorName?: string
+  /**
+   * Entries that are not engine-generated scenes: "authored" (a FIXED page,
+   * content verbatim) or "observed" (an OBSERVED_DIALOGUE exchange). Absent
+   * for GENERATED scenes and DIALOGUE transcripts.
+   */
+  kind?: "authored" | "observed"
 }
 
 // ─── CHOICE HISTORY ──────────────────────────────────────────

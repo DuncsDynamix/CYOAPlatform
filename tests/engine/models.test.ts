@@ -20,6 +20,21 @@ describe("MODEL_MAP", () => {
     expect(MODEL_MAP.evaluative.maxTokens).toBeGreaterThanOrEqual(8000)
   })
 
+  it("prose and summary think at low effort, with room for thinking tokens (A3)", () => {
+    expect(MODEL_MAP.prose).toMatchObject({ model: "claude-sonnet-5-5", thinking: { type: "adaptive" }, effort: "low", maxTokens: 2000 })
+    expect(MODEL_MAP.summary).toMatchObject({ model: "claude-sonnet-5-5", thinking: { type: "adaptive" }, effort: "low", maxTokens: 1500 })
+  })
+
+  it("latency-sensitive kinds stay thinking-off via between_tools", () => {
+    for (const kind of ["dialogue_opener", "dialogue_response", "observed_dialogue", "router", "bindery_json", "bindery_sample"] as const) {
+      expect(MODEL_MAP[kind].thinking).toEqual({ type: "between_tools" })
+    }
+  })
+
+  it("scaffold extraction has room to finish (A4)", () => {
+    expect(MODEL_MAP.scaffold.maxTokens).toBe(800)
+  })
+
   it("no engine file names a model outside models.ts", () => {
     const dir = "lib/engine"
     const offenders = readdirSync(dir)

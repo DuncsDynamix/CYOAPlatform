@@ -13,7 +13,8 @@ export interface EvidenceRecord {
   aiSummary: string
   completedAt: string // ISO timestamp
   passed: boolean
-  outcome: AssessmentOutcome
+  /** Null when the scenario has no assessment: the record then carries no verdict. */
+  outcome: AssessmentOutcome | null
   criteria: CompetencyResult[]
   decisions: DecisionReview[]
 }
@@ -25,17 +26,35 @@ export interface EvidenceRecordInput {
   completedAt: string
   results: CompetencyResult[]
   decisions: DecisionReview[]
+  /**
+   * Whether the scenario contains an assessment (an EVALUATIVE node).
+   * Defaults to "there are results". With an assessment but no results the
+   * verdict is "incomplete", never a pass.
+   */
+  hasAssessment?: boolean
 }
 
-/** The EVALUATIVE pass rule lives in the engine; this is the training-side alias. */
-export const competenceOutcome = assessmentOutcome
+/**
+ * The evidence verdict. The EVALUATIVE pass rule lives in the engine
+ * (assessmentOutcome); this adds the evidence-level rule for zero results:
+ * no assessment in the scenario means no verdict at all, and an assessment
+ * with nothing recorded is incomplete. An empty result list must never read
+ * as "Competence demonstrated".
+ */
+export function competenceOutcome(
+  results: CompetencyResult[],
+  hasAssessment = results.length > 0
+): AssessmentOutcome | null {
+  if (results.length === 0) return hasAssessment ? "incomplete" : null
+  return assessmentOutcome(results)
+}
 
-export function competencePassed(results: CompetencyResult[]): boolean {
-  return assessmentOutcome(results) === "passed"
+export function competencePassed(results: CompetencyResult[], hasAssessment?: boolean): boolean {
+  return competenceOutcome(results, hasAssessment) === "passed"
 }
 
 export function buildEvidenceRecord(input: EvidenceRecordInput): EvidenceRecord {
-  const outcome = assessmentOutcome(input.results)
+  const outcome = competenceOutcome(input.results, input.hasAssessment)
 
   return {
     moduleTitle: input.moduleTitle,

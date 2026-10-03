@@ -14,10 +14,22 @@ export class ModelCallError extends Error {
 
 // 30s timeout + 2 SDK-managed retries (exponential backoff on 429/5xx) so a
 // hung or rate-limited API call can never block a request indefinitely.
-// Assessment thinks, and Bindery chapter drafts run to thousands of output
-// tokens for an author who is told the assistant is working, so both get longer.
-export function getAnthropicClient(apiKey?: string, timeoutMs = 30_000): Anthropic {
-  return new Anthropic({ apiKey: apiKey ?? process.env.ANTHROPIC_API_KEY, timeout: timeoutMs, maxRetries: 2 })
+// Bindery chapter drafts run to thousands of output tokens for an author who
+// is told the assistant is working, so they get longer.
+export function getAnthropicClient(apiKey?: string, timeoutMs = 30_000, maxRetries = 2): Anthropic {
+  return new Anthropic({ apiKey: apiKey ?? process.env.ANTHROPIC_API_KEY, timeout: timeoutMs, maxRetries })
+}
+
+/**
+ * Per-kind client limits. Assessment thinks, so it gets longer than the 30s
+ * default, but it runs inside an engine route with maxDuration 120 and the
+ * generator makes two attempts: 50s with one SDK retry keeps the usual
+ * failure modes (429/5xx answered quickly) inside the route's budget.
+ */
+function clientLimitsFor(kind: CallKind): { timeoutMs: number; maxRetries: number } {
+  if (kind === "evaluative") return { timeoutMs: 50_000, maxRetries: 1 }
+  if (kind === "bindery_json") return { timeoutMs: 120_000, maxRetries: 2 }
+  return { timeoutMs: 30_000, maxRetries: 2 }
 }
 
 interface Usage { input_tokens: number; output_tokens: number }
@@ -60,8 +72,8 @@ export interface CallModelOptions {
 
 export async function callModel(opts: CallModelOptions): Promise<{ text: string; usage: Usage }> {
   const spec = MODEL_MAP[opts.kind]
-  const timeoutMs = opts.kind === "evaluative" ? 90_000 : opts.kind === "bindery_json" ? 120_000 : 30_000
-  const client = getAnthropicClient(opts.apiKey, timeoutMs)
+  const { timeoutMs, maxRetries } = clientLimitsFor(opts.kind)
+  const client = getAnthropicClient(opts.apiKey, timeoutMs, maxRetries)
 
   const outputConfig: Record<string, unknown> = {}
   if (spec.effort) outputConfig.effort = spec.effort

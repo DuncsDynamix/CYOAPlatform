@@ -5,6 +5,12 @@
  *
  * Sonnet 5.5 rejects thinking {type:"disabled"}; {type:"between_tools"} is
  * its thinking-off mode (valid at effort high or below, the default).
+ *
+ * Prose and summary think at low effort: with thinking off, Sonnet 5.5 was
+ * observed narrating its reasoning into the visible page ("The beat you've
+ * given me jumps ahead..."). Thinking tokens count toward max_tokens, hence
+ * the larger budgets. Dialogue, routing and Bindery stay thinking-off: they
+ * are latency-sensitive and showed no leak.
  */
 export type CallKind =
   | "prose"
@@ -33,15 +39,15 @@ const HAIKU = "claude-haiku-4-5"
 const THINKING_OFF = { type: "between_tools" } as const
 
 export const MODEL_MAP: Record<CallKind, ModelSpec> = {
-  prose: { model: SONNET, maxTokens: 800, thinking: THINKING_OFF, fallback: true },
-  summary: { model: SONNET, maxTokens: 400, thinking: THINKING_OFF, fallback: true },
+  prose: { model: SONNET, maxTokens: 2000, thinking: { type: "adaptive" }, effort: "low", fallback: true },
+  summary: { model: SONNET, maxTokens: 1500, thinking: { type: "adaptive" }, effort: "low", fallback: true },
   dialogue_opener: { model: SONNET, maxTokens: 280, thinking: THINKING_OFF, fallback: true },
   dialogue_response: { model: SONNET, maxTokens: 340, thinking: THINKING_OFF, fallback: true },
   observed_dialogue: { model: SONNET, maxTokens: 1100, thinking: THINKING_OFF, fallback: true },
   router: { model: SONNET, maxTokens: 64, thinking: THINKING_OFF, fallback: true },
   // The evidence record is the product: think, and leave room to finish.
   evaluative: { model: SONNET, maxTokens: 8000, thinking: { type: "adaptive" }, effort: "medium", fallback: true },
-  scaffold: { model: HAIKU, maxTokens: 300 },
+  scaffold: { model: HAIKU, maxTokens: 800 },
   breakthrough: { model: HAIKU, maxTokens: 30 },
   bindery_json: { model: SONNET, maxTokens: 4000, thinking: THINKING_OFF, fallback: true },
   bindery_sample: { model: SONNET, maxTokens: 400, thinking: THINKING_OFF, fallback: true },

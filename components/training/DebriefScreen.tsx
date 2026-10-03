@@ -82,7 +82,7 @@ export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHi
           <div className="t-debrief-score">
             <span className="t-debrief-score-label">{score.label}:</span>{" "}
             <span className="t-debrief-score-value">{score.value} / {score.outOf}</span>
-            {" — "}
+            {" · "}
             <span
               className="t-debrief-score-result"
               style={{ color: score.passed ? "var(--t-success)" : "var(--t-warning)" }}

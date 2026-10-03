@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { buildSystemPrompt, buildGenerationPrompt, buildEndpointSummaryPrompt, buildEvaluativePrompt, buildLearningDialogueRules, WRITING_STYLE_RULES, buildSceneContext, DIALOGUE_ENGAGEMENT_RULES } from "./prompts"
+import { buildSystemPrompt, buildGenerationPrompt, buildEndpointSummaryPrompt, buildEvaluativePrompt, buildLearningDialogueRules, WRITING_STYLE_RULES, buildSceneContext, DIALOGUE_ENGAGEMENT_RULES, buildSummarySystemPrompt } from "./prompts"
 import { stripEmDashes, stripJsonFence } from "./style"
 import { buildArcAwareness } from "./arc"
 import { USE_CASE_PACKS } from "./usecases"
@@ -130,9 +130,7 @@ export async function generateEndpointSummary(
 
   const learnerBlock = buildLearnerBlock(session.context, "summary")
   const prompt = buildEndpointSummaryPrompt(narrativeSummary, choiceHistory, summaryInstruction, session.state.counters) + (learnerBlock ? `\n\n${learnerBlock}` : "")
-  const systemPrompt = `You are a master storyteller writing a personalised ending reflection. ${pack.core.style.notes}
-
-${WRITING_STYLE_RULES}`
+  const systemPrompt = buildSummarySystemPrompt(pack.core.style.notes)
 
   const { text } = await callModel({
     kind: "summary",
@@ -314,7 +312,7 @@ export async function generateObservedDialogue(
 ): Promise<{ speaker: string; line: string }[]> {
   const fallback: { speaker: string; line: string }[] = [
     { speaker: actorA.name, line: "We need to talk about what happened." },
-    { speaker: actorB.name, line: "Of course — what's on your mind?" },
+    { speaker: actorB.name, line: "Of course. What's on your mind?" },
   ]
 
   try {

@@ -93,6 +93,15 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
     return () => abortRef.current?.abort()
   }, [])
 
+  // Every response handler arrives through this ref, never through the
+  // arriveAtNode captured by its own closure. advanceToNextNode is memoised
+  // once and onContinue callbacks are stored in state, so a captured
+  // arriveAtNode reads the state of the render that created it: that is how
+  // the debrief evidence record was once built from an empty result list
+  // ("Competence demonstrated" after two critical criteria failed).
+  // (Kept current by the effect that follows arriveAtNode's declaration.)
+  const arriveRef = useRef<((sid: string, node: Node, content: ResolvedContent) => void) | null>(null)
+
   function nextSignal(): AbortSignal {
     abortRef.current?.abort()
     abortRef.current = new AbortController()
@@ -145,12 +154,11 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
       setObjectives(objectives)
       setTotalSteps(data.shape?.displaySteps ?? data.shape?.totalDepthMax ?? 0)
 
-      arriveAtNode(data.sessionId, data.node, data.content)
+      arriveRef.current?.(data.sessionId, data.node, data.content)
     } catch (err) {
       if (isAbort(err)) return
-      setPlayerStatus({ status: "error", message: "Network error — please try again", retryable: true })
+      setPlayerStatus({ status: "error", message: "Network error. Please try again.", retryable: true })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [experienceSlug])
 
   useEffect(() => {
@@ -186,6 +194,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
           completedAt: prev.evidence.completedAt,
           results: merged,
           decisions: prev.evidence.decisions,
+          hasAssessment: true,
         }),
       }
     })
@@ -222,6 +231,11 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
     }
 
     if (content.type === "endpoint") {
+      // The session's stored results (sent with the endpoint) are
+      // authoritative. Client-accumulated results are only a fallback for an
+      // older server; with neither, the scenario has no assessment and the
+      // record carries no verdict.
+      const results = content.assessment?.results ?? competencyResults
       setPlayerStatus({
         status: "debrief",
         outcomeLabel: content.outcomeCard.outcomeLabel,
@@ -234,8 +248,9 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
           outcomeLabel: content.outcomeCard.outcomeLabel,
           aiSummary: content.summary,
           completedAt: new Date().toISOString(),
-          results: competencyResults,
+          results,
           decisions: decisionHistory,
+          hasAssessment: content.assessment !== undefined || results.length > 0,
         }),
       })
       return
@@ -319,7 +334,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
     }
   }
 
-  const advanceToNextNode = useCallback(async (sid: string) => {
+  async function advanceToNextNode(sid: string) {
     setPlayerStatus({ status: "advancing" })
     try {
       const res = await fetch(`/api/v1/engine/node?sessionId=${sid}`, { signal: nextSignal() })
@@ -329,12 +344,15 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
         return
       }
       const data = await res.json() as { node: Node; content: ResolvedContent }
-      arriveAtNode(sid, data.node, data.content)
+      arriveRef.current?.(sid, data.node, data.content)
     } catch (err) {
       if (isAbort(err)) return
+      // Reached on a failed fetch OR an exception while handling a 200
+      // response; log it so the two can be told apart.
+      console.error("[player] advance failed:", err)
       setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: () => advanceToNextNode(sid) })
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   async function handleChoice(choiceId: string, choiceLabel: string, option: ChoiceOption) {
     if (!sessionId) return
@@ -411,7 +429,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
       if (data.dialogueComplete && data.nextNode && data.nextContent) {
         // Dialogue over — advance
         setDialogueHistory([])
-        arriveAtNode(sessionId!, data.nextNode, data.nextContent)
+        arriveRef.current?.(sessionId!, data.nextNode, data.nextContent)
       } else {
         // Continue dialogue
         setDialogueHistory((prev) => [...prev, charTurn])
@@ -449,7 +467,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
       const data = await res.json() as { nextNode?: Node; nextContent?: ResolvedContent }
       if (data.nextNode && data.nextContent) {
         setDialogueHistory([])
-        arriveAtNode(sessionId, data.nextNode, data.nextContent)
+        arriveRef.current?.(sessionId, data.nextNode, data.nextContent)
       }
     } catch (err) {
       if (isAbort(err)) return
@@ -478,12 +496,18 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
         return
       }
       const data = await res.json() as { node: Node; content: ResolvedContent }
-      arriveAtNode(sessionId, data.node, data.content)
+      arriveRef.current?.(sessionId, data.node, data.content)
     } catch (err) {
       if (isAbort(err)) return
+      console.error("[player] choice failed:", err)
       setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: () => submitChoice(choiceId) })
     }
   }
+
+  // Keep the ref pointing at this render's arriveAtNode (see arriveRef).
+  useEffect(() => {
+    arriveRef.current = arriveAtNode
+  })
 
   // ─── Render ─────────────────────────────────────────────────
 
@@ -834,7 +858,7 @@ function DialoguePanel({
             }}
             disabled={submitting || concluding}
           >
-            {concluding ? "Finishing…" : "I've said what I need to — finish the conversation"}
+            {concluding ? "Finishing…" : "I've said what I need to. Finish the conversation"}
           </button>
         </div>
       )}

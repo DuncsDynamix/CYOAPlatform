@@ -49,7 +49,8 @@ export interface SessionRecord {
   evaluation: {
     criteria: CompetencyResult[]
     passed: boolean
-    outcome: AssessmentOutcome
+    /** Null when the experience has no assessment (no EVALUATIVE node). */
+    outcome: AssessmentOutcome | null
     endpointSummary: string | null
   }
 }
@@ -65,6 +66,7 @@ export function buildSessionRecord(session: ExperienceSession, experience: Exper
   const choices = session.choiceHistory as ChoiceHistoryEntry[]
 
   const timeline: SessionRecordStep[] = []
+  const hasAssessment = nodes.some((n) => n.type === "EVALUATIVE")
 
   for (const nodeId of session.state.nodesVisited) {
     const node = nodes.find((n) => n.id === nodeId)
@@ -141,8 +143,8 @@ export function buildSessionRecord(session: ExperienceSession, experience: Exper
     timeline,
     evaluation: {
       criteria: session.state.competencyProfile,
-      passed: competencePassed(session.state.competencyProfile),
-      outcome: competenceOutcome(session.state.competencyProfile),
+      passed: competencePassed(session.state.competencyProfile, hasAssessment),
+      outcome: competenceOutcome(session.state.competencyProfile, hasAssessment),
       endpointSummary: session.state.endpointSummary ?? null,
     },
   }

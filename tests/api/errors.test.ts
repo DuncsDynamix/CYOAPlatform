@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
 import { classifyEngineError } from "@/lib/api/errors"
+import { ModelCallError } from "@/lib/engine/llm"
 
 function apiError(status: number, message = "api error"): Error {
   const err = new Error(message)
@@ -42,6 +43,28 @@ describe("classifyEngineError", () => {
     const result = classifyEngineError(apiError(401, "invalid x-api-key"))
     expect(result.status).toBe(502)
     expect(result.body.retryable).toBe(false)
+  })
+
+  it("maps model truncation, empty output and queue failures to 503 retryable (C1)", () => {
+    for (const reason of ["max_tokens", "no_text", "queue"] as const) {
+      const result = classifyEngineError(new ModelCallError(reason, `internal detail ${reason}`))
+      expect(result.status).toBe(503)
+      expect(result.body.retryable).toBe(true)
+      expect(result.body.error).not.toContain("internal detail")
+    }
+  })
+
+  it("maps a model refusal to 502 retryable (C1)", () => {
+    const result = classifyEngineError(new ModelCallError("refusal", "Model declined (prose)"))
+    expect(result.status).toBe(502)
+    expect(result.body.retryable).toBe(true)
+  })
+
+  it("keeps error copy free of em-dashes", () => {
+    const samples = [classifyEngineError(Object.assign(new Error("x"), { status: 429 })), classifyEngineError(Object.assign(new Error("x"), { status: 503 }))]
+    const t = new Error("t"); t.name = "APIConnectionTimeoutError"
+    samples.push(classifyEngineError(t), classifyEngineError(new ModelCallError("refusal", "r")), classifyEngineError(new ModelCallError("no_text", "n")))
+    for (const s of samples) expect(s.body.error).not.toMatch(/\u2014/)
   })
 
   it("maps unknown errors to 500 non-retryable", () => {

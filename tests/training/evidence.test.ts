@@ -27,6 +27,27 @@ describe("buildEvidenceRecord outcome", () => {
     expect(record.outcome).toBe("incomplete")
     expect(record.passed).toBe(false)
   })
+  it("carries no verdict when the scenario has no assessment (A5)", () => {
+    const record = buildEvidenceRecord({ ...base, results: [] })
+    expect(record.outcome).toBeNull()
+    expect(record.passed).toBe(false)
+  })
+  it("is incomplete, never passed, when an assessment exists but nothing was recorded (A5)", () => {
+    const record = buildEvidenceRecord({ ...base, results: [], hasAssessment: true })
+    expect(record.outcome).toBe("incomplete")
+  })
+  it("says not_passed when a critical criterion failed (the live Doorstep case)", () => {
+    const record = buildEvidenceRecord({
+      ...base,
+      hasAssessment: true,
+      results: [
+        result({ weight: "major" }),
+        result({ rubricCriterionId: "verify", weight: "critical", passed: false }),
+        result({ rubricCriterionId: "level", weight: "critical", passed: false }),
+      ],
+    })
+    expect(record.outcome).toBe("not_passed")
+  })
   it("reports outcome passed alongside passed=true", () => {
     const record = buildEvidenceRecord({ ...base, results: [result({ weight: "critical" })] })
     expect(record.outcome).toBe("passed")

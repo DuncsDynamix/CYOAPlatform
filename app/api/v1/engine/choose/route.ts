@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   const genLimit = await checkGenerationLimit(user?.id ?? sessionId)
   if (!genLimit.success) {
     return NextResponse.json(
-      { error: "Generation limit reached — try again in a minute.", retryable: true },
+      { error: "Generation limit reached. Try again in a minute.", retryable: true },
       { status: 429 }
     )
   }
