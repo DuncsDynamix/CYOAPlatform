@@ -105,6 +105,14 @@
 .tg-record-crit-main {
   min-width: 0;
 }
+/* Phones: the status chip goes above the label, so the evidence gets the full width
+   instead of a narrow column beside an empty chip column. Print keeps the side layout. */
+@media screen and (max-width: 559px) {
+  .tg-record-criterion {
+    flex-direction: column-reverse;
+    gap: var(--tg-space-1);
+  }
+}
 .tg-record-crit-label {
   font-weight: 600;
 }
@@ -192,6 +200,28 @@
 }
 
 @media print {
+  /* A document scale, not a screen scale: keeps a five-criterion summary sheet on page 1. */
+  .tg-record {
+    --tg-fs-xs: 7.5pt;
+    --tg-fs-sm: 9pt;
+    --tg-fs-base: 10pt;
+    --tg-fs-read: 10pt;
+    --tg-fs-lg: 12pt;
+    --tg-fs-xl: 14pt;
+    --tg-fs-2xl: 18pt;
+    font-size: var(--tg-fs-base);
+    line-height: 1.45;
+  }
+  .tg-record-section {
+    margin-top: var(--tg-space-4);
+  }
+  .tg-record-accred {
+    margin-top: var(--tg-space-3);
+  }
+  .tg-record-foot {
+    margin-top: var(--tg-space-3);
+    break-before: avoid;
+  }
   .tg-no-print {
     display: none;
   }

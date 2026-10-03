@@ -32,6 +32,11 @@ describe("CoverScreen", () => {
     expect(screen.getByText(/assessed by AI against Gold Tap Training's criteria/)).toBeInTheDocument()
   })
 
+  it("shows the course description without em-dashes", () => {
+    render(<CoverScreen cover={{ ...cover, description: "For domiciliary care workers — the indicators vary every session." }} canResume={false} {...handlers()} />)
+    expect(screen.getByText("For domiciliary care workers: the indicators vary every session.")).toBeInTheDocument()
+  })
+
   it("starts only when the learner chooses to", () => {
     const h = handlers()
     render(<CoverScreen cover={cover} canResume={false} {...h} />)

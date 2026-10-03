@@ -31,8 +31,15 @@
     top: var(--tg-space-8);
   }
 }
+/* No photograph: the title sits on the header colour, without the photo scrim or reserved height. */
 .tg-cover-hero--plain {
+  min-height: 0;
   border-bottom: 4px solid var(--tg-brand);
+}
+.tg-cover-hero--plain .tg-cover-title {
+  padding-top: var(--tg-space-6);
+  background: none;
+  color: var(--tg-header-fg);
 }
 .tg-cover-hero-img {
   position: absolute;
@@ -80,14 +87,16 @@
 }
 .tg-cover-stages {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--tg-space-1);
   margin: 0;
   padding: 0;
   list-style: none;
 }
+/* Cells grow from their content and the row wraps, so a stage name never breaks mid-word. */
 .tg-cover-stage {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 auto;
+  max-width: 100%;
   padding: var(--tg-space-2) var(--tg-space-1);
   border: 1px solid var(--tg-border);
   border-radius: var(--tg-radius-sm);
@@ -96,7 +105,7 @@
   font-weight: 600;
   font-size: var(--tg-fs-xs);
   text-align: center;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .tg-cover-section {
   display: block;

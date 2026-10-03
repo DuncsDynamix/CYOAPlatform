@@ -44,8 +44,18 @@
     min-height: 320px;
   }
 }
+/* No photograph: a header-coloured band, not a photo scrim over an empty box. */
 .tg-hero--plain {
+  min-height: 0;
   border-bottom: 4px solid var(--tg-brand);
+}
+.tg-hero--plain .tg-hero-body {
+  padding-top: var(--tg-space-6);
+  background: none;
+  color: var(--tg-header-fg);
+}
+.tg-hero--plain .tg-hero-kicker {
+  color: inherit;
 }
 .tg-hero-img {
   position: absolute;
@@ -131,8 +141,10 @@
     width: 140px;
   }
 }
+/* No image: the slot collapses to a brand spine instead of an empty block. */
 .tg-course-img--plain {
   display: block;
+  width: 0;
   border-right: 4px solid var(--tg-brand);
 }
 .tg-course-body {

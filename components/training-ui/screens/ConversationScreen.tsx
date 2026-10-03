@@ -112,7 +112,6 @@ export function ConversationScreen({
           </li>
         )}
       </ol>
-      <div ref={endRef} />
 
       <div className="tg-composer">
         {turnCount >= 1 && (
@@ -149,6 +148,9 @@ export function ConversationScreen({
           </button>
         </div>
       </div>
+      {/* After the sticky composer, so "scroll to the end" reaches the true bottom
+          and the newest turn sits above the composer instead of under it. */}
+      <div ref={endRef} />
     </div>
   )
 }

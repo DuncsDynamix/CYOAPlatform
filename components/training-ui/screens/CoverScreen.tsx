@@ -43,7 +43,7 @@ export function CoverScreen({
               <DocumentIcon /> {COVER_COPY.record}
             </li>
           </ul>
-          {cover.description && <p className="tg-cover-desc">{cover.description}</p>}
+          {cover.description && <p className="tg-cover-desc">{toDisplayText(cover.description)}</p>}
           {cover.stages.length > 1 && (
             <ol className="tg-cover-stages" aria-label="Stages">
               {cover.stages.map((s, i) => (

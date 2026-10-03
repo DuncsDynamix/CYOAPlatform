@@ -90,6 +90,7 @@ export const HERO_ACTION = {
 } as const
 
 export const COVER_COPY = {
+  headerTitle: "Course",
   start: "Start",
   resume: "Resume",
   startAgain: "Start again",

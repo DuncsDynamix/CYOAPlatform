@@ -69,6 +69,23 @@ describe("ConversationScreen", () => {
     expect(base.onConclude).toHaveBeenCalledOnce()
   })
 
+  it("scrolls to the true bottom, so the newest turn is never parked under the pinned composer", () => {
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    try {
+      const { container, rerender } = render(<ConversationScreen {...base} />)
+      rerender(<ConversationScreen {...base} history={[...base.history, turn("participant", "Sam, from the water company.")]} turnCount={1} />)
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: "end" })
+      const target = scrollIntoView.mock.contexts.at(-1) as Element
+      const composer = container.querySelector(".tg-composer")!
+      // The sentinel follows the sticky composer: scrolling it into view reaches the end of the scroll area.
+      expect(composer.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(composer.contains(target)).toBe(false)
+    } finally {
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView
+    }
+  })
+
   it("hides the voice toggle when the server reports voice unavailable", async () => {
     render(<ConversationScreen {...base} />)
     await waitFor(() => expect(screen.queryByRole("button", { name: /actor voice/ })).not.toBeInTheDocument())

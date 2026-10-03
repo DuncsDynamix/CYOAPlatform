@@ -157,6 +157,12 @@ describe("TrainingPlayer flow", () => {
     await screen.findByText("Intro text.")
   })
 
+  it("titles the cover header 'Course', so a pack without a logo does not show its name twice", () => {
+    const { container } = render(<TrainingPlayer experienceSlug="doorstep" brand={{ displayName: "Fernbrook Care", header: "light" }} cover={cover} />)
+    expect(container.querySelector(".tg-header-stage")).toHaveTextContent(/^Course$/)
+    expect(screen.getAllByText("Fernbrook Care")).toHaveLength(1)
+  })
+
   it("resumes, or starts again with restart, from the cover", async () => {
     const fetchMock = vi.fn((_url: string, _init?: RequestInit) =>
       jsonResponse({ sessionId: "sess-2", experienceTitle: "The Doorstep", node: introNode, content: { type: "prose", content: "Intro text." } })

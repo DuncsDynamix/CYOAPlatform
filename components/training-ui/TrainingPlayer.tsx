@@ -19,6 +19,7 @@ import { isDemoMode } from "@/lib/demo"
 import { stageProgress } from "@/lib/training/stages"
 import { toDisplayText } from "@/lib/training/display"
 import { recordReference } from "@/lib/training/reference"
+import { COVER_COPY } from "@/lib/training/copy"
 import type { Stage } from "@/lib/training/presentation"
 import type { CoverView, FeedbackStyle, PlayerBrand, WaitPlan } from "@/lib/training/views"
 
@@ -58,7 +59,7 @@ export function TrainingPlayer({
 
   if (!s.started && cover) {
     return (
-      <Shell brand={brand} title={brand.displayName}>
+      <Shell brand={brand} title={COVER_COPY.headerTitle}>
         <CoverScreen
           cover={cover}
           canResume={Boolean(resumeSessionId)}
