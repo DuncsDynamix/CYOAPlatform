@@ -22,7 +22,10 @@ vi.mock("@/lib/db/prisma", () => {
     experienceSession: {
       create: vi.fn(),
       findUnique: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
       update: vi.fn(),
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+      count: vi.fn().mockResolvedValue(0),
     },
     generatedNode: {
       upsert: vi.fn(),

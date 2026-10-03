@@ -39,13 +39,15 @@ export interface EvidenceRecordInput {
  * (assessmentOutcome); this adds the evidence-level rule for zero results:
  * no assessment in the scenario means no verdict at all, and an assessment
  * with nothing recorded is incomplete. An empty result list must never read
- * as "Competence demonstrated".
+ * as "Competence demonstrated". Any not_assessed criterion makes the outcome
+ * incomplete.
  */
 export function competenceOutcome(
   results: CompetencyResult[],
   hasAssessment = results.length > 0
 ): AssessmentOutcome | null {
   if (results.length === 0) return hasAssessment ? "incomplete" : null
+  if (results.some((r) => r.status === "not_assessed")) return "incomplete"
   return assessmentOutcome(results)
 }
 
