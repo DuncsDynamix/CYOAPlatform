@@ -1,38 +1,31 @@
+import type { Metadata } from "next"
+import { notFound } from "next/navigation"
 import { getPageUser } from "@/lib/auth/page-user"
-import { previewPersonalised } from "@/lib/training/personalisation"
-import { TrainingPlayer } from "@/components/training/TrainingPlayer"
-import { db } from "@/lib/db/prisma"
-import { resolveBrand } from "@/lib/branding"
-import type { ShapeDefinition } from "@/types/experience"
-import { normaliseContextPack } from "@/lib/engine"
+import { loadScenarioMetadata, loadScenarioPage } from "@/lib/training/scenario-page"
+import { BrandScope } from "@/components/training-ui/BrandScope"
+import { TrainingPlayer } from "@/components/training-ui/TrainingPlayer"
 
-export default async function ScenarioPage({ params }: { params: Promise<{ id: string }> }) {
+// DB-backed page: render per request, never at build time
+export const dynamic = "force-dynamic"
+
+type Props = {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ resume?: string }>
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
-  const experience = await db.experience.findFirst({
-    where: { OR: [{ slug: id }, { id }] },
-    select: {
-      type: true,
-      title: true,
-      description: true,
-      contextPack: true,
-      shape: true,
-      orgId: true,
-      org: { select: { id: true, slug: true, personalisationEnabled: true, competencyFramework: true } },
-    },
-  })
-  const brand = resolveBrand(experience?.org?.slug)
+  return loadScenarioMetadata(id, await getPageUser())
+}
 
-  const pack = experience ? normaliseContextPack(experience.contextPack, experience.type).pack : null
-  const shape = experience?.shape as ShapeDefinition | null
-  const cover = experience
-    ? {
-        title: experience.title,
-        description: experience.description ?? "",
-        objectives: pack?.extension.kind === "training" ? pack.extension.learningObjectives : [],
-        steps: shape?.displaySteps ?? shape?.totalDepthMax ?? 0,
-        personalised: await previewPersonalised(await getPageUser(), experience.org),
-      }
-    : undefined
+export default async function ScenarioPage({ params, searchParams }: Props) {
+  const [{ id }, query] = await Promise.all([params, searchParams])
+  const data = await loadScenarioPage(id, await getPageUser(), { resume: query.resume === "1" })
+  if (!data) notFound()
 
-  return <TrainingPlayer experienceSlug={id} brand={brand} cover={cover} />
+  return (
+    <BrandScope pack={data.pack}>
+      <TrainingPlayer {...data.player} />
+    </BrandScope>
+  )
 }
