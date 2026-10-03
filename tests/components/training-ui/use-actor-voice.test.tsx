@@ -6,7 +6,7 @@ vi.mock("@/lib/voice/client", () => ({
 }))
 
 const { fetchActorAudio } = await import("@/lib/voice/client")
-const { useActorVoice } = await import("@/components/training/useActorVoice")
+const { useActorVoice } = await import("@/components/training-ui/useActorVoice")
 
 const mockFetchActorAudio = vi.mocked(fetchActorAudio)
 
