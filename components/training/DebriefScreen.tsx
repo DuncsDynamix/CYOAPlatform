@@ -1,3 +1,4 @@
+import { useState } from "react"
 import type { DecisionReview, CompetencyProfile, OutcomeCardData } from "@/types/engine"
 import type { EvidenceRecord } from "@/lib/training/evidence"
 import { EvidenceReport } from "@/components/traverse-training/EvidenceReport"
@@ -11,6 +12,8 @@ interface DebriefScreenProps {
   moduleTitle: string
   score?: OutcomeCardData["score"]
   evidence?: EvidenceRecord
+  /** Re-runs the assessment for one node; resolves once the evidence record has been updated. */
+  onReassess?: (nodeId: string) => Promise<void>
   onRestart: () => void
   onExit: () => void
   /** Demo-mode explainer badge slot (rendered above the header when present). */
@@ -29,7 +32,40 @@ function toneColour(tone?: "positive" | "developmental" | "neutral"): string {
   return "var(--t-text-on-dark-muted)"
 }
 
-export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHistory, competencies, moduleTitle, score, evidence, onRestart, onExit, demoBadge }: DebriefScreenProps) {
+function ReassessActions({ evidence, onReassess }: { evidence: EvidenceRecord; onReassess: (nodeId: string) => Promise<void> }) {
+  const [pendingNode, setPendingNode] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const nodeIds = Array.from(new Set(evidence.criteria.filter((c) => c.status === "not_assessed").map((c) => c.nodeId)))
+  if (nodeIds.length === 0) return null
+
+  async function run(nodeId: string) {
+    setPendingNode(nodeId)
+    setError(null)
+    try {
+      await onReassess(nodeId)
+    } catch {
+      setError("The assessment could not be re-run. Try again shortly.")
+    } finally {
+      setPendingNode(null)
+    }
+  }
+
+  return (
+    <div className="t-debrief-section" style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "flex-start" }}>
+      {nodeIds.map((nodeId) => {
+        const label = evidence.criteria.find((c) => c.nodeId === nodeId)?.criterionLabel
+        return (
+          <button key={nodeId} className="t-btn-secondary" disabled={pendingNode !== null} onClick={() => run(nodeId)}>
+            {pendingNode === nodeId ? "Re-running..." : nodeIds.length === 1 ? "Re-run assessment" : `Re-run assessment${label ? ` (${label})` : ""}`}
+          </button>
+        )
+      })}
+      {error && <p role="alert">{error}</p>}
+    </div>
+  )
+}
+
+export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHistory, competencies, moduleTitle, score, evidence, onReassess, onRestart, onExit, demoBadge }: DebriefScreenProps) {
   return (
     <div className="t-debrief">
       <div className="t-debrief-inner">
@@ -71,6 +107,7 @@ export function DebriefScreen({ outcomeLabel, closingLine, aiSummary, decisionHi
 
         {/* Evidence record — the filable artefact */}
         {evidence && <EvidenceReport record={evidence} />}
+        {evidence && onReassess && <ReassessActions evidence={evidence} onReassess={onReassess} />}
 
         {/* Decision history */}
         {decisionHistory.length > 0 && (

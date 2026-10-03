@@ -54,3 +54,32 @@ describe("legacy competency results", () => {
     expect(read({ ...legacy(false, "x"), status: "not_assessed" })).toBe("not_assessed")
   })
 })
+
+describe("reassessNode merge", () => {
+  it("keeps previously assessed criteria when the re-run fails, and updates when it succeeds", async () => {
+    vi.resetModules()
+    const gen = vi.fn()
+    const replace = vi.fn()
+    const sess = {
+      id: "s1",
+      narrativeHistory: [{ nodeId: "d1" }],
+      state: { competencyProfile: [res("ev1", "c1"), { ...res("ev1", "c2"), status: "not_assessed", passed: false }] },
+    }
+    vi.doMock("@/lib/engine/generator", () => ({ generateEvaluativeAssessment: gen }))
+    vi.doMock("@/lib/engine/session", () => ({ getSession: vi.fn().mockResolvedValue(sess), replaceCompetencyResults: replace }))
+    const { reassessNode } = await import("@/lib/engine/executor")
+    const exp = { nodes: [{ id: "ev1", type: "EVALUATIVE", assessesNodeIds: ["d1"], rubric: [] }] } as never
+    const na = (id: string) => ({ ...res("ev1", id), status: "not_assessed", passed: false })
+
+    gen.mockResolvedValueOnce({ results: [na("c1"), na("c2")], feedback: "f" })
+    const failed = await reassessNode("s1", "ev1", exp)
+    expect(failed.results.map((r) => [r.rubricCriterionId, r.status])).toEqual([["c1", "passed"], ["c2", "not_assessed"]])
+    expect(failed.outcome).toBe("passed")
+
+    gen.mockResolvedValueOnce({ results: [na("c1"), { ...res("ev1", "c2"), status: "not_passed", passed: false }], feedback: "f" })
+    const ok = await reassessNode("s1", "ev1", exp)
+    expect(ok.results.map((r) => [r.rubricCriterionId, r.status])).toEqual([["c1", "passed"], ["c2", "not_passed"]])
+    vi.doUnmock("@/lib/engine/generator")
+    vi.doUnmock("@/lib/engine/session")
+  })
+})

@@ -141,9 +141,21 @@ export async function reassessNode(
   const entries = (session.narrativeHistory as NarrativeHistoryEntry[]).filter((h) =>
     evalNode.assessesNodeIds.includes(h.nodeId)
   )
-  const { results, feedback } = await generateEvaluativeAssessment(evalNode, entries, session, experience, apiKey)
+  const fresh = await generateEvaluativeAssessment(evalNode, entries, session, experience, apiKey)
+  // A failed re-run must never erase criteria that were already assessed.
+  const stored = session.state.competencyProfile.filter((r) => r.nodeId === nodeId)
+  const results = fresh.results.map((r) => {
+    if (r.status !== "not_assessed") return r
+    const prior = stored.find((s) => s.rubricCriterionId === r.rubricCriterionId)
+    return prior && prior.status !== "not_assessed" ? prior : r
+  })
   await replaceCompetencyResults(sessionId, nodeId, results)
-  return { results, feedback, outcome: assessmentOutcome(results) }
+  const anyFresh = fresh.results.some((r) => r.status !== "not_assessed")
+  return {
+    results,
+    feedback: anyFresh ? fresh.feedback : "The assessment could not be re-run. Your earlier results are unchanged.",
+    outcome: assessmentOutcome(results),
+  }
 }
 
 /**

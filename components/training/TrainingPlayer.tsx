@@ -162,6 +162,34 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
     setCompetencyResults((prev) => [...prev.filter((r) => !nodeIds.has(r.nodeId)), ...results])
   }
 
+  /** Debrief re-run: replaces the node's results and rebuilds the evidence record in place. */
+  async function reassessFromDebrief(nodeId: string) {
+    if (!sessionId) throw new Error("No session")
+    const res = await fetch("/api/v1/engine/reassess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, nodeId }),
+    })
+    if (!res.ok) throw new Error(`Reassess failed (${res.status})`)
+    const data = (await res.json()) as { results: CompetencyResult[] }
+    replaceResultsForNodes(data.results)
+    setPlayerStatus((prev) => {
+      if (prev.status !== "debrief" || !prev.evidence) return prev
+      const merged = [...prev.evidence.criteria.filter((c) => c.nodeId !== nodeId), ...data.results]
+      return {
+        ...prev,
+        evidence: buildEvidenceRecord({
+          moduleTitle: prev.evidence.moduleTitle,
+          outcomeLabel: prev.evidence.outcomeLabel,
+          aiSummary: prev.evidence.aiSummary,
+          completedAt: prev.evidence.completedAt,
+          results: merged,
+          decisions: prev.evidence.decisions,
+        }),
+      }
+    })
+  }
+
   function arriveAtNode(sid: string, node: Node, content: ResolvedContent) {
     // Demo badge key: node type, with the open-choice variant distinguished.
     // Checkpoints are skipped so the previous screen's key survives auto-advance.
@@ -525,6 +553,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
           moduleTitle={moduleTitle}
           score={playerStatus.score}
           evidence={playerStatus.evidence}
+          onReassess={reassessFromDebrief}
           onRestart={startSession}
           onExit={() => { window.location.href = "/scenario" }}
           demoBadge={isDemoMode() ? <DemoNodeBadge copyKey="ENDPOINT" /> : undefined}
