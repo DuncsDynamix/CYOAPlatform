@@ -16,7 +16,8 @@ import {
   type PendingRef,
 } from "@/lib/library/bindery"
 import { getAllNodes } from "./executor"
-import type { Experience, ExperienceContextPack, FixedNode, GeneratedNode, Node } from "@/types/experience"
+import { getContextPack } from "./contract"
+import type { Experience, FixedNode, GeneratedNode, Node } from "@/types/experience"
 
 /**
  * Calls the model for structured JSON output and validates it against `schema`.
@@ -77,7 +78,7 @@ export async function draftOutline(
 ): Promise<BookOutline> {
   const pack = getBinderyPack(experience.type)
   const template = templateId ? pack.templates.find((t) => t.id === templateId) ?? null : null
-  const contextPack = experience.contextPack as ExperienceContextPack
+  const contextPack = getContextPack(experience)
 
   const { system, user } = buildOutlinePrompt({
     pack,
@@ -184,7 +185,7 @@ export async function draftChapter(
   apiKey?: string
 ): Promise<{ nodes: Node[]; pendingRefs: PendingRef[] }> {
   const pack = getBinderyPack(experience.type)
-  const contextPack = experience.contextPack as ExperienceContextPack
+  const contextPack = getContextPack(experience)
   const outline = outlineFromSegments(experience.segments, experience.shape)
 
   const { system, user } = buildChapterPrompt({
@@ -212,7 +213,7 @@ export async function draftSinglePage(
   nodeId: string,
   apiKey?: string
 ): Promise<{ nodes: Node[]; pendingRefs: PendingRef[] }> {
-  const contextPack = experience.contextPack as ExperienceContextPack
+  const contextPack = getContextPack(experience)
   const node = getAllNodes(experience).find((n) => n.id === nodeId)
 
   if (!node || (node.type !== "FIXED" && node.type !== "GENERATED")) {
@@ -247,7 +248,7 @@ export async function sampleTelling(
   nodeId: string,
   apiKey?: string
 ): Promise<string> {
-  const contextPack = experience.contextPack as ExperienceContextPack
+  const contextPack = getContextPack(experience)
   const node = getAllNodes(experience).find((n) => n.id === nodeId)
 
   if (!node || node.type !== "GENERATED") {

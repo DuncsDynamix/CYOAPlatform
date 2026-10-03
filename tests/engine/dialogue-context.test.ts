@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import type { DialogueNode, ObservedDialogueNode, EvaluativeNode, Actor } from "@/types/experience"
+import type { DialogueNode, ObservedDialogueNode, EvaluativeNode, Character } from "@/types/experience"
 import type { NarrativeHistoryEntry, DialogueTurn } from "@/types/session"
 
 // ─── MOCK SETUP (follows tests/engine/generator.test.ts convention) ─────────
@@ -52,13 +52,13 @@ function sessionWithHistory() {
   return session
 }
 
-const actor: Actor = {
+const actor: Character = {
   name: "Steve Malin",
   role: "Network duty manager",
   personality: "Blunt, stretched",
   speech: "Fast, list-shaped",
   knowledge: "The network cold",
-  relationshipToProtagonist: "The learner's manager",
+  relationshipToParticipant: "The learner's manager",
 }
 
 const dialogueNode: DialogueNode = {

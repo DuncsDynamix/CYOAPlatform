@@ -37,6 +37,7 @@ import { getExperience, getExperienceById } from "@/lib/db/queries/experience"
 import { createSession, getSession } from "@/lib/engine/session"
 import { arriveAtNode } from "@/lib/engine/executor"
 import { createTestExperience, createTestSession } from "../helpers/factories"
+import type { ContextPack } from "@/types/experience"
 
 const mockGetExperience = vi.mocked(getExperience)
 const mockGetExperienceById = vi.mocked(getExperienceById)
@@ -102,10 +103,10 @@ describe("POST /api/v1/engine/start", () => {
   })
 
   it("returns learning objectives and a shape summary without leaking authoring internals", async () => {
-    const experience = createTestExperience({ status: "published" })
-    const cp = experience.contextPack as { learningObjectives?: string[]; groundTruth?: unknown[] }
-    cp.learningObjectives = ["Spot the cluster", "Sample before flushing"]
-    cp.groundTruth = [{ label: "secret", type: "inline", fetchStrategy: "on_session_start", priority: "must_include", content: "answers" }]
+    const experience = createTestExperience({ status: "published", type: "l_and_d" })
+    const cp = experience.contextPack as ContextPack
+    cp.extension = { kind: "training", learningObjectives: ["Spot the cluster", "Sample before flushing"] }
+    cp.core.references = [{ id: "r1", label: "secret", role: "reference", priority: "must", source: { kind: "text", text: "answers" } }]
     const shape = experience.shape as { totalDepthMax: number; displaySteps?: number }
     shape.totalDepthMax = 8
     shape.displaySteps = 11
@@ -131,6 +132,8 @@ describe("POST /api/v1/engine/start", () => {
 
     expect(data.contextPack.learningObjectives).toEqual(["Spot the cluster", "Sample before flushing"])
     // Never leak authored internals to the client
+    expect(data.contextPack.references).toBeUndefined()
+    expect(data.contextPack.core).toBeUndefined()
     expect(data.contextPack.groundTruth).toBeUndefined()
     expect(data.contextPack.actors).toBeUndefined()
     expect(data.shape.totalDepthMax).toBe(8)

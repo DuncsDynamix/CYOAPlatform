@@ -10,7 +10,8 @@ import { trackEvent } from "@/lib/analytics"
 import { StartSessionSchema } from "@/lib/validation"
 import { validateExperienceGraph } from "@/lib/authoring/graph"
 import { engineErrorResponse } from "@/lib/api/errors"
-import type { ExperienceContextPack, ShapeDefinition } from "@/types/experience"
+import { getContextPack } from "@/lib/engine/contract"
+import type { ShapeDefinition } from "@/types/experience"
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "anonymous"
@@ -115,7 +116,7 @@ export async function POST(req: NextRequest) {
       arrival = await arriveAtNode(session.id, arrival.content.targetNodeId, experience, apiKey)
     }
 
-    const cp = experience.contextPack as ExperienceContextPack | null
+    const pack = getContextPack(experience)
     const shape = experience.shape as ShapeDefinition | null
 
     return NextResponse.json({
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
       experienceTitle: experience.title,
       // Trimmed on purpose: groundTruth, actors and scripts are authored
       // internals (they contain the answers) and must never reach the client.
-      contextPack: { learningObjectives: cp?.learningObjectives ?? [] },
+      contextPack: { learningObjectives: pack.extension.kind === "training" ? pack.extension.learningObjectives : [] },
       shape: {
         totalDepthMax: shape?.totalDepthMax ?? 0,
         displaySteps: shape?.displaySteps,

@@ -1,4 +1,5 @@
-import type { Experience, ExperienceContextPack, ShapeDefinition, Node, ChoiceOption } from "@/types/experience"
+import { normaliseContextPack, type ContextPack } from "@/lib/engine/contract"
+import type { Experience, ShapeDefinition, Node, ChoiceOption } from "@/types/experience"
 import type { ExperienceSession, SessionState, NarrativeHistoryEntry, NarrativeScaffold } from "@/types/session"
 import { USE_CASE_PACKS } from "@/lib/engine/usecases"
 
@@ -47,7 +48,7 @@ export function createTestShape(overrides: Partial<ShapeDefinition> = {}): Shape
   }
 }
 
-export function createTestContextPack(): ExperienceContextPack {
+export function createLegacyTestContextPack(): Record<string, unknown> {
   return {
     world: {
       description: "1980s London. Unremarkable streets hiding unremarkable secrets.",
@@ -79,6 +80,10 @@ export function createTestContextPack(): ExperienceContextPack {
     ],
     scripts: [],
   }
+}
+
+export function createTestContextPack(): ContextPack {
+  return normaliseContextPack(createLegacyTestContextPack(), "cyoa_story").pack
 }
 
 export function createTestNodeGraph(): Node[] {

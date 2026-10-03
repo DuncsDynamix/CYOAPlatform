@@ -42,76 +42,12 @@ export type UseCaseCategory =
   | "crisis_exercise"
   | "practice_rehearsal"
 
-export interface ExperienceContextPack {
-  world: {
-    description: string
-    rules: string
-    atmosphere: string
-  }
-  actors: Actor[]
-  protagonist: {
-    perspective: string
-    role: string
-    knowledge: string
-    goal: string
-  }
-  style: {
-    tone: string
-    language: string
-    register: string
-    targetLength: { min: number; max: number }
-    styleNotes: string
-  }
-  groundTruth: GroundTruthSource[]
-  scripts: ContextScript[]
-  // Training-specific (optional — stored here to avoid schema change)
-  learningObjectives?: string[]
-  /** Which demo/sales use case this course exemplifies (library shelf sections). */
-  useCaseCategory?: UseCaseCategory
-}
-
 export interface ActorVoiceProfile {
   /** TTS vendor voice id (e.g. an ElevenLabs voice id) */
   vendorVoiceId: string
   pace?: "measured" | "normal" | "rapid"
   /** Delivery guidance, e.g. "tired, guarded, softens late" */
   notes?: string
-}
-
-export interface Actor {
-  name: string
-  role: string
-  personality: string
-  speech: string
-  knowledge: string
-  relationshipToProtagonist: string
-  /** Optional voice casting for DIALOGUE audio playback. Absent → per-env default voice, or silent. */
-  voice?: ActorVoiceProfile
-}
-
-export interface GroundTruthSource {
-  label: string
-  type: "inline" | "file" | "database" | "url" | "folder"
-  fetchStrategy: "on_session_start" | "on_node_generation" | "on_demand"
-  priority: "must_include" | "should_include" | "may_include"
-  content?: string
-  path?: string
-  mcpSource?: McpSource
-}
-
-export interface McpSource {
-  serverId: string
-  toolName: string
-  arguments: Record<string, unknown>
-}
-
-export interface ContextScript {
-  label: string
-  priority: "must" | "should" | "may"
-  trigger: "always" | "on_node_type" | "on_state_condition"
-  instruction: string
-  nodeTypes?: NodeType[]
-  stateCondition?: string
 }
 
 // ─── SHAPE DEFINITION ────────────────────────────────────────
@@ -411,7 +347,6 @@ export interface Segment {
   description?: string
   order: number
   entryCondition?: string // state condition expression (same syntax as script conditions)
-  contextOverrides?: Partial<ExperienceContextPack> // per-segment tweaks layered on top
   nodes: Node[]
 }
 
@@ -431,7 +366,8 @@ export interface Experience {
   type: string
   renderingTheme: string
   useCasePack: ExperienceUseCasePack
-  contextPack: ExperienceContextPack
+  // Stored JSON; read through getContextPack() from @/lib/engine
+  contextPack: unknown
   shape: ShapeDefinition
   nodes: Node[] // legacy flat list — used when segments is empty
   segments: Segment[]
@@ -441,3 +377,12 @@ export interface Experience {
   createdAt: Date
   updatedAt: Date
 }
+
+/** @deprecated Removed in Task 2c once client components read v2 packs. */
+export type ExperienceContextPack = import("./legacy-pack").LegacyContextPackV1
+/** @deprecated Removed in Task 2c once client components read v2 packs. */
+export type Actor = import("./legacy-pack").Actor
+/** @deprecated Removed in Task 2c once client components read v2 packs. */
+export type GroundTruthSource = import("./legacy-pack").GroundTruthSource
+/** @deprecated Removed in Task 2c once client components read v2 packs. */
+export type ContextScript = import("./legacy-pack").ContextScript

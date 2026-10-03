@@ -3,6 +3,7 @@ import { generateNode, generateEndpointSummary, generateScaffold, generateDialog
 import { getFromCache, writeToCache, getScaffoldFromCache, writeScaffoldToCache } from "./cache"
 import { updateSessionState, getSession, markSessionComplete, appendNarrativeHistory, initDialogueState, appendCompetencyResult } from "./session"
 import { buildArcAwareness } from "./arc"
+import { getContextPack } from "./contract"
 import { applyDisplayConditions } from "./conditions"
 import { trackEvent } from "@/lib/analytics"
 import type {
@@ -20,7 +21,6 @@ import type {
   ChoiceOption,
   Experience,
   Segment,
-  ExperienceContextPack,
   OutcomeVariant,
 } from "@/types/experience"
 import type { ExperienceSession, NarrativeHistoryEntry, NarrativeScaffold } from "@/types/session"
@@ -405,8 +405,7 @@ async function resolveNodeContent(
 
     case "DIALOGUE": {
       const dialogueNode = node as DialogueNode
-      const cp = experience.contextPack as ExperienceContextPack
-      const actor = cp.actors?.find((a) => a.name === dialogueNode.actorId)
+      const actor = getContextPack(experience).core.characters.find((a) => a.name === dialogueNode.actorId)
       if (!actor) throw new Error(`Actor "${dialogueNode.actorId}" not found in context pack`)
 
       // Resume existing dialogue for this node if still in progress
@@ -473,9 +472,9 @@ async function resolveNodeContent(
 
     case "OBSERVED_DIALOGUE": {
       const obsNode = node as ObservedDialogueNode
-      const cp = experience.contextPack as ExperienceContextPack
-      const actorA = cp.actors?.find((a) => a.name === obsNode.actorAId)
-      const actorB = cp.actors?.find((a) => a.name === obsNode.actorBId)
+      const characters = getContextPack(experience).core.characters
+      const actorA = characters.find((a) => a.name === obsNode.actorAId)
+      const actorB = characters.find((a) => a.name === obsNode.actorBId)
       if (!actorA) throw new Error(`Actor "${obsNode.actorAId}" not found in context pack`)
       if (!actorB) throw new Error(`Actor "${obsNode.actorBId}" not found in context pack`)
 

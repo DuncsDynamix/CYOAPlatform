@@ -1,37 +1,26 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import type { ExperienceContextPack, Actor } from "@/types/experience"
+import type { Character, ContextPack } from "@/types/experience"
+import { createTestContextPack } from "../helpers/factories"
 
 const { isVoiceEnabled, resolveActorVoice, synthesizeSpeech } = await import("@/lib/voice/tts")
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
-function makeActor(overrides: Partial<Actor> = {}): Actor {
+function makeActor(overrides: Partial<Character> = {}): Character {
   return {
     name: "Margaret Ellery",
     role: "Client",
     personality: "Private, proud",
     speech: "Deflects with small talk",
     knowledge: "Knows about the money",
-    relationshipToProtagonist: "Trusts her carer",
+    relationshipToParticipant: "Trusts her carer",
     ...overrides,
   }
 }
 
-function makePack(actors: Actor[]): ExperienceContextPack {
-  return {
-    world: { description: "w", rules: "r", atmosphere: "a" },
-    actors,
-    protagonist: { perspective: "you", role: "carer", knowledge: "k", goal: "g" },
-    style: {
-      tone: "quiet",
-      language: "en-GB",
-      register: "professional",
-      targetLength: { min: 100, max: 200 },
-      styleNotes: "n",
-    },
-    groundTruth: [],
-    scripts: [],
-  }
+function makePack(actors: Character[]): ContextPack {
+  const pack = createTestContextPack()
+  return { ...pack, core: { ...pack.core, characters: actors } }
 }
 
 beforeEach(() => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import type { DialogueNode, EvaluativeNode, Actor } from "@/types/experience"
+import type { DialogueNode, EvaluativeNode, Character } from "@/types/experience"
 import type { DialogueTurn, NarrativeHistoryEntry } from "@/types/session"
 
 // ─── MOCK SETUP (follows tests/engine/dialogue-context.test.ts convention) ──
@@ -33,13 +33,13 @@ function textResponse(text: string) {
   }
 }
 
-const actor: Actor = {
+const actor: Character = {
   name: "Jamie Ellis",
   role: "Fellow operative",
   personality: "Enthusiastic.",
   speech: "Informal.",
   knowledge: "Pipework.",
-  relationshipToProtagonist: "Peer.",
+  relationshipToParticipant: "Peer.",
 }
 
 const dialogueNode: DialogueNode = {

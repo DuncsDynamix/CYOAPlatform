@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
-import type { Experience, Node, Segment } from "@/types/experience"
+import type { Experience, ExperienceContextPack, Node, Segment } from "@/types/experience"
 import { ExperienceForm } from "@/components/authoring/ExperienceForm"
 import { ContextPackEditor } from "@/components/authoring/ContextPackEditor"
 import { NodeGraph } from "@/components/authoring/NodeGraph"
@@ -288,7 +288,8 @@ export default function ExperienceEditorPage() {
 
         {tab === "context" && (
           <ContextPackEditor
-            data={experience.contextPack}
+            // Task 2c converts the editor to v2; until then it still edits the stored legacy shape.
+            data={experience.contextPack as ExperienceContextPack}
             onChange={(cp) => updateExperience({ contextPack: cp })}
           />
         )}

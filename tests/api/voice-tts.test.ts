@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { NextRequest } from "next/server"
-import type { Actor, ExperienceContextPack } from "@/types/experience"
+import type { Character, ContextPack } from "@/types/experience"
 
 // ─── MOCK SETUP (follows tests/api/engine.test.ts convention) ────────────────
 
@@ -26,7 +26,7 @@ const { POST } = await import("@/app/api/v1/voice/tts/route")
 const { getSession } = await import("@/lib/engine/session")
 const { getExperienceById } = await import("@/lib/db/queries/experience")
 const { canAccessSession } = await import("@/lib/auth")
-const { createTestExperience, createTestSession } = await import("../helpers/factories")
+const { createTestExperience, createTestSession, createTestContextPack } = await import("../helpers/factories")
 
 const mockGetSession = vi.mocked(getSession)
 const mockGetExperienceById = vi.mocked(getExperienceById)
@@ -36,34 +36,22 @@ const mockCanAccessSession = vi.mocked(canAccessSession)
 
 const SESSION_ID = "550e8400-e29b-41d4-a716-446655440010"
 
-function actorWithVoice(overrides: Partial<Actor> = {}): Actor {
+function actorWithVoice(overrides: Partial<Character> = {}): Character {
   return {
     name: "Margaret Ellery",
     role: "Client",
     personality: "p",
     speech: "s",
     knowledge: "k",
-    relationshipToProtagonist: "r",
+    relationshipToParticipant: "r",
     voice: { vendorVoiceId: "voice-margaret" },
     ...overrides,
   }
 }
 
-function packWith(actors: Actor[]): ExperienceContextPack {
-  return {
-    world: { description: "w", rules: "r", atmosphere: "a" },
-    actors,
-    protagonist: { perspective: "you", role: "carer", knowledge: "k", goal: "g" },
-    style: {
-      tone: "t",
-      language: "en-GB",
-      register: "professional",
-      targetLength: { min: 100, max: 200 },
-      styleNotes: "n",
-    },
-    groundTruth: [],
-    scripts: [],
-  }
+function packWith(actors: Character[]): ContextPack {
+  const pack = createTestContextPack()
+  return { ...pack, core: { ...pack.core, characters: actors } }
 }
 
 function makeRequest(body: unknown): NextRequest {

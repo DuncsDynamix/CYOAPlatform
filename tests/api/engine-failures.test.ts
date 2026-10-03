@@ -47,6 +47,7 @@ import { getSession, commitSessionMutation } from "@/lib/engine/session"
 import { arriveAtNode, findNode } from "@/lib/engine/executor"
 import { generateDialogueResponse, assessDialogueBreakthrough } from "@/lib/engine/generator"
 import { createTestExperience, createTestSession } from "../helpers/factories"
+import type { ContextPack } from "@/types/experience"
 
 const mockGetExperienceById = vi.mocked(getExperienceById)
 const mockGetSession = vi.mocked(getSession)
@@ -86,7 +87,7 @@ const samActor = {
   personality: "Direct but fair.",
   speech: "Short sentences.",
   knowledge: "Knows the site.",
-  relationshipToProtagonist: "Colleague",
+  relationshipToParticipant: "Colleague",
 }
 
 function dialogueSession() {
@@ -164,8 +165,8 @@ describe("POST /api/v1/engine/choose — atomic writes and failure envelopes", (
 describe("POST /api/v1/engine/dialogue — generation-before-write and envelopes", () => {
   function setupDialogue() {
     const experience = createTestExperience()
-    const cp = experience.contextPack as { actors: unknown[] }
-    cp.actors = [samActor]
+    const cp = experience.contextPack as ContextPack
+    cp.core.characters = [samActor]
     const session = dialogueSession()
     mockGetSession.mockResolvedValue(session)
     mockGetExperienceById.mockResolvedValue(experience)

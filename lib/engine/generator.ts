@@ -3,8 +3,9 @@ import { stripEmDashes, stripJsonFence } from "./style"
 import { buildArcAwareness } from "./arc"
 import { USE_CASE_PACKS } from "./usecases"
 import { callModel } from "./llm"
+import { getContextPack, type ContextPack, type Character } from "./contract"
 import { trackEvent } from "@/lib/analytics"
-import type { GeneratedNode, EndpointNode, Experience, ExperienceContextPack, GroundTruthSource, Actor, DialogueNode, EvaluativeNode, ObservedDialogueNode } from "@/types/experience"
+import type { GeneratedNode, EndpointNode, Experience, DialogueNode, EvaluativeNode, ObservedDialogueNode } from "@/types/experience"
 import type { ExperienceSession, NarrativeHistoryEntry, ChoiceHistoryEntry, NarrativeScaffold, DialogueTurn, CompetencyResult } from "@/types/session"
 
 export { trackGeneration } from "./llm"
@@ -19,11 +20,11 @@ export async function generateNode(
   const arcAwareness = buildArcAwareness(node, session, experience)
 
   const useCasePack = USE_CASE_PACKS[experience.type] ?? USE_CASE_PACKS.cyoa_story
-  const contextPack = experience.contextPack as ExperienceContextPack
-  const resolvedGroundTruth = await resolveGroundTruth(contextPack.groundTruth ?? [])
+  const pack = getContextPack(experience)
+  const referenceBlock = renderLegacyReferences(pack)
 
-  const systemPrompt = buildSystemPrompt(useCasePack, contextPack)
-  const prompt = buildGenerationPrompt(node, session, contextPack, arcAwareness, resolvedGroundTruth)
+  const systemPrompt = buildSystemPrompt(useCasePack, pack)
+  const prompt = buildGenerationPrompt(node, session, pack, arcAwareness, referenceBlock)
 
   const { text } = await callModel({
     kind: "prose",
@@ -115,7 +116,7 @@ export async function generateEndpointSummary(
   experience: Experience,
   apiKey?: string
 ): Promise<string> {
-  const contextPack = experience.contextPack as ExperienceContextPack
+  const pack = getContextPack(experience)
 
   // Only the most recent entries — the full history of a long session would
   // blow out the prompt for marginal benefit in a closing reflection.
@@ -124,7 +125,7 @@ export async function generateEndpointSummary(
   const choiceHistory = session.choiceHistory as ChoiceHistoryEntry[]
 
   const prompt = buildEndpointSummaryPrompt(narrativeSummary, choiceHistory, summaryInstruction, session.state.counters)
-  const systemPrompt = `You are a master storyteller writing a personalised ending reflection. ${contextPack.style?.styleNotes ?? ""}
+  const systemPrompt = `You are a master storyteller writing a personalised ending reflection. ${pack.core.style.notes}
 
 ${WRITING_STYLE_RULES}`
 
@@ -147,19 +148,19 @@ ${WRITING_STYLE_RULES}`
  */
 export async function generateDialogueOpener(
   node: DialogueNode,
-  actor: Actor,
+  actor: Character,
   session: ExperienceSession,
   experience: Experience,
   apiKey?: string
 ): Promise<string> {
-  const contextPack = experience.contextPack as ExperienceContextPack
+  const pack = getContextPack(experience)
 
   const systemPrompt = `You are ${actor.name}, ${actor.role}. ${actor.personality}
 Your speech style: ${actor.speech}
 Your knowledge: ${actor.knowledge}
-Your relationship to the protagonist: ${actor.relationshipToProtagonist}
-Setting: ${contextPack.world?.description ?? ""}
-Tone: ${contextPack.style?.tone ?? "professional"}
+Your relationship to the participant: ${actor.relationshipToParticipant}
+Setting: ${pack.core.setting.summary}
+Tone: ${pack.core.style.tone || "professional"}
 
 What has just happened (the participant was there and knows all of this):
 ${buildSceneContext(session)}
@@ -172,7 +173,7 @@ Write ONLY your character's spoken line — no action descriptions, no stage dir
 
 ${WRITING_STYLE_RULES}`
 
-  const userPrompt = `The participant (${contextPack.protagonist?.role ?? "learner"}) has just arrived at this scene.
+  const userPrompt = `The participant (${pack.core.participant.role || "learner"}) has just arrived at this scene.
 Start the conversation to set up this situation: ${node.breakthroughCriteria}
 
 Write your opening line now.`
@@ -194,20 +195,20 @@ Write your opening line now.`
  */
 export async function generateDialogueResponse(
   node: DialogueNode,
-  actor: Actor,
+  actor: Character,
   turns: DialogueTurn[],
   session: ExperienceSession,
   experience: Experience,
   apiKey?: string
 ): Promise<string> {
-  const contextPack = experience.contextPack as ExperienceContextPack
+  const pack = getContextPack(experience)
 
   const systemPrompt = `You are ${actor.name}, ${actor.role}. ${actor.personality}
 Your speech style: ${actor.speech}
 Your knowledge: ${actor.knowledge}
-Your relationship to the protagonist: ${actor.relationshipToProtagonist}
-Setting: ${contextPack.world?.description ?? ""}
-Tone: ${contextPack.style?.tone ?? "professional"}
+Your relationship to the participant: ${actor.relationshipToParticipant}
+Setting: ${pack.core.setting.summary}
+Tone: ${pack.core.style.tone || "professional"}
 
 What has just happened (the participant was there and knows all of this):
 ${buildSceneContext(session)}
@@ -296,8 +297,8 @@ Has the participant achieved the breakthrough described above? Judge on the Part
  */
 export async function generateObservedDialogue(
   node: ObservedDialogueNode,
-  actorA: Actor,
-  actorB: Actor,
+  actorA: Character,
+  actorB: Character,
   session: ExperienceSession,
   experience: Experience,
   apiKey?: string
@@ -308,11 +309,11 @@ export async function generateObservedDialogue(
   ]
 
   try {
-    const contextPack = experience.contextPack as ExperienceContextPack
+    const pack = getContextPack(experience)
 
     const systemPrompt = `You are writing a realistic workplace conversation for a training scenario.
-Setting: ${contextPack.world?.description ?? "a professional workplace"}
-Tone: ${contextPack.style?.tone ?? "professional"}
+Setting: ${pack.core.setting.summary || "a professional workplace"}
+Tone: ${pack.core.style.tone || "professional"}
 
 What has just happened in the scenario (both characters are aware of the situation):
 ${buildSceneContext(session)}
@@ -438,35 +439,11 @@ export async function generateEvaluativeAssessment(
   }
 }
 
-// ─── GROUND TRUTH RESOLUTION ─────────────────────────────────
+// ─── REFERENCES (temporary; replaced in Task 4) ──────────────
 
-async function resolveGroundTruth(
-  sources: GroundTruthSource[]
-): Promise<string> {
-  if (!sources || sources.length === 0) return ""
-
-  const parts: string[] = []
-
-  for (const source of sources) {
-    switch (source.type) {
-      case "inline":
-        if (source.content) {
-          parts.push(`[${source.priority.toUpperCase()}] ${source.label}: ${source.content}`)
-        }
-        break
-
-      case "file":
-        // Phase 1: file sources logged and skipped — Supabase Storage integration is Phase 2
-        console.warn(`[ground-truth] Skipping file source "${source.label}" — file fetch not implemented in Phase 1`)
-        break
-
-      case "database":
-      case "url":
-      case "folder":
-        console.warn(`[ground-truth] Skipping ${source.type} source "${source.label}" — not implemented in Phase 1`)
-        break
-    }
-  }
-
-  return parts.join("\n")
+function renderLegacyReferences(pack: ContextPack): string {
+  const lines = pack.core.references
+    .filter((r) => r.source.kind === "text")
+    .map((r) => `[${r.priority.toUpperCase()}] ${r.label}: ${(r.source as { text: string }).text}`)
+  return lines.length ? `GROUND TRUTH — facts you must treat as authoritative:\n${lines.join("\n")}` : ""
 }

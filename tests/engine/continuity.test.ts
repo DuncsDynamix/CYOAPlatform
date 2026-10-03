@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { buildGenerationPrompt } from "@/lib/engine/prompts"
 import { createTestSession, createTestExperience } from "../helpers/factories"
-import type { GeneratedNode, ExperienceContextPack } from "@/types/experience"
+import type { GeneratedNode, ContextPack } from "@/types/experience"
 import type { NarrativeHistoryEntry } from "@/types/session"
 
 const node: GeneratedNode = {
@@ -28,7 +28,7 @@ describe("generation prompt continuity anchor", () => {
       } as NarrativeHistoryEntry,
     ]
     const experience = createTestExperience()
-    const prompt = buildGenerationPrompt(node, session, experience.contextPack as ExperienceContextPack, arc, "")
+    const prompt = buildGenerationPrompt(node, session, experience.contextPack as ContextPack, arc, "")
 
     expect(prompt).toContain("PREVIOUS SCENE'S CLOSING WORDS")
     expect(prompt).toContain("the radio crackles just as you reach the door")
@@ -38,7 +38,7 @@ describe("generation prompt continuity anchor", () => {
     const session = createTestSession()
     session.narrativeHistory = []
     const experience = createTestExperience()
-    const prompt = buildGenerationPrompt(node, session, experience.contextPack as ExperienceContextPack, arc, "")
+    const prompt = buildGenerationPrompt(node, session, experience.contextPack as ContextPack, arc, "")
     expect(prompt).not.toContain("PREVIOUS SCENE'S CLOSING WORDS")
   })
 })

@@ -7,7 +7,7 @@
 // same as lib/engine/prompts.ts does for in-session generation.
 import type { BinderyPack, BinderyTemplate } from "@/lib/library/bindery-packs"
 import type { BookOutline } from "@/lib/library/bindery"
-import type { ExperienceContextPack } from "@/types/experience"
+import type { ContextPack } from "@/types/experience"
 import { WRITING_STYLE_RULES, FICTION_CRAFT_RULES } from "@/lib/engine/prompts"
 
 const REF_CONVENTIONS =
@@ -17,30 +17,31 @@ const REF_CONVENTIONS =
 
 const JSON_ONLY_INSTRUCTION = "Reply with the JSON object only. No prose, no code fences."
 
-// contextPack.protagonist.perspective is typically "second" ("you") or
-// "first" ("I"), but authoring UI free text and older drafts can leave it
-// blank or spell it out ("third person") — normalize to the sentence the
+// pack.core.participant.perspective is "first" | "second" | "third" in v2;
+// older free text is normalised by the contract layer, but stay tolerant of
+// blank or spelled-out values — normalize to the sentence the
 // drafting prompts need, defaulting to second person (the platform's default
 // voice, see DEFAULT_CONTEXT_PACK in Desk.tsx) when the field is empty.
-function perspectiveLine(perspective: string): string {
+function perspectiveLine(perspective: "first" | "second" | "third" | string): string {
   const p = perspective.trim().toLowerCase()
   if (p.startsWith("first")) return "PERSPECTIVE: told in the first person"
   if (p.startsWith("third")) return "PERSPECTIVE: told in the third person"
   return "PERSPECTIVE: told in the second person"
 }
 
-function contextSummary(contextPack: ExperienceContextPack): string {
+function contextSummary(pack: ContextPack): string {
+  const { setting, participant, style } = pack.core
   return `THE WORLD:
-${contextPack.world.description}
+${setting.summary}
 
 THE PROTAGONIST:
-Role: ${contextPack.protagonist.role}
-Goal: ${contextPack.protagonist.goal}
-${perspectiveLine(contextPack.protagonist.perspective)}
+Role: ${participant.role}
+Goal: ${participant.goal}
+${perspectiveLine(participant.perspective)}
 
 STYLE:
-Tone: ${contextPack.style.tone}
-Register: ${contextPack.style.register}`
+Tone: ${style.tone}
+Register: ${style.register}`
 }
 
 export function buildOutlinePrompt(args: {
@@ -48,7 +49,7 @@ export function buildOutlinePrompt(args: {
   template: BinderyTemplate | null
   title: string
   genre: string
-  contextPack: ExperienceContextPack
+  contextPack: ContextPack
 }): { system: string; user: string } {
   const { pack, template, title, genre, contextPack } = args
 
@@ -92,7 +93,7 @@ export function buildChapterPrompt(args: {
   outline: BookOutline
   chapterIndex: number
   title: string
-  contextPack: ExperienceContextPack
+  contextPack: ContextPack
   existingChapterTitles: string[]
 }): { system: string; user: string } {
   const { pack, outline, chapterIndex, title, contextPack, existingChapterTitles } = args
@@ -148,7 +149,7 @@ ${JSON_ONLY_INSTRUCTION}`
 export function buildSinglePagePrompt(args: {
   pack: BinderyPack
   title: string
-  contextPack: ExperienceContextPack
+  contextPack: ContextPack
   written: boolean
   label: string
 }): { system: string; user: string } {
@@ -180,7 +181,7 @@ ${JSON_ONLY_INSTRUCTION}`
 export function buildSamplePrompt(args: {
   beatInstruction: string
   title: string
-  contextPack: ExperienceContextPack
+  contextPack: ContextPack
 }): { system: string; user: string } {
   const { beatInstruction, title, contextPack } = args
 

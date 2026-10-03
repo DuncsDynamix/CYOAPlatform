@@ -39,6 +39,7 @@ const { getExperienceById } = await import("@/lib/db/queries/experience")
 const { arriveAtNode } = await import("@/lib/engine/executor")
 const { generateDialogueResponse, assessDialogueBreakthrough } = await import("@/lib/engine/generator")
 const { createTestExperience, createTestSession } = await import("../helpers/factories")
+import type { ContextPack } from "@/types/experience"
 
 const mockGetSession = vi.mocked(getSession)
 const mockCommit = vi.mocked(commitSessionMutation)
@@ -65,9 +66,9 @@ function wire(node: Node) {
   const session = createTestSession({ currentNodeId: "d1" })
   session.state.dialogue = { turns: [], breakthroughAchieved: false, turnCount: 3 } as never
   const experience = createTestExperience({ nodes: [node] })
-  const cp = experience.contextPack as { actors?: unknown[] }
-  cp.actors = [
-    { name: "Steve Malin", role: "r", personality: "p", speech: "s", knowledge: "k", relationshipToProtagonist: "x" },
+  const cp = experience.contextPack as ContextPack
+  cp.core.characters = [
+    { name: "Steve Malin", role: "r", personality: "p", speech: "s", knowledge: "k", relationshipToParticipant: "x" },
   ]
   mockGetSession.mockResolvedValue(session)
   mockGetExperienceById.mockResolvedValue(experience)

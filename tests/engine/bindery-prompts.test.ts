@@ -2,14 +2,22 @@ import { describe, it, expect } from "vitest"
 import { buildOutlinePrompt, buildChapterPrompt, buildSamplePrompt } from "@/lib/engine/bindery-prompts"
 import { WRITING_STYLE_RULES } from "@/lib/engine/prompts"
 import { getBinderyPack } from "@/lib/library/bindery-packs"
-import type { ExperienceContextPack } from "@/types/experience"
+import { createTestContextPack } from "../helpers/factories"
+import type { ContextPack } from "@/types/experience"
 
-const ctx = {
-  world: { description: "A barrow kingdom", rules: "", atmosphere: "cold" },
-  actors: [], protagonist: { perspective: "second", role: "scholar", knowledge: "", goal: "" },
-  style: { tone: "somber", language: "en", register: "literary", targetLength: { min: 120, max: 220 }, styleNotes: "" },
-  groundTruth: [], scripts: [],
-} as unknown as ExperienceContextPack
+const base = createTestContextPack()
+const ctx: ContextPack = {
+  ...base,
+  core: {
+    ...base.core,
+    setting: { summary: "A barrow kingdom" },
+    characters: [],
+    participant: { perspective: "second", role: "scholar", startingKnowledge: "", goal: "" },
+    style: { tone: "somber", language: "en", register: "literary", targetLength: { min: 120, max: 220 }, notes: "" },
+    references: [],
+    rules: [],
+  },
+}
 
 const pack = getBinderyPack("cyoa_story")
 const outline = { chapters: [{ title: "The Dig", arc: "found", approxPages: 3, choiceMoments: 1, convergesInto: null }], endpointCount: 2, depthMin: 4, depthMax: 8 }
@@ -53,7 +61,7 @@ describe("bindery prompts", () => {
   })
 
   it("defaults to second person when perspective is blank", () => {
-    const blankCtx = { ...ctx, protagonist: { ...ctx.protagonist, perspective: "" } }
+    const blankCtx = { ...ctx, core: { ...ctx.core, participant: { ...ctx.core.participant, perspective: "" } } } as unknown as ContextPack
     const p = buildChapterPrompt({ pack, outline, chapterIndex: 0, title: "T", contextPack: blankCtx, existingChapterTitles: ["The Dig"] })
     expect(p.user).toMatch(/PERSPECTIVE: told in the second person/)
   })

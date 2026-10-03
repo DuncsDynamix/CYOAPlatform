@@ -5,7 +5,7 @@ import { getExperienceById } from "@/lib/db/queries/experience"
 import { requireAuth, canAccessSession } from "@/lib/auth"
 import { checkEngineLimit } from "@/lib/security/ratelimit"
 import { isVoiceEnabled, resolveActorVoice, synthesizeSpeech } from "@/lib/voice/tts"
-import type { ExperienceContextPack } from "@/types/experience"
+import { getContextPack } from "@/lib/engine/contract"
 
 const TtsRequestSchema = z.object({
   sessionId: z.string().uuid(),
@@ -61,8 +61,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Experience not found" }, { status: 404 })
   }
 
-  const contextPack = experience.contextPack as unknown as ExperienceContextPack
-  const voiceId = resolveActorVoice(contextPack, actorName)
+  const pack = getContextPack(experience as unknown as { contextPack: unknown; type: string })
+  const voiceId = resolveActorVoice(pack, actorName)
   if (!voiceId) {
     return NextResponse.json({ error: "No voice available for this actor" }, { status: 404 })
   }

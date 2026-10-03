@@ -1,7 +1,7 @@
 import type {
   ExperienceUseCasePack,
-  ExperienceContextPack,
-  ContextScript,
+  ContextPack,
+  ContextRule,
   EvaluativeNode,
   GeneratedNode,
   NodeType,
@@ -15,20 +15,22 @@ import type { SessionState } from "@/types/session"
  *   Layer 1 — Use Case Pack (platform behaviour)
  *   Layer 2 — Context Pack (author content: world, actors, protagonist, style)
  */
-export function buildSystemPrompt(
-  useCasePack: ExperienceUseCasePack,
-  contextPack: ExperienceContextPack
-): string {
+export function buildSystemPrompt(useCasePack: ExperienceUseCasePack, pack: ContextPack): string {
   const eb = useCasePack.engineBehaviour
+  const { setting, participant, characters, style } = pack.core
 
   const actorsBlock =
-    contextPack.actors.length > 0
-      ? `\nTHE PEOPLE IN THIS WORLD:\n${contextPack.actors
-          .map(
-            (a) =>
-              `${a.name} (${a.role}): ${a.personality}. Speaks: ${a.speech}. Knows: ${a.knowledge}. Relationship to protagonist: ${a.relationshipToProtagonist}.`
-          )
+    characters.length > 0
+      ? `\nTHE PEOPLE IN THIS WORLD:\n${characters
+          .map((a) => `${a.name} (${a.role}): ${a.personality}. Speaks: ${a.speech}. Knows: ${a.knowledge}. Relationship to the participant: ${a.relationshipToParticipant}.`)
           .join("\n")}`
+      : ""
+
+  const storyBlock =
+    pack.extension.kind === "story"
+      ? `Atmosphere: ${pack.extension.atmosphere}${pack.extension.worldRules ? `\nWorld rules: ${pack.extension.worldRules}` : ""}${
+          pack.extension.canon?.length ? `\nCanon (never contradict):\n${pack.extension.canon.map((c) => `- ${c}`).join("\n")}` : ""
+        }`
       : ""
 
   return `
@@ -46,24 +48,24 @@ ${eb.qualityStandards}
 FAILURE MODES — never produce output that:
 ${eb.failureModes.map((f) => `- ${f}`).join("\n")}
 
-THE WORLD:
-${contextPack.world.description}
-Rules: ${contextPack.world.rules}
-Atmosphere: ${contextPack.world.atmosphere}
+THE SETTING:
+${setting.summary}
+${setting.details ? `Rules: ${setting.details}` : ""}
+${storyBlock}
 ${actorsBlock}
 
-THE PROTAGONIST:
-Role: ${contextPack.protagonist.role}
-Perspective: ${contextPack.protagonist.perspective}
-Knowledge at start: ${contextPack.protagonist.knowledge}
-Goal: ${contextPack.protagonist.goal}
+THE PARTICIPANT:
+Role: ${participant.role}
+Perspective: ${participant.perspective} person
+Knowledge at start: ${participant.startingKnowledge}
+Goal: ${participant.goal}
 
 STYLE:
-Tone: ${contextPack.style.tone}
-Language: ${contextPack.style.language}
-Register: ${contextPack.style.register}
-Length: ${contextPack.style.targetLength.min}–${contextPack.style.targetLength.max} words per scene
-${contextPack.style.styleNotes}
+Tone: ${style.tone}
+Language: ${style.language}
+Register: ${style.register}
+Length: ${style.targetLength.min}–${style.targetLength.max} words per scene
+${style.notes}
 
 ${WRITING_STYLE_RULES}
 
@@ -260,11 +262,11 @@ LEARNING-CONVERSATION RULES:
 export function buildGenerationPrompt(
   node: GeneratedNode,
   session: ExperienceSession,
-  contextPack: ExperienceContextPack,
+  pack: ContextPack,
   arcAwareness: ArcAwareness,
-  resolvedGroundTruth: string
+  referenceBlock: string
 ): string {
-  const activeScripts = filterScripts(contextPack.scripts, node.type, session.state as SessionState)
+  const activeScripts = filterScripts(pack.core.rules, node.type, session.state as SessionState)
 
   const scriptBlock =
     activeScripts.length > 0
@@ -315,7 +317,7 @@ export function buildGenerationPrompt(
 STORY SO FAR (STRUCTURED SUMMARY):
 ${scaffoldContext}
 ${continuityBlock}
-${resolvedGroundTruth ? `GROUND TRUTH — facts you must treat as authoritative:\n${resolvedGroundTruth}` : ""}
+${referenceBlock}
 
 CURRENT ARC POSITION:
 ${arcAwareness.instruction}
@@ -369,10 +371,10 @@ export function buildEndpointSummaryPrompt(
 // ─── PRIVATE HELPERS ──────────────────────────────────────────
 
 function filterScripts(
-  scripts: ContextScript[],
+  scripts: ContextRule[],
   nodeType: NodeType,
   state: SessionState
-): ContextScript[] {
+): ContextRule[] {
   return scripts.filter((script) => {
     if (script.trigger === "always") return true
     if (script.trigger === "on_node_type") {

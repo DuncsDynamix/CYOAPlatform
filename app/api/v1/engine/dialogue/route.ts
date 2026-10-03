@@ -8,7 +8,8 @@ import { requireAuth, getAnthropicKey, canAccessSession } from "@/lib/auth"
 import { checkEngineLimit, checkGenerationLimit } from "@/lib/security/ratelimit"
 import { trackEvent } from "@/lib/analytics"
 import { engineErrorResponse } from "@/lib/api/errors"
-import type { DialogueNode, ExperienceContextPack } from "@/types/experience"
+import { getContextPack } from "@/lib/engine/contract"
+import type { DialogueNode } from "@/types/experience"
 import type { DialogueTurn, NarrativeHistoryEntry } from "@/types/session"
 
 /**
@@ -116,8 +117,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Current node is not a dialogue node" }, { status: 400 })
   }
 
-  const cp = experience.contextPack as ExperienceContextPack
-  const actor = cp.actors?.find((a) => a.name === currentNode.actorId)
+  const actor = getContextPack(experience).core.characters.find((a) => a.name === currentNode.actorId)
   if (!actor) {
     return NextResponse.json({ error: `Actor "${currentNode.actorId}" not found` }, { status: 400 })
   }

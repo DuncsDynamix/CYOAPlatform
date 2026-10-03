@@ -1,4 +1,4 @@
-import type { ExperienceContextPack } from "@/types/experience"
+import type { ContextPack } from "@/lib/engine/contract"
 
 /**
  * TTS vendor adapter (ElevenLabs). Voice is transport, text is truth:
@@ -21,10 +21,10 @@ export function isVoiceEnabled(): boolean {
  * fallback for uncast actors, not a voice for arbitrary names.
  */
 export function resolveActorVoice(
-  contextPack: ExperienceContextPack,
+  pack: ContextPack,
   actorName: string
 ): string | null {
-  const actor = contextPack.actors.find((a) => a.name === actorName)
+  const actor = pack.core.characters.find((a) => a.name === actorName)
   if (!actor) return null
   return actor.voice?.vendorVoiceId || process.env.ELEVENLABS_DEFAULT_VOICE_ID || null
 }
