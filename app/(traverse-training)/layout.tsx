@@ -2,6 +2,8 @@ import "@/app/globals-traverse-training.css"
 import "@/components/training-ui/styles/tokens.css"
 import "@/components/training-ui/styles/base.css"
 import "@/components/training-ui/styles/shell.css"
+import "@/components/training-ui/styles/scene.css"
+import "@/components/training-ui/styles/slides.css"
 import type { Metadata } from "next"
 import { fontVariables } from "./fonts"
 

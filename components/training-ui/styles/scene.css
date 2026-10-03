@@ -1,0 +1,169 @@
+/* Scenes and the seven layout templates. */
+
+.tg-paper {
+  background: var(--tg-surface-raised);
+  border-radius: var(--tg-radius-md);
+  box-shadow: var(--tg-shadow-card);
+  padding: var(--tg-space-5);
+}
+@media (min-width: 720px) {
+  .tg-paper {
+    padding: var(--tg-space-8) var(--tg-space-10);
+  }
+}
+.tg-paper-title {
+  margin-bottom: var(--tg-space-3);
+  font-size: var(--tg-fs-xl);
+}
+
+.tg-layout {
+  overflow: hidden;
+  padding: var(--tg-space-5);
+  border-radius: var(--tg-radius-md);
+  background: var(--tg-surface-raised);
+  box-shadow: var(--tg-shadow-card);
+}
+.tg-layout-title {
+  margin-bottom: var(--tg-space-3);
+  font-size: var(--tg-fs-xl);
+}
+.tg-layout--text-only {
+  padding: var(--tg-space-5);
+}
+
+.tg-layout--title {
+  padding: var(--tg-space-10) var(--tg-space-5);
+  border-top: 4px solid var(--tg-brand);
+  text-align: center;
+}
+.tg-layout-hero-title {
+  margin-bottom: var(--tg-space-3);
+  font-size: var(--tg-fs-2xl);
+}
+.tg-layout-hero-sub {
+  color: var(--tg-text-muted);
+}
+
+.tg-layout--image-left,
+.tg-layout--image-right {
+  display: grid;
+  gap: var(--tg-space-5);
+}
+@media (min-width: 720px) {
+  .tg-layout--image-left,
+  .tg-layout--image-right {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+  .tg-layout--image-right .tg-layout-media {
+    order: 2;
+  }
+}
+.tg-layout-text {
+  min-width: 0;
+}
+.tg-layout-media {
+  margin: 0;
+}
+.tg-layout-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--tg-radius-sm);
+}
+.tg-layout-caption {
+  margin-top: var(--tg-space-2);
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-text-muted);
+}
+.tg-layout-caption--inverse {
+  color: var(--tg-on-image-muted);
+}
+
+.tg-layout--full-bleed {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 360px;
+  padding: 0;
+  background: var(--tg-header-bg);
+}
+.tg-layout-bleed-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tg-layout-bleed-overlay {
+  position: relative;
+  width: 100%;
+  padding: var(--tg-space-10) var(--tg-space-5) var(--tg-space-5);
+  background: var(--tg-image-scrim);
+  color: var(--tg-on-image);
+}
+.tg-layout-bleed-title {
+  margin-bottom: var(--tg-space-2);
+  font-size: var(--tg-fs-xl);
+}
+
+.tg-layout--quote {
+  padding: var(--tg-space-8) var(--tg-space-6);
+  border-left: 4px solid var(--tg-brand);
+}
+.tg-layout-quote {
+  font-family: var(--tg-font-heading);
+  font-size: var(--tg-fs-lg);
+  line-height: 1.45;
+}
+.tg-layout-quote-by {
+  margin-top: var(--tg-space-3);
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-text-muted);
+}
+
+.tg-layout--diagram {
+  padding: var(--tg-space-5);
+}
+.tg-layout-diagram {
+  position: relative;
+}
+.tg-callout {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: var(--tg-space-1);
+  transform: translate(-50%, -50%);
+}
+.tg-callout-marker {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tg-brand);
+  color: var(--tg-on-brand);
+  font-size: var(--tg-fs-xs);
+  font-weight: 700;
+  box-shadow: var(--tg-shadow-card);
+}
+.tg-callout-label {
+  padding: 2px var(--tg-space-2);
+  border-radius: var(--tg-radius-sm);
+  background: var(--tg-surface-raised);
+  font-size: var(--tg-fs-xs);
+  font-weight: 600;
+  box-shadow: var(--tg-shadow-card);
+}
+@media (max-width: 640px) {
+  .tg-callout-label {
+    display: none;
+  }
+}
+.tg-callout-list {
+  margin-top: var(--tg-space-3);
+  padding-left: 1.4em;
+  list-style: decimal;
+  font-size: var(--tg-fs-sm);
+}

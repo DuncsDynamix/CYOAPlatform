@@ -1,0 +1,67 @@
+/* Slide deck navigation. Slides themselves use the layout templates. */
+
+.tg-slides-empty {
+  color: var(--tg-text-muted);
+}
+.tg-slide-notes {
+  margin-top: var(--tg-space-3);
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-text-muted);
+}
+.tg-slides-count {
+  margin-top: var(--tg-space-3);
+  text-align: center;
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-text-muted);
+}
+.tg-slides-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--tg-space-3);
+  width: 100%;
+}
+.tg-slides-dots {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--tg-space-1);
+}
+.tg-slides-dot {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.tg-slides-dot::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tg-border);
+}
+.tg-slides-dot[aria-current="true"]::before {
+  background: var(--tg-brand);
+}
+.tg-slides-arrow {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border: 1.5px solid var(--tg-border);
+  border-radius: var(--tg-radius-md);
+  background: var(--tg-surface-raised);
+  color: var(--tg-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.tg-slides-arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
