@@ -360,6 +360,8 @@ export interface Experience {
   useCasePack: ExperienceUseCasePack
   // Stored JSON; read through getContextPack() from @/lib/engine
   contextPack: unknown
+  // App-owned display data (library category, imagery); not engine context
+  presentation?: Record<string, unknown>
   shape: ShapeDefinition
   nodes: Node[] // legacy flat list — used when segments is empty
   segments: Segment[]

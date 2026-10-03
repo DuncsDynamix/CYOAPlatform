@@ -45,12 +45,12 @@ const KNOWN = new Set<string>(USE_CASE_CATEGORIES.map((c) => c.id))
  * the incoming course order within each section. Courses without a (known)
  * category land in the fallback section; empty sections are omitted.
  */
-export function groupCoursesByCategory<T extends { contextPack: unknown }>(
+export function groupCoursesByCategory<T extends { presentation: unknown }>(
   courses: T[]
 ): { category: UseCaseCategoryMeta; courses: T[] }[] {
   const buckets = new Map<UseCaseCategory, T[]>()
   for (const course of courses) {
-    const raw = (course.contextPack as { useCaseCategory?: string } | null)?.useCaseCategory
+    const raw = (course.presentation as { useCaseCategory?: string } | null)?.useCaseCategory
     const id = (raw && KNOWN.has(raw) ? raw : FALLBACK) as UseCaseCategory
     const bucket = buckets.get(id) ?? []
     bucket.push(course)

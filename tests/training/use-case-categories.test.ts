@@ -3,7 +3,7 @@ import { USE_CASE_CATEGORIES, groupCoursesByCategory } from "@/lib/training/use-
 
 const course = (slug: string, useCaseCategory?: string) => ({
   slug,
-  contextPack: useCaseCategory ? { useCaseCategory } : {},
+  presentation: useCaseCategory ? { useCaseCategory } : {},
 })
 
 describe("USE_CASE_CATEGORIES", () => {

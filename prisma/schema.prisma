@@ -27,6 +27,11 @@ model Org {
   operatorApiKey     String? // encrypted
   operatorApiKeyHint String? // last 4 chars for display
 
+  // [{ id, label, description? }]
+  competencyFramework Json @default("[]")
+  // Learner-profile personalisation opt-in
+  personalisationEnabled Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -104,6 +109,9 @@ model Experience {
   // Experience Context Pack (author-owned content — See Section 5.2)
   contextPack Json // See Section 5 for structure
 
+  // App-owned display data (library category, imagery). Not engine context.
+  presentation Json @default("{}")
+
   // Shape Definition (stored as JSONB)
   shape Json // See Section 5 for structure
 
@@ -143,6 +151,9 @@ model ExperienceSession {
 
   // State (JSONB — accumulated choice history, flags, scores)
   state Json @default("{}")
+
+  // SessionContext sent at start (contract v2)
+  context Json @default("{}")
 
   // Each entry is a NarrativeHistoryEntry — see types/session.ts
   // content field is full prose (reader display only)

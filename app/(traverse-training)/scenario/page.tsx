@@ -54,7 +54,7 @@ export default async function TrainingLibraryPage() {
   const courses = await db.experience.findMany({
     where: { orgId: user.orgId, renderingTheme: "training", status: "published" },
     orderBy: { createdAt: "asc" },
-    select: { slug: true, type: true, title: true, description: true, contextPack: true, shape: true },
+    select: { slug: true, type: true, title: true, description: true, contextPack: true, presentation: true, shape: true },
   })
 
   return (
