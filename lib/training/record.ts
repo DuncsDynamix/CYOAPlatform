@@ -6,7 +6,8 @@ import type {
   NarrativeHistoryEntry,
   ChoiceHistoryEntry,
 } from "@/types/session"
-import { competencePassed } from "@/lib/training/evidence"
+import type { AssessmentOutcome } from "@/lib/engine/client"
+import { competencePassed, competenceOutcome } from "@/lib/training/evidence"
 
 /**
  * The full session record: everything the learner saw, chose and said, in
@@ -48,6 +49,7 @@ export interface SessionRecord {
   evaluation: {
     criteria: CompetencyResult[]
     passed: boolean
+    outcome: AssessmentOutcome
     endpointSummary: string | null
   }
 }
@@ -140,6 +142,7 @@ export function buildSessionRecord(session: ExperienceSession, experience: Exper
     evaluation: {
       criteria: session.state.competencyProfile,
       passed: competencePassed(session.state.competencyProfile),
+      outcome: competenceOutcome(session.state.competencyProfile),
       endpointSummary: session.state.endpointSummary ?? null,
     },
   }

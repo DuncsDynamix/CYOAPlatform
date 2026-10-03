@@ -43,9 +43,12 @@ export interface CompetencyResult {
   nodeId: string
   rubricCriterionId: string
   criterionLabel: string
+  status: "passed" | "not_passed" | "not_assessed"
+  /** Kept for stored records and older readers: equals status === "passed". */
   passed: boolean
   evidence: string
   weight: "critical" | "major" | "minor"
+  competencyId?: string
 }
 
 // ─── NARRATIVE SCAFFOLD ───────────────────────────────────────

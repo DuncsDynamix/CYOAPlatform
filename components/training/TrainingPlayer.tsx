@@ -14,6 +14,7 @@ import type { ResolvedContent } from "@/types/engine"
 import type { Node } from "@/types/experience"
 import type { DialogueTurn, CompetencyResult } from "@/types/session"
 import { buildEvidenceRecord } from "@/lib/training/evidence"
+import type { AssessmentOutcome } from "@/lib/engine/client"
 import { DEFAULT_BRAND, type BrandTheme } from "@/lib/branding"
 import { shuffleWith } from "@/lib/training/shuffle"
 import { CoverScreen } from "./CoverScreen"
@@ -155,6 +156,12 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
     if (started) startSession()
   }, [started, startSession])
 
+  /** Replaces (never appends) results for the nodes in `results`, so re-assessment cannot duplicate. */
+  function replaceResultsForNodes(results: CompetencyResult[]) {
+    const nodeIds = new Set(results.map((r) => r.nodeId))
+    setCompetencyResults((prev) => [...prev.filter((r) => !nodeIds.has(r.nodeId)), ...results])
+  }
+
   function arriveAtNode(sid: string, node: Node, content: ResolvedContent) {
     // Demo badge key: node type, with the open-choice variant distinguished.
     // Checkpoints are skipped so the previous screen's key survives auto-advance.
@@ -270,9 +277,10 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
     }
 
     if (content.type === "evaluative") {
-      setCompetencyResults((prev) => [...prev, ...content.results])
+      replaceResultsForNodes(content.results)
       setPlayerStatus({
         status: "evaluative_result",
+        outcome: content.outcome,
         passed: content.passed,
         results: content.results,
         feedback: content.feedback,
@@ -556,9 +564,11 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
       >
         {demoBadge}
         <EvaluativeResultPanel
-          passed={playerStatus.passed}
+          sessionId={sessionId}
+          outcome={playerStatus.outcome}
           results={playerStatus.results}
           feedback={playerStatus.feedback}
+          onReassessed={replaceResultsForNodes}
           onContinue={() => handleEvaluativeContinue(playerStatus.nextNodeId)}
         />
       </TrainingShell>
@@ -854,32 +864,86 @@ function ObservedDialoguePanel({
   )
 }
 
-function EvaluativeResultPanel({
-  passed,
-  results,
-  feedback,
+const OUTCOME_HEADING: Record<AssessmentOutcome, { text: string; modifier: string }> = {
+  passed: { text: "✓ Assessment complete", modifier: "pass" },
+  not_passed: { text: "↑ Areas for development", modifier: "develop" },
+  incomplete: { text: "Assessment incomplete", modifier: "develop" },
+}
+
+const CRITERION_MODIFIER: Record<CompetencyResult["status"], string> = {
+  passed: "pass",
+  not_passed: "fail",
+  not_assessed: "pending",
+}
+
+export function EvaluativeResultPanel({
+  sessionId,
+  outcome: initialOutcome,
+  results: initialResults,
+  feedback: initialFeedback,
+  onReassessed,
   onContinue,
 }: {
-  passed: boolean
+  sessionId: string | null
+  outcome: AssessmentOutcome
   results: CompetencyResult[]
   feedback: string
+  onReassessed: (results: CompetencyResult[]) => void
   onContinue: () => void
 }) {
+  const [outcome, setOutcome] = useState(initialOutcome)
+  const [results, setResults] = useState(initialResults)
+  const [feedback, setFeedback] = useState(initialFeedback)
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const canReassess = !!sessionId && results.length > 0 && results.some((r) => r.status === "not_assessed")
+
+  async function reassess() {
+    if (!sessionId) return
+    setPending(true)
+    setError(null)
+    try {
+      const res = await fetch("/api/v1/engine/reassess", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, nodeId: results[0].nodeId }),
+      })
+      if (!res.ok) throw new Error(`Reassess failed (${res.status})`)
+      const data = (await res.json()) as { results: CompetencyResult[]; feedback: string; outcome: AssessmentOutcome }
+      setResults(data.results)
+      setFeedback(data.feedback)
+      setOutcome(data.outcome)
+      onReassessed(data.results)
+    } catch {
+      setError("The assessment could not be re-run. Try again shortly.")
+    } finally {
+      setPending(false)
+    }
+  }
+
+  const heading = OUTCOME_HEADING[outcome]
   return (
     <div className="t-evaluative-panel">
-      <div className={`t-evaluative-outcome t-evaluative-outcome--${passed ? "pass" : "develop"}`}>
-        {passed ? "✓ Assessment Complete" : "↑ Areas for Development"}
-      </div>
+      <div className={`t-evaluative-outcome t-evaluative-outcome--${heading.modifier}`}>{heading.text}</div>
       <p className="t-evaluative-feedback">{feedback}</p>
       <div className="t-evaluative-criteria">
         {results.map((r) => (
-          <div key={r.rubricCriterionId} className={`t-evaluative-criterion t-evaluative-criterion--${r.passed ? "pass" : "fail"}`}>
+          <div key={r.rubricCriterionId} className={`t-evaluative-criterion t-evaluative-criterion--${CRITERION_MODIFIER[r.status]}`}>
             <span className="t-evaluative-criterion-label">{r.criterionLabel}</span>
             <span className="t-evaluative-criterion-weight">{r.weight}</span>
             <p className="t-evaluative-criterion-evidence">{r.evidence}</p>
           </div>
         ))}
       </div>
+      {canReassess && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", paddingTop: "1rem" }}>
+          <button className="t-btn-secondary" onClick={reassess} disabled={pending}>
+            {pending ? "Re-running..." : "Re-run assessment"}
+          </button>
+          {error && <p className="t-evaluative-feedback" role="alert">{error}</p>}
+        </div>
+      )}
       <div style={{ display: "flex", justifyContent: "center", paddingTop: "1.5rem" }}>
         <button className="t-btn-primary" onClick={onContinue}>Continue →</button>
       </div>

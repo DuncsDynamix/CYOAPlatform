@@ -11,11 +11,13 @@ function record(overrides: Partial<EvidenceRecord> = {}): EvidenceRecord {
     aiSummary: "Recognised the indicators and escalated the same day.",
     completedAt: "2026-08-05T10:00:00.000Z",
     passed: true,
+    outcome: "passed",
     criteria: [
       {
         nodeId: "ev1",
         rubricCriterionId: "indicator-recognition",
         criterionLabel: "Recognition of indicators",
+        status: "passed",
         passed: true,
         evidence: "Noted the red-letter post and the bare cupboards unprompted.",
         weight: "critical",
@@ -24,6 +26,7 @@ function record(overrides: Partial<EvidenceRecord> = {}): EvidenceRecord {
         nodeId: "ev1",
         rubricCriterionId: "disclosure-handling",
         criterionLabel: "Disclosure conversation",
+        status: "not_passed",
         passed: false,
         evidence: "Promised Margaret secrecy when asked, which policy forbids.",
         weight: "major",
@@ -50,8 +53,24 @@ describe("EvidenceReport", () => {
   })
 
   it("marks the overall outcome as not yet demonstrated when a critical failed", () => {
-    render(<EvidenceReport record={record({ passed: false })} />)
+    render(<EvidenceReport record={record({ passed: false, outcome: "not_passed" })} />)
     expect(screen.getByText(/not yet demonstrated/i)).toBeInTheDocument()
+  })
+
+  it("renders an incomplete record as incomplete with not-assessed criteria", () => {
+    const base = record()
+    render(
+      <EvidenceReport
+        record={record({
+          passed: false,
+          outcome: "incomplete",
+          criteria: [{ ...base.criteria[0], status: "not_assessed", passed: false, evidence: "Assessment unavailable. It can be re-run." }],
+        })}
+      />
+    )
+    expect(screen.getByText("Assessment incomplete")).toBeInTheDocument()
+    expect(screen.getByText("Not assessed")).toBeInTheDocument()
+    expect(screen.queryByText(/not yet demonstrated/i)).not.toBeInTheDocument()
   })
 
   it("shows the completion date and the decision trail", () => {

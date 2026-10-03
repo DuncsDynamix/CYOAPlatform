@@ -4,6 +4,7 @@
 export {
   arriveAtNode,
   findNode,
+  reassessNode,
   findFirstNodeId,
   getAllNodes,
   getReachableGeneratedChildren,
@@ -28,6 +29,7 @@ export {
   setDialogueBreakthrough,
   clearDialogueState,
   appendCompetencyResult,
+  replaceCompetencyResults,
   updateLastScaffoldChoice,
   parseSessionState,
   commitSessionMutation,
@@ -44,10 +46,13 @@ export {
   assessDialogueBreakthrough,
   generateObservedDialogue,
   generateEvaluativeAssessment,
+  NOT_ASSESSED_EVIDENCE,
   sanitizeAssessment,
   trackGeneration,
 } from "./generator"
 
+export { assessmentOutcome } from "./assessment-outcome"
+export type { AssessmentOutcome } from "./assessment-outcome"
 export { resolveOpenChoiceRouting } from "./router"
 export {
   getFromCache,

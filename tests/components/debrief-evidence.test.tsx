@@ -13,6 +13,7 @@ const evidence = buildEvidenceRecord({
       nodeId: "ev1",
       rubricCriterionId: "containment-discipline",
       criterionLabel: "Containment discipline",
+      status: "passed",
       passed: true,
       evidence: "Isolated the file server without rebooting.",
       weight: "critical",
@@ -37,6 +38,30 @@ describe("DebriefScreen with evidence", () => {
     render(<DebriefScreen {...baseProps} evidence={evidence} />)
     expect(screen.getByText("Containment discipline")).toBeInTheDocument()
     expect(screen.getByText(/without rebooting/)).toBeInTheDocument()
+  })
+
+  it("renders an incomplete evidence record honestly", () => {
+    const incomplete = buildEvidenceRecord({
+      moduleTitle: "Locked: A Ransomware Tabletop",
+      outcomeLabel: "Exercise Complete",
+      aiSummary: "s",
+      completedAt: "2026-08-05T10:00:00.000Z",
+      results: [
+        {
+          nodeId: "ev1",
+          rubricCriterionId: "c",
+          criterionLabel: "Containment discipline",
+          status: "not_assessed",
+          passed: false,
+          evidence: "Assessment unavailable. It can be re-run.",
+          weight: "critical",
+        },
+      ],
+      decisions: [],
+    })
+    render(<DebriefScreen {...baseProps} evidence={incomplete} />)
+    expect(screen.getByText("Assessment incomplete")).toBeInTheDocument()
+    expect(screen.getByText("Not assessed")).toBeInTheDocument()
   })
 
   it("renders without an evidence record (backwards compatible)", () => {

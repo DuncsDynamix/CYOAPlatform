@@ -4,16 +4,34 @@ import type { CompetencyResult } from "@/types/session"
 const { buildEvidenceRecord } = await import("@/lib/training/evidence")
 
 function result(overrides: Partial<CompetencyResult> = {}): CompetencyResult {
+  const passed = overrides.passed ?? true
   return {
     nodeId: "ev1",
     rubricCriterionId: "empathy",
     criterionLabel: "Empathy and rapport",
-    passed: true,
+    status: passed ? "passed" : "not_passed",
+    passed,
     evidence: "Acknowledged the twelve-day wait before offering a fix.",
     weight: "major",
     ...overrides,
   }
 }
+
+describe("buildEvidenceRecord outcome", () => {
+  const base = { moduleTitle: "m", outcomeLabel: "o", aiSummary: "s", completedAt: "2026-01-01T00:00:00Z", decisions: [] }
+  it("is incomplete, not failed, when a critical criterion was not assessed", () => {
+    const record = buildEvidenceRecord({
+      ...base,
+      results: [result({ weight: "critical", status: "not_assessed", passed: false })],
+    })
+    expect(record.outcome).toBe("incomplete")
+    expect(record.passed).toBe(false)
+  })
+  it("reports outcome passed alongside passed=true", () => {
+    const record = buildEvidenceRecord({ ...base, results: [result({ weight: "critical" })] })
+    expect(record.outcome).toBe("passed")
+  })
+})
 
 describe("buildEvidenceRecord", () => {
   const base = {

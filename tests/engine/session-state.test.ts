@@ -22,6 +22,7 @@ const validState: SessionState = {
       nodeId: "eval-1",
       rubricCriterionId: "crit-1",
       criterionLabel: "Empathy",
+      status: "passed",
       passed: true,
       evidence: "Acknowledged the concern.",
       weight: "major",

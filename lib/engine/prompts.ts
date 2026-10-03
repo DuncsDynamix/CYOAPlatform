@@ -190,7 +190,7 @@ Return a JSON object with this structure:
   "feedback": "2–3 sentences of holistic feedback addressed to the learner about what THEY said and chose."
 }
 
-Include all ${node.rubric.length} criteria in results. No markdown fences — just the JSON object.`
+Include all ${node.rubric.length} criteria in results.`
 
   const system = `You are an instructional design assessor. Evaluate learner performance against rubric criteria using only the learner's own recorded words and choices. Respond only with valid JSON.
 

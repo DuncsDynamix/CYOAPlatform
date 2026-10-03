@@ -1,5 +1,6 @@
 import type { CompetencyResult } from "@/types/session"
 import type { DecisionReview } from "@/types/engine"
+import { assessmentOutcome, type AssessmentOutcome } from "@/lib/engine/client"
 
 /**
  * The Evidence Record: the buyer-facing artefact assembled at debrief from
@@ -12,6 +13,7 @@ export interface EvidenceRecord {
   aiSummary: string
   completedAt: string // ISO timestamp
   passed: boolean
+  outcome: AssessmentOutcome
   criteria: CompetencyResult[]
   decisions: DecisionReview[]
 }
@@ -25,21 +27,23 @@ export interface EvidenceRecordInput {
   decisions: DecisionReview[]
 }
 
-/** Mirrors the EVALUATIVE pass rule in lib/engine/executor.ts: pass ⇔ no critical criterion failed. */
+/** The EVALUATIVE pass rule lives in the engine; this is the training-side alias. */
+export const competenceOutcome = assessmentOutcome
+
 export function competencePassed(results: CompetencyResult[]): boolean {
-  const criticals = results.filter((r) => r.weight === "critical")
-  return criticals.length === 0 || criticals.every((r) => r.passed)
+  return assessmentOutcome(results) === "passed"
 }
 
 export function buildEvidenceRecord(input: EvidenceRecordInput): EvidenceRecord {
-  const passed = competencePassed(input.results)
+  const outcome = assessmentOutcome(input.results)
 
   return {
     moduleTitle: input.moduleTitle,
     outcomeLabel: input.outcomeLabel,
     aiSummary: input.aiSummary,
     completedAt: input.completedAt,
-    passed,
+    passed: outcome === "passed",
+    outcome,
     criteria: input.results,
     decisions: input.decisions,
   }

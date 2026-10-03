@@ -83,6 +83,7 @@ function wireSession() {
       nodeId: "ev1",
       rubricCriterionId: "recognition",
       criterionLabel: "Recognition",
+      status: "passed",
       passed: true,
       evidence: "Sampled before flushing.",
       weight: "critical",

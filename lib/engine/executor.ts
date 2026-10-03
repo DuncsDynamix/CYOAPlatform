@@ -1,8 +1,9 @@
 import { db } from "@/lib/db/prisma"
 import { generateNode, generateEndpointSummary, generateScaffold, generateDialogueOpener, generateEvaluativeAssessment, generateObservedDialogue } from "./generator"
 import { getFromCache, writeToCache, getScaffoldFromCache, writeScaffoldToCache } from "./cache"
-import { updateSessionState, getSession, markSessionComplete, appendNarrativeHistory, initDialogueState, appendCompetencyResult } from "./session"
+import { updateSessionState, getSession, markSessionComplete, appendNarrativeHistory, initDialogueState, replaceCompetencyResults } from "./session"
 import { buildArcAwareness } from "./arc"
+import { assessmentOutcome, type AssessmentOutcome } from "./assessment-outcome"
 import { getContextPack } from "./contract"
 import { applyDisplayConditions } from "./conditions"
 import { getAllNodes } from "./graph"
@@ -22,7 +23,7 @@ import type {
   Experience,
   OutcomeVariant,
 } from "@/types/experience"
-import type { ExperienceSession, NarrativeHistoryEntry, NarrativeScaffold } from "@/types/session"
+import type { ExperienceSession, NarrativeHistoryEntry, NarrativeScaffold, CompetencyResult } from "@/types/session"
 import type { ArrivalResult, ResolvedContent, OutcomeCardData } from "@/types/engine"
 
 // ─── PURE HELPER FUNCTIONS ────────────────────────────────────
@@ -121,6 +122,28 @@ export async function arriveAtNode(
  */
 export function findNode(nodes: Node[], nodeId: string): Node | undefined {
   return nodes.find((n) => n.id === nodeId)
+}
+
+/**
+ * Re-runs an assessment for an EVALUATIVE node and replaces its stored results.
+ */
+export async function reassessNode(
+  sessionId: string,
+  nodeId: string,
+  experience: Experience,
+  apiKey?: string
+): Promise<{ results: CompetencyResult[]; feedback: string; outcome: AssessmentOutcome }> {
+  const session = await getSession(sessionId)
+  if (!session) throw new Error(`Session ${sessionId} not found`)
+  const node = findNode(getAllNodes(experience), nodeId)
+  if (!node || node.type !== "EVALUATIVE") throw new Error(`Node ${nodeId} is not an assessment`)
+  const evalNode = node as EvaluativeNode
+  const entries = (session.narrativeHistory as NarrativeHistoryEntry[]).filter((h) =>
+    evalNode.assessesNodeIds.includes(h.nodeId)
+  )
+  const { results, feedback } = await generateEvaluativeAssessment(evalNode, entries, session, experience, apiKey)
+  await replaceCompetencyResults(sessionId, nodeId, results)
+  return { results, feedback, outcome: assessmentOutcome(results) }
 }
 
 /**
@@ -442,14 +465,14 @@ async function resolveNodeContent(
         apiKey
       )
 
-      await appendCompetencyResult(session.id, results)
+      await replaceCompetencyResults(session.id, evalNode.id, results)
 
-      const criticalCriteria = results.filter((r) => r.weight === "critical")
-      const passed = criticalCriteria.length === 0 || criticalCriteria.every((r) => r.passed)
+      const outcome = assessmentOutcome(results)
 
       return {
         type: "evaluative",
-        passed,
+        outcome,
+        passed: outcome === "passed",
         results,
         feedback,
         nextNodeId: evalNode.nextNodeId,

@@ -1,5 +1,6 @@
 import type { Node, ChoiceOption, Slide, NodeLayout } from "./experience"
 import type { ExperienceSession, DialogueTurn, CompetencyResult } from "./session"
+import type { AssessmentOutcome } from "@/lib/engine/client"
 import type { EvidenceRecord } from "@/lib/training/evidence"
 
 // ─── RESOLVED CONTENT ─────────────────────────────────────────
@@ -31,6 +32,7 @@ export type ResolvedContent =
     }
   | {
       type: "evaluative"
+      outcome: AssessmentOutcome
       passed: boolean
       results: CompetencyResult[]
       feedback: string
@@ -167,6 +169,7 @@ export type TrainingPlayerStatus =
     }
   | {
       status: "evaluative_result"
+      outcome: AssessmentOutcome
       passed: boolean
       results: CompetencyResult[]
       feedback: string

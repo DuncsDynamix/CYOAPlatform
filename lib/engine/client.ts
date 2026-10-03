@@ -4,6 +4,8 @@
 export * from "./contract"
 export { getChildLinks, validateExperienceGraph } from "./graph"
 export type { ChildLink, GraphIssue, GraphValidationResult } from "./graph"
+export { assessmentOutcome } from "./assessment-outcome"
+export type { AssessmentOutcome } from "./assessment-outcome"
 export { USE_CASE_PACKS } from "./usecases"
 export { validateExperience } from "./validate"
 export type { ValidationIssue } from "./validate"

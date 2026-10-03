@@ -1,3 +1,4 @@
+import { z } from "zod"
 import { buildSystemPrompt, buildGenerationPrompt, buildEndpointSummaryPrompt, buildEvaluativePrompt, buildLearningDialogueRules, WRITING_STYLE_RULES, buildSceneContext, DIALOGUE_ENGAGEMENT_RULES } from "./prompts"
 import { stripEmDashes, stripJsonFence } from "./style"
 import { buildArcAwareness } from "./arc"
@@ -6,7 +7,7 @@ import { callModel } from "./llm"
 import { getContextPack, type Character } from "./contract"
 import { buildReferenceBlock } from "./references"
 import { trackEvent } from "@/lib/analytics"
-import type { GeneratedNode, EndpointNode, Experience, DialogueNode, EvaluativeNode, ObservedDialogueNode } from "@/types/experience"
+import type { GeneratedNode, EndpointNode, Experience, DialogueNode, EvaluativeNode, ObservedDialogueNode, RubricCriterion } from "@/types/experience"
 import type { ExperienceSession, NarrativeHistoryEntry, ChoiceHistoryEntry, NarrativeScaffold, DialogueTurn, CompetencyResult } from "@/types/session"
 
 export { trackGeneration } from "./llm"
@@ -374,9 +375,36 @@ export function sanitizeAssessment<T extends { feedback: string; results: { evid
   }
 }
 
+export const NOT_ASSESSED_EVIDENCE = "Assessment unavailable. It can be re-run."
+
+const AssessmentResponseSchema = z.object({
+  results: z.array(z.object({ rubricCriterionId: z.string(), passed: z.boolean(), evidence: z.string() })),
+  feedback: z.string(),
+})
+
+const ASSESSMENT_JSON_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["results", "feedback"],
+  properties: {
+    results: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["rubricCriterionId", "passed", "evidence"],
+        properties: { rubricCriterionId: { type: "string" }, passed: { type: "boolean" }, evidence: { type: "string" } },
+      },
+    },
+    feedback: { type: "string" },
+  },
+}
+
 /**
  * Runs a rubric-based assessment against scaffold context (CB-003).
- * Returns per-criterion results and a holistic feedback string.
+ * Returns per-criterion results and a holistic feedback string. An engine
+ * failure (refusal, truncation, invalid output) is recorded as not_assessed,
+ * never as a learner failure.
  */
 export async function generateEvaluativeAssessment(
   node: EvaluativeNode,
@@ -385,60 +413,59 @@ export async function generateEvaluativeAssessment(
   experience: Experience,
   apiKey?: string
 ): Promise<{ results: CompetencyResult[]; feedback: string }> {
-  const fallback: { results: CompetencyResult[]; feedback: string } = {
-    results: node.rubric.map((c) => ({
-      nodeId: node.id,
-      rubricCriterionId: c.id,
-      criterionLabel: c.label,
-      passed: false,
-      evidence: "Assessment could not be completed.",
-      weight: c.weight,
-    })),
-    feedback: "Your decisions have been recorded.",
+  const notAssessed = (c: RubricCriterion): CompetencyResult => ({
+    nodeId: node.id,
+    rubricCriterionId: c.id,
+    criterionLabel: c.label,
+    weight: c.weight,
+    status: "not_assessed",
+    passed: false,
+    evidence: NOT_ASSESSED_EVIDENCE,
+    ...(c.competencyId && { competencyId: c.competencyId }),
+  })
+  const fallback = {
+    results: node.rubric.map(notAssessed),
+    feedback: "Your responses have been recorded. The assessment can be re-run.",
   }
 
   if (scaffoldEntries.length === 0) {
-    console.warn(`[evaluative] No scaffold entries found for node ${node.id} — assessesNodeIds: ${JSON.stringify(node.assessesNodeIds)}`)
+    console.warn(`[evaluative] No scaffold entries found for node ${node.id}, assessesNodeIds: ${JSON.stringify(node.assessesNodeIds)}`)
     return fallback
   }
 
-  try {
-    // CB-003: scaffold context, structurally split so the learner is judged
-    // only on their own words and chosen options — see buildEvaluativePrompt.
-    const { system, user } = buildEvaluativePrompt(node, scaffoldEntries, buildReferenceBlock(getContextPack(experience), "assessor"))
+  // CB-003: scaffold context, structurally split so the learner is judged
+  // only on their own words and chosen options, see buildEvaluativePrompt.
+  const { system, user } = buildEvaluativePrompt(node, scaffoldEntries, buildReferenceBlock(getContextPack(experience), "assessor"))
 
-    const { text } = await callModel({
-      kind: "evaluative",
-      system,
-      messages: [{ role: "user", content: user }],
-      apiKey,
-      meta: { sessionId: session.id, nodeId: node.id, orgId: experience.orgId ?? undefined },
-    })
-
-    // Strip markdown fences if the model wraps the JSON despite being asked not to
-    const raw = stripJsonFence(text.trim())
-    const parsed = sanitizeAssessment(
-      JSON.parse(raw) as {
-        results: { rubricCriterionId: string; passed: boolean; evidence: string }[]
-        feedback: string
-      }
-    )
-
-    const results: CompetencyResult[] = parsed.results.map((r) => {
-      const criterion = node.rubric.find((c) => c.id === r.rubricCriterionId)
-      return {
-        nodeId: node.id,
-        rubricCriterionId: r.rubricCriterionId,
-        criterionLabel: criterion?.label ?? r.rubricCriterionId,
-        passed: r.passed,
-        evidence: r.evidence,
-        weight: criterion?.weight ?? "minor",
-      }
-    })
-
-    return { results, feedback: parsed.feedback ?? fallback.feedback }
-  } catch (err) {
-    console.error(`[evaluative] Assessment failed for node ${node.id}:`, err)
-    return fallback
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const { text } = await callModel({
+        kind: "evaluative",
+        system,
+        messages: [{ role: "user", content: user }],
+        apiKey,
+        outputSchema: ASSESSMENT_JSON_SCHEMA,
+        meta: { sessionId: session.id, nodeId: node.id, orgId: experience.orgId ?? undefined },
+      })
+      const parsed = sanitizeAssessment(AssessmentResponseSchema.parse(JSON.parse(stripJsonFence(text.trim()))))
+      const results = node.rubric.map((c): CompetencyResult => {
+        const r = parsed.results.find((x) => x.rubricCriterionId === c.id)
+        if (!r) return notAssessed(c)
+        return {
+          nodeId: node.id,
+          rubricCriterionId: c.id,
+          criterionLabel: c.label,
+          weight: c.weight,
+          status: r.passed ? "passed" : "not_passed",
+          passed: r.passed,
+          evidence: r.evidence,
+          ...(c.competencyId && { competencyId: c.competencyId }),
+        }
+      })
+      return { results, feedback: parsed.feedback }
+    } catch (err) {
+      console.error(`[evaluative] attempt ${attempt + 1} failed for node ${node.id}:`, err instanceof Error ? err.message : err)
+    }
   }
+  return fallback
 }

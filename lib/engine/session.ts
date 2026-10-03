@@ -41,10 +41,23 @@ const CompetencyResultSchema = z.object({
   nodeId: z.string(),
   rubricCriterionId: z.string(),
   criterionLabel: z.string(),
+  status: z.enum(["passed", "not_passed", "not_assessed"]).optional(),
   passed: z.boolean(),
   evidence: z.string(),
   weight: z.enum(["critical", "major", "minor"]),
-})
+  competencyId: z.string().optional(),
+}).transform((r): CompetencyResult => ({
+  ...r,
+  // Legacy results stored no status. The old silent fallback evidence marks
+  // an assessment that never ran, which must not read as a learner failure.
+  status:
+    r.status ??
+    (r.evidence === "Assessment could not be completed."
+      ? "not_assessed"
+      : r.passed
+        ? "passed"
+        : "not_passed"),
+}))
 
 const SessionStateSchema = z.object({
   flags: z.record(z.union([z.string(), z.boolean()])).catch({}),
@@ -351,6 +364,19 @@ export async function appendCompetencyResult(
   if (results.length === 0) return
   await commitSessionMutation(sessionId, (draft) => {
     draft.state.competencyProfile = [...draft.state.competencyProfile, ...results]
+  })
+}
+
+export async function replaceCompetencyResults(
+  sessionId: string,
+  nodeId: string,
+  results: CompetencyResult[]
+): Promise<void> {
+  await commitSessionMutation(sessionId, (draft) => {
+    draft.state.competencyProfile = [
+      ...draft.state.competencyProfile.filter((r) => r.nodeId !== nodeId),
+      ...results,
+    ]
   })
 }
 

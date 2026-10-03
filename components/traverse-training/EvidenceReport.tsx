@@ -13,6 +13,18 @@ function weightLabel(weight: CompetencyResult["weight"]): string {
   return "Minor"
 }
 
+const VERDICT: Record<EvidenceRecord["outcome"], { text: string; modifier: string }> = {
+  passed: { text: "Competence demonstrated", modifier: "pass" },
+  not_passed: { text: "Not yet demonstrated", modifier: "develop" },
+  incomplete: { text: "Assessment incomplete", modifier: "incomplete" },
+}
+
+const RESULT: Record<CompetencyResult["status"], { text: string; modifier: string }> = {
+  passed: { text: "Demonstrated", modifier: "pass" },
+  not_passed: { text: "Develop", modifier: "develop" },
+  not_assessed: { text: "Not assessed", modifier: "pending" },
+}
+
 /**
  * The buyer-facing Evidence Record: rubric outcomes with quoted evidence,
  * the decision trail, and a print/save path. Rendered at debrief; printable
@@ -29,8 +41,8 @@ export function EvidenceReport({ record }: { record: EvidenceRecord }) {
             {record.outcomeLabel} · Completed {formatDate(record.completedAt)}
           </div>
         </div>
-        <div className={`tt-evidence-verdict ${record.passed ? "tt-evidence-verdict--pass" : "tt-evidence-verdict--develop"}`}>
-          {record.passed ? "Competence demonstrated" : "Not yet demonstrated"}
+        <div className={`tt-evidence-verdict tt-evidence-verdict--${VERDICT[record.outcome].modifier}`}>
+          {VERDICT[record.outcome].text}
         </div>
       </header>
 
@@ -40,8 +52,8 @@ export function EvidenceReport({ record }: { record: EvidenceRecord }) {
             <div className="tt-evidence-criterion-head">
               <span className="tt-evidence-criterion-label">{c.criterionLabel}</span>
               <span className={`tt-evidence-weight tt-evidence-weight--${c.weight}`}>{weightLabel(c.weight)}</span>
-              <span className={`tt-evidence-result ${c.passed ? "tt-evidence-result--pass" : "tt-evidence-result--develop"}`}>
-                {c.passed ? "Demonstrated" : "Develop"}
+              <span className={`tt-evidence-result tt-evidence-result--${RESULT[c.status].modifier}`}>
+                {RESULT[c.status].text}
               </span>
             </div>
             <blockquote className="tt-evidence-quote">{c.evidence}</blockquote>

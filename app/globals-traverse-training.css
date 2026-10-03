@@ -885,6 +885,7 @@
 }
 .traverse-training-theme .tt-evidence-verdict--pass { background: var(--t-success-light); color: var(--t-success); }
 .traverse-training-theme .tt-evidence-verdict--develop { background: #FEF3E2; color: var(--t-warning); }
+.traverse-training-theme .tt-evidence-verdict--incomplete { background: var(--t-surface-warning); color: var(--t-text-secondary); }
 .traverse-training-theme .tt-evidence-criterion { padding: 0.875rem 0; border-bottom: 1px solid var(--t-border-strong); }
 .traverse-training-theme .tt-evidence-criterion-head { display: flex; align-items: center; gap: 0.625rem; }
 .traverse-training-theme .tt-evidence-criterion-label { font-weight: 600; font-size: 0.9rem; flex: 1; }
@@ -896,6 +897,7 @@
 .traverse-training-theme .tt-evidence-result { font-size: 0.75rem; font-weight: 700; }
 .traverse-training-theme .tt-evidence-result--pass { color: var(--t-success); }
 .traverse-training-theme .tt-evidence-result--develop { color: var(--t-warning); }
+.traverse-training-theme .tt-evidence-result--pending { color: var(--t-text-secondary); }
 .traverse-training-theme .tt-evidence-quote {
   margin: 0.5rem 0 0; padding: 0.5rem 0.875rem; border-left: 3px solid var(--t-accent-light);
   font-size: 0.85rem; color: var(--t-text-muted); font-style: italic;
@@ -1102,6 +1104,7 @@
 }
 .traverse-training-theme .t-evaluative-criterion--pass { border-left-color: var(--t-success); }
 .traverse-training-theme .t-evaluative-criterion--fail { border-left-color: var(--t-warning); }
+.traverse-training-theme .t-evaluative-criterion--pending { border-left-color: var(--t-text-muted); }
 .traverse-training-theme .t-evaluative-criterion-label { font-family: var(--t-font-ui); font-size: 0.875rem; font-weight: 600; color: var(--t-text-primary); display: block; }
 .traverse-training-theme .t-evaluative-criterion-weight { font-family: var(--t-font-ui); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--t-text-muted); display: block; margin-top: 0.1rem; }
 .traverse-training-theme .t-evaluative-criterion-evidence { font-family: var(--t-font-body); font-size: 0.875rem; line-height: 1.5; color: var(--t-text-secondary); margin: 0.5rem 0 0; }
