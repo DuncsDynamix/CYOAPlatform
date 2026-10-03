@@ -1,0 +1,271 @@
+/* In-course frame: header, stage bar, scroll area, drawers, demo badge. */
+
+.tg-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.tg-header {
+  flex: none;
+  background: var(--tg-header-bg);
+  color: var(--tg-header-fg);
+}
+.tg-scope[data-header="light"] .tg-header {
+  border-bottom: 1px solid var(--tg-border);
+}
+.tg-header :focus-visible {
+  outline-color: var(--tg-header-fg);
+}
+.tg-header-row {
+  display: flex;
+  align-items: center;
+  gap: var(--tg-space-3);
+  max-width: var(--tg-page-width);
+  min-height: var(--tg-header-h);
+  margin: 0 auto;
+  padding: var(--tg-space-2) var(--tg-space-4);
+}
+.tg-header-titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tg-header-course {
+  font-size: var(--tg-fs-xs);
+  color: var(--tg-header-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tg-header-stage {
+  font-family: var(--tg-font-heading);
+  font-weight: 700;
+  font-size: var(--tg-fs-base);
+  line-height: 1.25;
+}
+.tg-header-btn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--tg-radius-sm);
+  background: var(--tg-header-control);
+  color: var(--tg-header-fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+}
+.tg-header-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tg-brandmark {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+.tg-brandmark-full {
+  height: 36px;
+  width: auto;
+}
+.tg-brandmark-mark {
+  display: none;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+.tg-wordmark {
+  font-family: var(--tg-font-heading);
+  font-weight: 700;
+  font-size: var(--tg-fs-sm);
+}
+.tg-monogram {
+  display: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--tg-brand);
+  color: var(--tg-on-brand);
+  font-family: var(--tg-font-heading);
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 640px) {
+  .tg-header .tg-brandmark-full,
+  .tg-header .tg-wordmark {
+    display: none;
+  }
+  .tg-header .tg-brandmark-mark {
+    display: block;
+  }
+  .tg-header .tg-monogram {
+    display: inline-flex;
+  }
+}
+
+.tg-stagebar {
+  display: flex;
+  gap: 3px;
+  max-width: var(--tg-page-width);
+  margin: 0 auto;
+  padding: 0 var(--tg-space-4) var(--tg-space-2);
+}
+.tg-stagebar-seg {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+}
+.tg-stagebar-seg--done {
+  background: var(--tg-brand);
+}
+.tg-stagebar-seg--current {
+  background: linear-gradient(90deg, var(--tg-brand) 50%, var(--tg-header-control) 50%);
+}
+.tg-stagebar-seg--todo {
+  background: var(--tg-header-control);
+}
+
+.tg-main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.tg-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--tg-backdrop);
+}
+.tg-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  background: var(--tg-surface);
+  box-shadow: var(--tg-shadow-raised);
+}
+.tg-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tg-space-3);
+  padding: var(--tg-space-3) var(--tg-space-4);
+  background: var(--tg-header-bg);
+  color: var(--tg-header-fg);
+}
+.tg-drawer-title {
+  font-size: var(--tg-fs-base);
+}
+.tg-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--tg-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tg-space-5);
+}
+.tg-drawer-empty {
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-text-muted);
+}
+.tg-note {
+  display: block;
+}
+.tg-note-label {
+  margin-bottom: var(--tg-space-2);
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-brand-ink);
+}
+.tg-note-slide + .tg-note-slide {
+  margin-top: var(--tg-space-3);
+}
+.tg-note-slide-title {
+  margin-bottom: var(--tg-space-1);
+  font-size: var(--tg-fs-sm);
+}
+.tg-note-line {
+  margin-top: var(--tg-space-1);
+  font-size: var(--tg-fs-sm);
+}
+.tg-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.tg-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tg-space-2);
+  margin-bottom: var(--tg-space-3);
+  font-size: var(--tg-fs-sm);
+}
+.tg-checklist-box {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  border: 2px solid var(--tg-text-muted);
+  border-radius: var(--tg-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--tg-brand);
+}
+.tg-checklist-item--done .tg-checklist-box {
+  background: var(--tg-brand);
+  border-color: var(--tg-brand);
+  color: var(--tg-on-brand);
+}
+.tg-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.tg-demo {
+  width: 100%;
+  max-width: calc(var(--tg-read-width) + 2 * var(--tg-space-4));
+  margin: var(--tg-space-3) auto 0;
+  padding: 0 var(--tg-space-4);
+}
+.tg-demo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tg-space-1);
+  padding: 2px var(--tg-space-3);
+  border: 1px dashed var(--tg-brand-ink);
+  border-radius: var(--tg-radius-pill);
+  background: var(--tg-surface-raised);
+  color: var(--tg-brand-ink);
+  font-size: var(--tg-fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+.tg-demo-blurb {
+  margin-top: var(--tg-space-2);
+  padding: var(--tg-space-3);
+  border-radius: var(--tg-radius-sm);
+  background: var(--tg-surface-raised);
+  color: var(--tg-text-muted);
+  font-size: var(--tg-fs-sm);
+}
