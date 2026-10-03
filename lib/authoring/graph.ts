@@ -26,10 +26,6 @@ export function makeNode(type: Node["type"]): Node {
       return { id, type, label: "", actorAId: "", actorBId: "", purpose: "", turns: 4, nextNodeId: "" }
     case "EVALUATIVE":
       return { id, type, label: "", rubric: [], assessesNodeIds: [], nextNodeId: "" }
-    case "SUBROUTINE_CALL":
-      return { id, type, label: "", targetNodeId: "", returnNodeId: "" }
-    case "SUBROUTINE_RETURN":
-      return { id, type, label: "" }
     case "SLIDE_DECK":
       return { id, type, label: "", slides: [], nextNodeId: "" }
   }
@@ -65,13 +61,7 @@ export function getNodeHandles(node: Node): NodeHandleSpec[] {
         { id: "next", label: "breakthrough" },
         { id: "failure", label: "max turns" },
       ]
-    case "SUBROUTINE_CALL":
-      return [
-        { id: "call", label: "call" },
-        { id: "return", label: "return" },
-      ]
     case "ENDPOINT":
-    case "SUBROUTINE_RETURN":
       return []
   }
 }
@@ -102,10 +92,6 @@ export function applyConnection(node: Node, handleId: string, targetId: string):
       return { ...node, nextNodeId: targetId } as Node
     case "failure":
       return { ...node, failureNodeId: targetId } as Node
-    case "call":
-      return { ...node, targetNodeId: targetId } as Node
-    case "return":
-      return { ...node, returnNodeId: targetId } as Node
     default:
       throw new Error(`Unknown handle "${handleId}"`)
   }

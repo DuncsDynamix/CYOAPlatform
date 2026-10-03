@@ -30,6 +30,7 @@ export interface ExperienceUseCasePack {
     optionalContextFields: string[]
     suggestedScripts: string[]
   }
+  extensionKind: "story" | "training"
   customisable: boolean
 }
 
@@ -112,16 +113,18 @@ export interface Slide {
 
 // ─── NODE TYPES ───────────────────────────────────────────────
 
-export type NodeType = "FIXED" | "GENERATED" | "CHOICE" | "CHECKPOINT" | "ENDPOINT" | "DIALOGUE" | "OBSERVED_DIALOGUE" | "EVALUATIVE" | "SUBROUTINE_CALL" | "SUBROUTINE_RETURN" | "SLIDE_DECK"
+export type NodeType = "FIXED" | "GENERATED" | "CHOICE" | "CHECKPOINT" | "ENDPOINT" | "DIALOGUE" | "OBSERVED_DIALOGUE" | "EVALUATIVE" | "SLIDE_DECK"
 
-export type Node = FixedNode | GeneratedNode | ChoiceNode | CheckpointNode | EndpointNode | DialogueNode | ObservedDialogueNode | EvaluativeNode | SubroutineCallNode | SubroutineReturnNode | SlideDeckNode
+export type Node = FixedNode | GeneratedNode | ChoiceNode | CheckpointNode | EndpointNode | DialogueNode | ObservedDialogueNode | EvaluativeNode | SlideDeckNode
 
 interface BaseNode {
   id: string
   type: NodeType
   label: string
-  position?: { x: number; y: number }
 }
+
+/** A node as the Studio canvas holds it: the node plus its saved canvas position. */
+export type AuthoringNode = Node & { position?: { x: number; y: number } }
 
 export interface FixedNode extends BaseNode {
   type: "FIXED"
@@ -311,6 +314,7 @@ export interface RubricCriterion {
   label: string
   description: string
   weight: "critical" | "major" | "minor"
+  competencyId?: string
 }
 
 export interface EvaluativeNode extends BaseNode {
@@ -319,18 +323,6 @@ export interface EvaluativeNode extends BaseNode {
   /** Node IDs whose scaffold context to use for assessment (CB-003) */
   assessesNodeIds: string[]
   nextNodeId: string
-}
-
-export interface SubroutineCallNode extends BaseNode {
-  type: "SUBROUTINE_CALL"
-  /** Node to jump to */
-  targetNodeId: string
-  /** Node to return to when the subroutine completes (Phase 2) */
-  returnNodeId: string
-}
-
-export interface SubroutineReturnNode extends BaseNode {
-  type: "SUBROUTINE_RETURN"
 }
 
 export interface SlideDeckNode extends BaseNode {

@@ -1,4 +1,7 @@
-import type { ExperienceUseCasePack } from "@/types/experience"
+import type { ExperienceUseCasePack, NodeType } from "@/types/experience"
+
+const ALL_TYPES: NodeType[] = ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT", "DIALOGUE", "OBSERVED_DIALOGUE", "EVALUATIVE", "SLIDE_DECK"]
+const STORY_TYPES: NodeType[] = ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT", "DIALOGUE", "OBSERVED_DIALOGUE"]
 
 export const USE_CASE_PACKS: Record<string, ExperienceUseCasePack> = {
   cyoa_story: {
@@ -25,14 +28,14 @@ export const USE_CASE_PACKS: Record<string, ExperienceUseCasePack> = {
     },
     nodeDefaults: {
       defaultConstraints: { lengthMin: 150, lengthMax: 250 },
-      // SUBROUTINE_CALL and SUBROUTINE_RETURN are Phase 2 and deliberately excluded from all use-case packs.
-      allowedNodeTypes: ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT"],
+      allowedNodeTypes: STORY_TYPES,
     },
     authoringConfig: {
-      requiredContextFields: ["world.description", "protagonist.role", "style.tone"],
-      optionalContextFields: ["actors", "groundTruth", "scripts"],
+      requiredContextFields: ["core.setting.summary", "core.participant.role", "core.style.tone"],
+      optionalContextFields: ["core.characters", "core.references", "core.rules"],
       suggestedScripts: ["Maintain mystery", "Escalation pacing", "Character voice consistency"],
     },
+    extensionKind: "story",
     customisable: false,
   },
 
@@ -61,14 +64,14 @@ export const USE_CASE_PACKS: Record<string, ExperienceUseCasePack> = {
     },
     nodeDefaults: {
       defaultConstraints: { lengthMin: 100, lengthMax: 200 },
-      // SUBROUTINE_CALL and SUBROUTINE_RETURN are Phase 2 and deliberately excluded from all use-case packs.
-      allowedNodeTypes: ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT"],
+      allowedNodeTypes: ALL_TYPES,
     },
     authoringConfig: {
-      requiredContextFields: ["world.description", "protagonist.role", "style.tone"],
-      optionalContextFields: ["actors", "groundTruth", "scripts"],
+      requiredContextFields: ["core.setting.summary", "core.participant.role", "core.style.tone", "extension.learningObjectives"],
+      optionalContextFields: ["core.characters", "core.references", "core.rules"],
       suggestedScripts: ["Competency assessment", "Feedback delivery", "Escalation path"],
     },
+    extensionKind: "training",
     customisable: false,
   },
 
@@ -96,14 +99,14 @@ export const USE_CASE_PACKS: Record<string, ExperienceUseCasePack> = {
     },
     nodeDefaults: {
       defaultConstraints: { lengthMin: 120, lengthMax: 220 },
-      // SUBROUTINE_CALL and SUBROUTINE_RETURN are Phase 2 and deliberately excluded from all use-case packs.
-      allowedNodeTypes: ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT"],
+      allowedNodeTypes: ALL_TYPES,
     },
     authoringConfig: {
-      requiredContextFields: ["world.description", "protagonist.role", "style.tone"],
-      optionalContextFields: ["actors", "groundTruth", "scripts"],
+      requiredContextFields: ["core.setting.summary", "core.participant.role", "core.style.tone"],
+      optionalContextFields: ["core.characters", "core.references", "core.rules"],
       suggestedScripts: ["Socratic questioning", "Misconception handling", "Knowledge scaffolding"],
     },
+    extensionKind: "training",
     customisable: false,
   },
 
@@ -131,14 +134,14 @@ export const USE_CASE_PACKS: Record<string, ExperienceUseCasePack> = {
     },
     nodeDefaults: {
       defaultConstraints: { lengthMin: 150, lengthMax: 300 },
-      // SUBROUTINE_CALL and SUBROUTINE_RETURN are Phase 2 and deliberately excluded from all use-case packs.
-      allowedNodeTypes: ["FIXED", "GENERATED", "CHOICE", "CHECKPOINT", "ENDPOINT"],
+      allowedNodeTypes: STORY_TYPES,
     },
     authoringConfig: {
-      requiredContextFields: ["world.description", "actors", "protagonist.role", "style.tone"],
-      optionalContextFields: ["groundTruth", "scripts"],
+      requiredContextFields: ["core.setting.summary", "core.participant.role", "core.style.tone", "core.characters"],
+      optionalContextFields: ["core.references", "core.rules"],
       suggestedScripts: ["Canon enforcement", "Character voice lock", "Lore consistency check"],
     },
+    extensionKind: "story",
     customisable: false,
   },
 }

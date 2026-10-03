@@ -5,6 +5,7 @@ import { updateSessionState, getSession, markSessionComplete, appendNarrativeHis
 import { buildArcAwareness } from "./arc"
 import { getContextPack } from "./contract"
 import { applyDisplayConditions } from "./conditions"
+import { getAllNodes } from "./graph"
 import { trackEvent } from "@/lib/analytics"
 import type {
   Node,
@@ -16,11 +17,9 @@ import type {
   DialogueNode,
   ObservedDialogueNode,
   EvaluativeNode,
-  SubroutineCallNode,
   SlideDeckNode,
   ChoiceOption,
   Experience,
-  Segment,
   OutcomeVariant,
 } from "@/types/experience"
 import type { ExperienceSession, NarrativeHistoryEntry, NarrativeScaffold } from "@/types/session"
@@ -57,21 +56,8 @@ export function selectOutcomeVariant(
 
 // ─── NODE RESOLUTION ─────────────────────────────────────────
 
-/**
- * Returns ALL nodes for an experience by flattening segments.
- * If segments exist, concatenates all segment nodes (sorted by order).
- * Otherwise falls back to the flat experience.nodes array.
- * Segments are an authoring-only concept — the engine always sees one flat graph.
- */
-export function getAllNodes(experience: Experience): Node[] {
-  const segments = (experience.segments ?? []) as Segment[]
-  if (segments.length > 0) {
-    return [...segments]
-      .sort((a, b) => a.order - b.order)
-      .flatMap((s) => s.nodes)
-  }
-  return experience.nodes ?? []
-}
+// getAllNodes lives in ./graph (pure) and is re-exported for compatibility.
+export { getAllNodes }
 
 // ─── PUBLIC API ───────────────────────────────────────────────
 
@@ -495,14 +481,6 @@ async function resolveNodeContent(
       }
     }
 
-    case "SUBROUTINE_CALL":
-    case "SUBROUTINE_RETURN":
-      return {
-        type: "not_implemented",
-        nodeType: node.type,
-        message: `${node.type} is reserved for Phase 2 and is not yet supported.`,
-      }
-
     case "SLIDE_DECK": {
       const deckNode = node as SlideDeckNode
       return { type: "slide_deck", slides: deckNode.slides, nextNodeId: deckNode.nextNodeId }
@@ -566,10 +544,6 @@ function getImmediateChildIds(node: Node): string[] {
       return [(node as EvaluativeNode).nextNodeId]
     case "OBSERVED_DIALOGUE":
       return [(node as ObservedDialogueNode).nextNodeId]
-    case "SUBROUTINE_CALL":
-      return [(node as SubroutineCallNode).targetNodeId]
-    case "SUBROUTINE_RETURN":
-      return []
     case "SLIDE_DECK":
       return [(node as SlideDeckNode).nextNodeId]
   }

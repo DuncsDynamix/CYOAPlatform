@@ -3,7 +3,7 @@
 import { z } from "zod"
 import type { ChoiceNode, EndpointNode, FixedNode, GeneratedNode, Node, Segment } from "@/types/experience"
 import { getChildLinks, makeNode, type GraphValidationResult } from "@/lib/authoring/graph"
-import { USE_CASE_PACKS } from "@/lib/engine/client"
+import { USE_CASE_PACKS, validateExperience } from "@/lib/engine/client"
 
 export interface ChapterOutline {
   title: string
@@ -400,7 +400,7 @@ export interface LooseStitch {
  * choice is both "all links unset" and "no way onward", and the broken-link
  * message is the more specific of the two.
  */
-export function looseStitches(result: GraphValidationResult, allNodes: Node[]): LooseStitch[] {
+export function looseStitches(result: GraphValidationResult, allNodes: Node[], contextPack?: unknown): LooseStitch[] {
   const nodeMap = new Map(allNodes.map((n) => [n.id, n]))
   const labelOf = (nodeId: string) => nodeMap.get(nodeId)?.label ?? ""
   const stitches: LooseStitch[] = []
@@ -436,6 +436,23 @@ export function looseStitches(result: GraphValidationResult, allNodes: Node[]): 
       nodeLabel: label,
       message: `no path reaches '${label}'`,
       severity: "adrift",
+    })
+  }
+
+  // Node-level problems the graph checks cannot see (e.g. a page kind the
+  // library cannot bind yet). Graph links are already covered above. A
+  // character check needs the draft's pack, so it only runs when one is given.
+  const flagged = new Set(stitches.map((s) => s.nodeId))
+  const { errors } = validateExperience({ type: "cyoa_story", contextPack: contextPack ?? null, nodes: allNodes, segments: [] })
+  for (const issue of errors) {
+    if (!issue.nodeId || issue.code === "dangling_link" || flagged.has(issue.nodeId)) continue
+    if (issue.code === "unknown_character" && contextPack === undefined) continue
+    flagged.add(issue.nodeId)
+    stitches.push({
+      nodeId: issue.nodeId,
+      nodeLabel: labelOf(issue.nodeId),
+      message: "Part of this book uses something the library cannot bind yet. Open it in the Studio to fix it.",
+      severity: "blocking",
     })
   }
 

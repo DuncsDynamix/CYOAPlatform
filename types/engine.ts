@@ -36,7 +36,6 @@ export type ResolvedContent =
       feedback: string
       nextNodeId: string
     }
-  | { type: "not_implemented"; nodeType: string; message: string }
   | { type: "redirect"; targetNodeId: string }
   | { type: "slide_deck"; slides: Slide[]; nextNodeId: string }
 

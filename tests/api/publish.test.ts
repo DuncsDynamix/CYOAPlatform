@@ -40,12 +40,8 @@ describe("POST /api/v1/experience/[id]/publish — graph validation", () => {
     expect(res.status).toBe(400)
 
     const body = await res.json()
-    expect(body.error).toMatch(/graph/i)
-    expect(body.brokenLinks).toContainEqual({
-      nodeId: "node-2a",
-      handle: "next",
-      targetId: "nowhere",
-    })
+    expect(body.error).toMatch(/problems/i)
+    expect(body.errors).toContainEqual(expect.objectContaining({ code: "dangling_link", nodeId: "node-2a" }))
     expect(mockUpdateExperience).not.toHaveBeenCalled()
   })
 
@@ -58,6 +54,7 @@ describe("POST /api/v1/experience/[id]/publish — graph validation", () => {
     const res = await publishExperience(publishRequest(), params)
     expect(res.status).toBe(200)
     expect(mockUpdateExperience).toHaveBeenCalled()
+    expect(Array.isArray((await res.json()).warnings)).toBe(true)
   })
 
   it("does not block unpublishing on a broken graph", async () => {

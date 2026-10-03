@@ -5,7 +5,7 @@ import {
   ChapterProposalSchema, proposalToNodes, derivePlan, looseStitches,
 } from "@/lib/library/bindery"
 import { validateExperienceGraph } from "@/lib/authoring/graph"
-import type { ChoiceNode, GeneratedNode } from "@/types/experience"
+import type { ChoiceNode, GeneratedNode, Node } from "@/types/experience"
 
 describe("bindery node factories", () => {
   it("makes a told page with engine defaults and a written page with empty prose", () => {
@@ -88,6 +88,19 @@ describe("chapter proposals", () => {
 })
 
 describe("derivePlan + looseStitches", () => {
+  it("flags a page kind the library cannot bind as a blocking stitch, without engine names", () => {
+    const page = makeBinderyPage("written")
+    const end = makeBinderyEnding("The Close")
+    const ev = { id: "ev", type: "EVALUATIVE", label: "Judging", rubric: [], assessesNodeIds: [], nextNodeId: end.id } as Node
+    page.nextNodeId = ev.id
+    const all = [page, ev, end]
+    const stitch = looseStitches(validateExperienceGraph(all), all).find((s) => s.nodeId === "ev" && s.message.startsWith("Part of this book"))
+    expect(stitch).toBeDefined()
+    expect(stitch!.severity).toBe("blocking")
+    expect(stitch!.message).toBe("Part of this book uses something the library cannot bind yet. Open it in the Studio to fix it.")
+    expect(stitch!.message).not.toMatch(/EVALUATIVE|—/)
+  })
+
   it("orders rows from the chapter start, marks rejoins, and speaks in fiction", () => {
     const a = makeBinderyPage("written"); const b = makeBinderyChoice() as ChoiceNode
     const c = makeBinderyPage("told"); const d = makeBinderyPage("told")

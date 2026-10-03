@@ -21,16 +21,12 @@ function getCoverVariant(draft: BinderyDraft): number {
   return (draft.shape as { coverVariant?: number } | null)?.coverVariant ?? 0
 }
 
-function asStringArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : []
-}
-
-function asIssueArray(value: unknown): { nodeId: string; handle: string; targetId: string }[] {
+/** Publish errors that name a node (links that go nowhere) become blocking stitches. */
+function asBrokenLinks(value: unknown): { nodeId: string; handle: string; targetId: string }[] {
   if (!Array.isArray(value)) return []
-  return value.filter(
-    (v): v is { nodeId: string; handle: string; targetId: string } =>
-      !!v && typeof v === "object" && typeof (v as { nodeId?: unknown }).nodeId === "string"
-  )
+  return value
+    .filter((v): v is { code: string; nodeId: string } => !!v && typeof v === "object" && (v as { code?: unknown }).code === "dangling_link" && typeof (v as { nodeId?: unknown }).nodeId === "string")
+    .map((v) => ({ nodeId: v.nodeId, handle: "", targetId: "" }))
 }
 
 // Sheet 5: the last stop before a book leaves the desk. Shows a live loose-
@@ -55,7 +51,7 @@ export function SheetBind({
   const sortedSegments = [...getSegments(draft)].sort((a, b) => a.order - b.order)
   const allNodes: Node[] = sortedSegments.flatMap((s) => s.nodes)
   const validation = validateExperienceGraph(allNodes)
-  const stitches = looseStitches(validation, allNodes)
+  const stitches = looseStitches(validation, allNodes, draft.contextPack)
 
   async function handleBind() {
     setBinding(true)
@@ -72,11 +68,12 @@ export function SheetBind({
           {
             valid: false,
             startNodeId: null,
-            brokenLinks: asIssueArray(data.brokenLinks),
-            deadEnds: asStringArray(data.deadEnds),
-            unreachable: asStringArray(data.unreachable),
+            brokenLinks: asBrokenLinks(data.errors),
+            deadEnds: [],
+            unreachable: [],
           },
-          allNodes
+          allNodes,
+          draft.contextPack
         )
         setServerStitches(
           fromServer.length > 0

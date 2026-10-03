@@ -128,24 +128,12 @@ export const EndpointNodeSchema = BaseNodeSchema.extend({
   }),
 })
 
-export const SubroutineCallNodeSchema = BaseNodeSchema.extend({
-  type: z.literal("SUBROUTINE_CALL"),
-  targetNodeId: z.string().min(1),
-  returnNodeId: z.string().min(1),
-})
-
-export const SubroutineReturnNodeSchema = BaseNodeSchema.extend({
-  type: z.literal("SUBROUTINE_RETURN"),
-})
-
 export const NodeSchema = z.discriminatedUnion("type", [
   FixedNodeSchema,
   GeneratedNodeSchema,
   ChoiceNodeSchema,
   CheckpointNodeSchema,
   EndpointNodeSchema,
-  SubroutineCallNodeSchema,
-  SubroutineReturnNodeSchema,
 ])
 
 // ─── INFERRED TYPES ───────────────────────────────────────────

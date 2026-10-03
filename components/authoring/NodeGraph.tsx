@@ -21,7 +21,7 @@ import {
   type OnConnectEnd,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
-import type { Node } from "@/types/experience"
+import type { Node, AuthoringNode } from "@/types/experience"
 import {
   getChildLinks,
   getNodeHandles,
@@ -258,7 +258,7 @@ function NodeGraphInner({ nodes, selectedId, onSelect, onAdd, onNodesChange }: N
     const nodeIds = new Set(nodes.map((n) => n.id))
 
     setRfNodes(
-      nodes.map((n) => ({
+      (nodes as AuthoringNode[]).map((n) => ({
         id: n.id,
         type: "traverse" as const,
         position: n.position ?? autoLayout.get(n.id) ?? { x: PADDING, y: PADDING },
@@ -408,7 +408,7 @@ function NodeGraphInner({ nodes, selectedId, onSelect, onAdd, onNodesChange }: N
   const createLinkedNode = useCallback(
     (type: Node["type"]) => {
       if (!connectMenu) return
-      const newNode: Node = {
+      const newNode: AuthoringNode = {
         ...makeNode(type),
         position: { x: connectMenu.flowX - NODE_W / 2, y: connectMenu.flowY },
       }

@@ -57,7 +57,7 @@ The story page (`app/(library)/story/[id]/page.tsx`) checks `experience.renderin
 
 The engine lives in `lib/engine/` and is the core of the platform:
 
-- **`executor.ts`** — Entry point. `arriveAtNode()` resolves a node to `ResolvedContent`, updates session state, and fires parallel pre-generation for reachable GENERATED children. The `resolveNodeContent` switch handles all 8 node types.
+- **`executor.ts`** — Entry point. `arriveAtNode()` resolves a node to `ResolvedContent`, updates session state, and fires parallel pre-generation for reachable GENERATED children. The `resolveNodeContent` switch handles all 9 node types.
 - **`generator.ts`** — All Anthropic API calls. Uses `claude-sonnet-5` for generation (migrated July 2026 — `claude-sonnet-4-20250514` was retired by Anthropic; thinking is explicitly disabled because Sonnet 5 defaults to adaptive thinking, which would eat the small max_tokens budgets), `claude-haiku-4-5-20251001` for scaffolding/assessment (cheap extraction calls). All calls go through `generationQueue` (p-queue, default concurrency 5).
 - **`session.ts`** — All DB reads/writes for `ExperienceSession`. The session state JSON includes `flags`, `dialogue`, and `competencyProfile`.
 - **`cache.ts`** — Redis (Upstash) + in-memory fallback for generated node prose. Key: `node:{sessionId}:{nodeId}`.
@@ -68,7 +68,7 @@ The engine lives in `lib/engine/` and is the core of the platform:
 
 ### Node Types
 
-Eight node types defined in `types/experience.ts`:
+Nine node types defined in `types/experience.ts`:
 
 | Type | Purpose |
 |------|---------|
@@ -78,6 +78,7 @@ Eight node types defined in `types/experience.ts`:
 | `CHECKPOINT` | Invisible progress marker; sets state flags, unlocks branches |
 | `ENDPOINT` | Terminal node; generates AI summary |
 | `DIALOGUE` | Multi-turn conversation loop with an actor; breakthrough detection |
+| `OBSERVED_DIALOGUE` | Generated two-character exchange the learner reads, not joins |
 | `EVALUATIVE` | Rubric-based assessment using scaffold context (CB-003 pattern) |
 | `SLIDE_DECK` | Ordered slide carousel; player navigates with prev/next/dots, then continues |
 
@@ -230,4 +231,4 @@ See `docs/platform_roadmap_vercel.md` for the full plan. As of 2026-03-30:
 
 - **`UpdateExperienceSchema` nullable fields** — `description` and `genre` use `.optional().nullable()`. Omitting `.nullable()` causes autosave to silently fail (400) for any experience where these fields are null in the DB.
 - **Image uploads** (`public/uploads/`) are written to disk and not tracked by git. They are not persistent across deploys or fresh clones. Seed images live in `public/uploads/seed/` and are copied by seed scripts.
-- **`GET /api/v1/engine/node`** — When adding a new node type with `nextNodeId`, add it to the explicit type switch in this route or the player will get a 400 trying to advance past it.
+- **Advancing past a node** — `getAdvanceTarget` in `lib/engine/navigation.ts` is the single source of where Continue goes; a new node type with `nextNodeId` must be added there.

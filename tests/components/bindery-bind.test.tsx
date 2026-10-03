@@ -244,10 +244,9 @@ describe("SheetBind", () => {
     const fetchMock = vi.fn(() =>
       jsonResponse(
         {
-          error: "Experience graph has problems that would break playthroughs",
-          brokenLinks: [{ nodeId: "node-choice", handle: "option:opt-2", targetId: "" }],
-          deadEnds: ["node-page"],
-          unreachable: [],
+          error: "This experience has problems that would break playthroughs",
+          errors: [{ code: "dangling_link", message: "A link points nowhere.", nodeId: "node-choice" }],
+          warnings: [],
         },
         400
       )

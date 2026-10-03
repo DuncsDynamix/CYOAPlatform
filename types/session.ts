@@ -3,7 +3,7 @@
 export interface SessionState {
   flags: Record<string, string | boolean>   // string and boolean only — numbers go to counters
   counters: Record<string, number>          // numeric accumulators, separate from flags
-  returnStack: string[]                     // Phase 2: subroutine return addresses
+  returnStack: string[]                     // Unused; kept for stored-state compatibility
   choicesMade: number
   nodesVisited: string[]
 

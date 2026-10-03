@@ -1,11 +1,11 @@
-import type { Node, ChoiceNode, FixedNode, GeneratedNode, CheckpointNode, DialogueNode, EvaluativeNode, ObservedDialogueNode, SlideDeckNode, SubroutineCallNode } from "@/types/experience"
+import type { Node, ChoiceNode, FixedNode, GeneratedNode, CheckpointNode, DialogueNode, EvaluativeNode, ObservedDialogueNode, SlideDeckNode, Experience, Segment } from "@/types/experience"
 
 // Pure graph logic shared by the authoring canvas, publish-time validation,
 // and session-start safety checks. Edges are always *derived* from node
 // fields — the node JSON stays the single source of truth.
 
 export interface ChildLink {
-  /** Stable handle id: "next", "failure", "call", "return", or "option:<optionId>". */
+  /** Stable handle id: "next", "failure", or "option:<optionId>". */
   handle: string
   /** Current link target — empty string when the slot is unset. */
   targetId: string
@@ -13,10 +13,10 @@ export interface ChildLink {
 }
 
 /** Node types a session can start on — mirrors findFirstNodeId in the executor. */
-const START_TYPES = new Set<Node["type"]>(["FIXED", "GENERATED", "SLIDE_DECK"])
+export const START_TYPES = new Set<Node["type"]>(["FIXED", "GENERATED", "SLIDE_DECK"])
 
 /** Node types that legitimately have no outgoing links. */
-const TERMINAL_TYPES = new Set<Node["type"]>(["ENDPOINT", "SUBROUTINE_RETURN"])
+export const TERMINAL_TYPES = new Set<Node["type"]>(["ENDPOINT"])
 
 export function getChildLinks(node: Node): ChildLink[] {
   switch (node.type) {
@@ -48,14 +48,7 @@ export function getChildLinks(node: Node): ChildLink[] {
       return [{ handle: "next", targetId: (node as ObservedDialogueNode).nextNodeId ?? "" }]
     case "SLIDE_DECK":
       return [{ handle: "next", targetId: (node as SlideDeckNode).nextNodeId ?? "" }]
-    case "SUBROUTINE_CALL": {
-      const sc = node as SubroutineCallNode
-      const links: ChildLink[] = [{ handle: "call", targetId: sc.targetNodeId ?? "", label: "call" }]
-      if (sc.returnNodeId) links.push({ handle: "return", targetId: sc.returnNodeId, label: "return" })
-      return links
-    }
     case "ENDPOINT":
-    case "SUBROUTINE_RETURN":
       return []
   }
 }
@@ -139,4 +132,16 @@ export function validateExperienceGraph(nodes: Node[]): GraphValidationResult {
     deadEnds,
     unreachable,
   }
+}
+
+/**
+ * Flattens an experience into one traversable node list. Segments are an
+ * authoring-only concept, so the engine always sees one flat graph.
+ */
+export function getAllNodes(experience: Pick<Experience, "nodes" | "segments">): Node[] {
+  const segments = (experience.segments ?? []) as Segment[]
+  if (segments.length > 0) {
+    return [...segments].sort((a, b) => a.order - b.order).flatMap((s) => s.nodes)
+  }
+  return experience.nodes ?? []
 }
