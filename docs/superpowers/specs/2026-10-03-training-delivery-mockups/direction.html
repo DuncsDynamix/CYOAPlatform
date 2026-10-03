@@ -1,0 +1,109 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Inter:wght@400;500;600&display=swap');
+.dirs{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:8px}
+@media(max-width:1100px){.dirs{grid-template-columns:1fr}}
+.dir{border:2px solid var(--border);border-radius:12px;padding:12px;background:var(--bg-secondary);cursor:pointer}
+.dir.selected{border-color:var(--selected-border);background:var(--selected-bg)}
+.dir h3{margin:4px 4px 2px}.dir p.d{margin:0 4px 10px;font-size:.85rem;color:var(--text-secondary)}
+.phone{width:100%;max-width:340px;margin:0 auto;border-radius:22px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.18);border:6px solid #111}
+/* --- A: Field manual --- */
+.a{background:#F7F4EE;font-family:'Open Sans',sans-serif;color:#1F2124}
+.a .hd{background:#1F2124;padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+.a .hd img{height:42px}.a .hd span{color:#C9CBD0;font-size:11px}
+.a .hero{position:relative;height:120px;background:url(EUSR-SHEA-Water-1.jpg) center/cover}
+.a .hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(31,33,36,.05),rgba(31,33,36,.85))}
+.a .hero div{position:absolute;left:14px;bottom:10px;z-index:1;color:#fff;font-family:Montserrat;font-weight:700;font-size:17px;line-height:1.15}
+.a .hero small{display:block;font-family:'Open Sans';font-weight:400;font-size:11px;color:#E8D9B0;margin-bottom:3px;letter-spacing:.06em;text-transform:uppercase}
+.a .bd{padding:14px}
+.a .sec{font-family:Montserrat;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#7A5F1A;margin:4px 0 8px;display:flex;align-items:center;gap:8px}
+.a .sec::before{content:'';width:10px;height:10px;border-radius:50%;background:#C09F51}
+.a .card{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(31,33,36,.12);margin-bottom:10px;display:flex}
+.a .card .im{width:86px;background:url(NRSWA-Signing-Lighting-Guarding-Operative.jpg) center/cover;flex:none}
+.a .card .tx{padding:10px 12px}.a .card b{font-family:Montserrat;font-size:13px;display:block;margin-bottom:3px}
+.a .card i{font-style:normal;font-size:11px;color:#5D6168}
+.a .pill{display:inline-block;margin-top:6px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:#1F2124;color:#fff}
+.a .btn{display:block;text-align:center;background:#C09F51;color:#1F2124;font-family:Montserrat;font-weight:700;font-size:13px;padding:11px;border-radius:8px;margin-top:4px}
+/* --- B: Editorial document --- */
+.b{background:#FFFFFF;font-family:Inter,sans-serif;color:#22252A}
+.b .hd{padding:14px 16px;border-bottom:1px solid #ECE7DC;display:flex;align-items:center;justify-content:space-between}
+.b .hd img{height:42px}.b .hd span{color:#8A8E95;font-size:11px}
+.b .bd{padding:18px 16px}
+.b .eyb{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#7A5F1A;font-weight:600}
+.b h4{font-family:'Source Serif 4',serif;font-weight:600;font-size:22px;line-height:1.2;margin:6px 0 6px}
+.b .lede{font-size:12px;color:#5D6168;line-height:1.5;margin:0 0 14px}
+.b .rule{height:1px;background:#C09F51;opacity:.6;margin:14px 0}
+.b .row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #F0ECE3}
+.b .row .im{width:64px;height:64px;border-radius:6px;background:url(NRSWA-Signing-Lighting-Guarding-Operative.jpg) center/cover;flex:none}
+.b .row b{font-family:'Source Serif 4',serif;font-weight:600;font-size:14px;display:block}
+.b .row i{font-style:normal;font-size:11px;color:#6B7078}
+.b .st{font-size:10px;color:#2F6B47;font-weight:600;margin-top:4px;display:block}
+.b .btn{display:block;text-align:center;border:1.5px solid #22252A;color:#22252A;font-weight:600;font-size:13px;padding:10px;border-radius:6px;margin-top:14px}
+/* --- C: Bold brand --- */
+.c{background:#FFFFFF;font-family:Montserrat,sans-serif;color:#111}
+.c .hd{background:#111;padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+.c .hd img{height:42px}.c .hd span{color:#C9CBD0;font-size:11px;font-weight:600}
+.c .band{background:#C09F51;padding:4px 14px 22px;color:#111}
+.c .band h4{font-weight:800;font-size:22px;line-height:1.05;margin:4px 0 6px;text-transform:uppercase}
+.c .band p{margin:0;font-size:12px;font-family:'Open Sans'}
+.c .bd{padding:14px;margin-top:-14px}
+.c .card{background:#111;color:#fff;border-radius:14px;padding:14px;margin-bottom:10px}
+.c .card b{font-weight:800;font-size:14px;display:block;text-transform:uppercase}
+.c .card i{font-style:normal;font-size:11px;color:#C9CBD0;font-family:'Open Sans'}
+.c .card .go{display:inline-block;margin-top:10px;background:#C09F51;color:#111;font-weight:800;font-size:11px;padding:6px 12px;border-radius:99px}
+.c .card.lt{background:#F4EEDF;color:#111}.c .card.lt i{color:#555}
+.why{font-size:.8rem;color:var(--text-secondary);margin:10px 4px 0;line-height:1.45}
+</style>
+
+<h2>Which base direction should the brand system be built on?</h2>
+<p class="subtitle">The same Gold Tap pack (logo, gold #C09F51, near-black #1F2124) in three directions, each shown as the training library at phone width. The direction sets the platform's fixed design; packs only change colour, logo, fonts and imagery. Click one to select it.</p>
+
+<div class="dirs">
+  <div class="dir" data-choice="a" onclick="toggleSelect(this)">
+    <h3>A. Field manual</h3>
+    <p class="d">Dark header, warm paper surface, photo hero, gold used as marks and primary action. Montserrat + Open Sans.</p>
+    <div class="phone"><div class="a">
+      <div class="hd"><img src="gt-logo-rev.png" alt=""><span>Sam Taylor</span></div>
+      <div class="hero"><div><small>Continue where you left off</small>The Doorstep: a frightened resident</div></div>
+      <div class="bd">
+        <div class="sec">Water hygiene</div>
+        <div class="card"><div class="im"></div><div class="tx"><b>Signing, lighting and guarding</b><i>Scenario · 15 min</i><br><span class="pill">Record available</span></div></div>
+        <div class="card"><div class="im" style="background-image:url(EUSR-SHEA-Water-1.jpg)"></div><div class="tx"><b>National Water Hygiene</b><i>Course · 25 questions</i></div></div>
+        <span class="btn">Resume The Doorstep</span>
+      </div>
+    </div></div>
+    <p class="why">Feels practical and on-site; strong on phones; dark header carries any logo well.</p>
+  </div>
+
+  <div class="dir" data-choice="b" onclick="toggleSelect(this)">
+    <h3>B. Editorial document</h3>
+    <p class="d">White, lots of space, serif headings, thin gold rules, quiet list layout. Source Serif + Inter.</p>
+    <div class="phone"><div class="b">
+      <div class="hd"><img src="gt-logo.png" alt=""><span>Sam Taylor</span></div>
+      <div class="bd">
+        <div class="eyb">Your training</div>
+        <h4>Practise the conversations that matter on site</h4>
+        <p class="lede">Six courses from Gold Tap Training. Each ends with an evidence record you can share with your manager.</p>
+        <div class="rule"></div>
+        <div class="row"><div class="im"></div><div><b>Signing, lighting and guarding</b><i>Scenario · 15 min</i><span class="st">✓ Record available</span></div></div>
+        <div class="row"><div class="im" style="background-image:url(EUSR-SHEA-Water-1.jpg)"></div><div><b>The Doorstep</b><i>Scenario · 20 min</i></div></div>
+        <span class="btn">Resume The Doorstep</span>
+      </div>
+    </div></div>
+    <p class="why">Reads as premium and calm; naturally matches a printed evidence record; less energetic on phones.</p>
+  </div>
+
+  <div class="dir" data-choice="c" onclick="toggleSelect(this)">
+    <h3>C. Bold brand</h3>
+    <p class="d">Brand colour as large fills, heavy uppercase headings, dark cards. Montserrat throughout.</p>
+    <div class="phone"><div class="c">
+      <div class="hd"><img src="gt-logo-rev.png" alt=""><span>Sam Taylor</span></div>
+      <div class="band"><h4>Tap into your potential</h4><p>Six courses. One evidence record each.</p></div>
+      <div class="bd">
+        <div class="card"><b>The Doorstep</b><i>Scenario · 20 min · in progress</i><br><span class="go">Resume</span></div>
+        <div class="card lt"><b>Signing, lighting and guarding</b><i>Scenario · 15 min · record available</i></div>
+        <div class="card lt"><b>National Water Hygiene</b><i>Course · 25 questions</i></div>
+      </div>
+    </div></div>
+    <p class="why">Most "Gold Tap" at a glance; but the brand colour does the heavy lifting, so a weaker palette (or a client with pale colours) looks worse.</p>
+  </div>
+</div>

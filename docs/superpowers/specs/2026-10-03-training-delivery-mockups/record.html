@@ -1,0 +1,120 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Open+Sans:ital,wght@0,400;0,600;1,400&display=swap');
+.recs{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:1200px){.recs{grid-template-columns:1fr}}
+.opt{border:2px solid var(--border);border-radius:12px;padding:12px;background:var(--bg-secondary);cursor:pointer}
+.opt.selected{border-color:var(--selected-border);background:var(--selected-bg)}
+.opt h3{margin:4px 4px 2px}.opt p.d{margin:0 4px 10px;font-size:.85rem;color:var(--text-secondary)}
+.why{font-size:.8rem;color:var(--text-secondary);margin:10px 4px 0;line-height:1.45}
+.a4{width:100%;max-width:380px;aspect-ratio:210/297;margin:0 auto;background:#fff;box-shadow:0 4px 20px rgba(0,0,0,.18);font-family:'Open Sans',sans-serif;color:#1F2124;font-size:7.4px;line-height:1.4;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.pg2{margin-top:10px;aspect-ratio:210/120}
+.mh{font-family:Montserrat}
+.top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:3px solid #C09F51}
+.top img{height:30px}.top .r{text-align:right;color:#5D6168;font-size:6.5px}.top .r b{display:block;font-family:Montserrat;font-size:9px;color:#1F2124;letter-spacing:.06em;text-transform:uppercase}
+.body{padding:10px 16px;flex:1}
+.idg{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:9px}
+.idg span{display:block;color:#6B7078;font-size:6px;text-transform:uppercase;letter-spacing:.07em}.idg b{font-weight:600;font-size:7.6px}
+.verdict{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:6px;margin-bottom:9px}
+.verdict .ic{width:20px;height:20px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:11px}
+.verdict b{font-family:Montserrat;font-size:10.5px;display:block}
+.v-inc{background:#EEF0F3;border:1px solid #C5CAD1}.v-inc .ic{background:#5B6572}
+.v-pass{background:#E7F2EB;border:1px solid #A9CDB6}.v-pass .ic{background:#2F6B47}
+.h{font-family:Montserrat;font-weight:700;font-size:7px;letter-spacing:.09em;text-transform:uppercase;color:#7A5F1A;margin:8px 0 5px;display:flex;align-items:center;gap:5px}
+.h::before{content:'';width:6px;height:6px;border-radius:50%;background:#C09F51}
+.chip{display:inline-block;font-size:6px;font-weight:600;padding:1px 6px;border-radius:99px;white-space:nowrap}
+.c-p{background:#E7F2EB;color:#245A3A}.c-n{background:#F8E6E3;color:#8E2B22}.c-na{background:#fff;color:#4A535E;border:1px dashed #8A929C}
+table.cr{width:100%;border-collapse:collapse}table.cr td{padding:4px 0;border-bottom:1px solid #EEE9DF;vertical-align:top}
+table.cr td.s{width:62px;text-align:right}
+q{font-style:italic;color:#3F444B}
+.card{border:1px solid #E5DFD2;border-left:3px solid var(--k);border-radius:4px;padding:6px 8px;margin-bottom:6px}
+.card .t{display:flex;justify-content:space-between;gap:6px;font-weight:600;font-size:7.6px;margin-bottom:3px}
+.card blockquote{margin:3px 0;padding:3px 7px;background:#F7F4EE;border-radius:3px;font-style:italic}
+.card .n{color:#5D6168;font-size:6.6px}
+.acc{display:flex;gap:7px;align-items:center;border-top:1px solid #EEE9DF;padding-top:7px;margin-top:6px}
+.acc img{height:22px}.acc small{color:#6B7078;font-size:5.8px;display:block}
+.foot{padding:7px 16px;background:#1F2124;color:#C9CBD0;font-size:5.8px;display:flex;justify-content:space-between}
+.tr p{margin:0 0 4px}.tr b{font-family:Montserrat;font-size:6.6px}
+/* certificate */
+.cert{align-items:center;text-align:center;justify-content:center;padding:24px;border:10px solid #F7F4EE;outline:1.5px solid #C09F51;outline-offset:-16px}
+.cert img{height:38px;margin-bottom:12px}
+.cert .k{font-family:Montserrat;font-size:7px;letter-spacing:.2em;text-transform:uppercase;color:#7A5F1A}
+.cert .nm{font-family:Montserrat;font-weight:800;font-size:20px;margin:8px 0 4px}
+.cert .co{font-size:9px;margin-bottom:12px}
+.seal{width:62px;height:62px;border-radius:50%;background:#C09F51;color:#1F2124;display:flex;align-items:center;justify-content:center;font-family:Montserrat;font-weight:800;font-size:6.6px;line-height:1.2;margin:4px auto 12px;box-shadow:0 0 0 3px #fff,0 0 0 4.5px #C09F51}
+.lbl{font-size:.72rem;color:var(--text-secondary);text-align:center;margin:6px 0 0}
+</style>
+
+<h2>How should the evidence record be laid out?</h2>
+<p class="subtitle">A4 pages in the Field manual style, using an example Doorstep record where one criterion couldn't be assessed (so the verdict is "Incomplete"; the honest states have to look good too). The record has its own URL and prints to PDF from the browser. Click one to select it.</p>
+
+<div class="recs">
+
+<!-- A: summary sheet + appendix -->
+<div class="opt" data-choice="a" onclick="toggleSelect(this)">
+  <h3>A. Summary sheet + transcript appendix</h3>
+  <p class="d">Page 1 is everything a manager files: who, what, verdict, each criterion with a short quote. The full conversation follows as an appendix.</p>
+  <div class="a4">
+    <div class="top"><img src="gt-logo.png" alt=""><div class="r"><b>Evidence record</b>Ref GT-7F3K-2Q9D</div></div>
+    <div class="body">
+      <div class="idg">
+        <div><span>Learner</span><b>Sam Taylor</b></div><div><span>Completed</span><b>3 October 2026, 14:22</b></div>
+        <div><span>Course</span><b>The Doorstep</b></div><div><span>Issued by</span><b>Gold Tap Training</b></div>
+      </div>
+      <div class="verdict v-inc"><div class="ic">!</div><div><b class="mh">Incomplete</b>3 of 4 criteria assessed: 3 demonstrated. One could not be assessed and can be re-run.</div></div>
+      <div class="h">Criteria</div>
+      <table class="cr">
+        <tr><td><b>Introduces self and reason for visit</b><br><q>Hi, I'm Sam from Thames Water, I'm here about the burst main on your road.</q></td><td class="s"><span class="chip c-p">Demonstrated</span></td></tr>
+        <tr><td><b>Explains the interruption plainly</b><br><q>Your water will be off for about four hours while we fix it.</q></td><td class="s"><span class="chip c-p">Demonstrated</span></td></tr>
+        <tr><td><b>Offers vulnerable-customer support</b><br><q>Is there anyone at home who needs water for medical reasons?</q></td><td class="s"><span class="chip c-p">Demonstrated</span></td></tr>
+        <tr><td><b>De-escalates the hostile resident</b><br><span style="color:#6B7078">The assessment service did not respond. This is not a judgement of the learner.</span></td><td class="s"><span class="chip c-na">Not assessed</span></td></tr>
+      </table>
+      <div class="h">Reflection</div>
+      <div style="color:#3F444B">Sam stayed courteous throughout and checked for vulnerable residents early. Next time, confirm the restoration time before leaving.</div>
+      <div class="acc"><img src="EUSRsmall-300x300.png" alt=""><div><b>Prepares for EUSR National Water Hygiene</b><small>This record evidences performance in this scenario. It is not a certificate from EUSR.</small></div></div>
+    </div>
+    <div class="foot"><span>Page 1 of 3 · Appendix: full conversation</span><span>Verify: app.audrill.com/r/GT-7F3K-2Q9D</span></div>
+  </div>
+  <div class="a4 pg2"><div class="body tr"><div class="h">Appendix · Conversation with Mrs Okafor</div><p><b>Mrs Okafor:</b> Who are you? What's going on out there?</p><p><b>Sam:</b> Hi, I'm Sam from Thames Water, I'm here about the burst main on your road.</p><p><b>Mrs Okafor:</b> Will I have water for my husband's dialysis?</p></div></div>
+  <p class="why">Fast to read and file; one page is the whole verdict. Quotes are short, so the appendix carries the detail.</p>
+</div>
+
+<!-- B: criterion cards -->
+<div class="opt" data-choice="b" onclick="toggleSelect(this)">
+  <h3>B. Criterion cards</h3>
+  <p class="d">Each criterion is a card with the learner's quoted words and the assessor's note. Decisions summarised after. Transcript via a link, not printed.</p>
+  <div class="a4">
+    <div class="top"><img src="gt-logo.png" alt=""><div class="r"><b>Evidence record</b>Ref GT-7F3K-2Q9D</div></div>
+    <div class="body">
+      <div class="idg">
+        <div><span>Learner</span><b>Sam Taylor</b></div><div><span>Completed</span><b>3 October 2026, 14:22</b></div>
+        <div><span>Course</span><b>The Doorstep</b></div><div><span>Issued by</span><b>Gold Tap Training</b></div>
+      </div>
+      <div class="verdict v-inc"><div class="ic">!</div><div><b class="mh">Incomplete</b>3 demonstrated, 1 not assessed</div></div>
+      <div class="card" style="--k:#2F6B47"><div class="t">Introduces self and reason for visit<span class="chip c-p">Demonstrated</span></div><blockquote>"Hi, I'm Sam from Thames Water, I'm here about the burst main on your road."</blockquote><div class="n">Gave name, employer and purpose before asking anything of the resident.</div></div>
+      <div class="card" style="--k:#2F6B47"><div class="t">Offers vulnerable-customer support<span class="chip c-p">Demonstrated</span></div><blockquote>"Is there anyone at home who needs water for medical reasons?"</blockquote><div class="n">Raised the Priority Services Register unprompted.</div></div>
+      <div class="card" style="--k:#8A929C"><div class="t">De-escalates the hostile resident<span class="chip c-na">Not assessed</span></div><div class="n">The assessment service did not respond. This is not a judgement of the learner.</div></div>
+      <div class="h">Key decisions</div>
+      <div style="color:#3F444B">Chose to knock again rather than leave a card · Stayed on the doorstep when shouted at</div>
+    </div>
+    <div class="foot"><span>Page 1 of 2</span><span>Verify: app.audrill.com/r/GT-7F3K-2Q9D</span></div>
+  </div>
+  <p class="why">Richest evidence per criterion; reads well on screen. Runs to 2 pages for most courses, and the verdict shares page 1 with detail.</p>
+</div>
+
+<!-- C: certificate front -->
+<div class="opt" data-choice="c" onclick="toggleSelect(this)">
+  <h3>C. Certificate front page</h3>
+  <p class="d">A ceremonial cover (name, course, seal), with the summary sheet from A behind it.</p>
+  <div class="a4 cert">
+    <img src="gt-logo.png" alt="">
+    <div class="k">Record of scenario performance</div>
+    <div class="nm">Sam Taylor</div>
+    <div class="co">The Doorstep · 3 October 2026</div>
+    <div class="seal">COMPETENCE<br>DEMONSTRATED</div>
+    <div style="color:#5D6168;font-size:6.6px">Issued by Gold Tap Training · Ref GT-7F3K-2Q9D</div>
+  </div>
+  <p class="lbl">(shown with a passed verdict; an "Incomplete" seal looks odd)</p>
+  <p class="why">Feels most like a reward. Risk: a certificate look reads as accreditation, which is exactly the overclaim we're guarding against, and it handles Incomplete / Not yet demonstrated badly.</p>
+</div>
+
+</div>

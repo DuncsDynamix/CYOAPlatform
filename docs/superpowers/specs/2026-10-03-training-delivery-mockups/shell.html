@@ -1,0 +1,134 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Open+Sans:ital,wght@0,400;0,600;1,400&display=swap');
+.row{border:2px solid var(--border);border-radius:12px;padding:12px 14px;background:var(--bg-secondary);cursor:pointer;margin-bottom:18px}
+.row.selected{border-color:var(--selected-border);background:var(--selected-bg)}
+.row h3{margin:2px 0}.row p.d{margin:0 0 10px;font-size:.85rem;color:var(--text-secondary)}
+.pair{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+.lap{flex:1 1 560px;max-width:700px;border:8px solid #2a2a2c;border-bottom-width:14px;border-radius:10px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.ph{flex:0 0 240px;border:6px solid #111;border-radius:22px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.scr{font-family:'Open Sans',sans-serif;color:#1F2124;background:#F7F4EE;font-size:11px;display:flex;flex-direction:column}
+.lap .scr{height:380px}.ph .scr{height:470px}
+.hd{background:#1F2124;color:#fff;display:flex;align-items:center;gap:10px;padding:8px 12px;flex:none}
+.hd img{height:28px}.mk{width:26px;height:26px;overflow:hidden;flex:none;display:block}.mk img{height:28px;margin:-1px 0 0 -1px}.hd .t{flex:1;min-width:0}.hd .t b{font-family:Montserrat;font-size:11.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hd .t span{font-size:9.5px;color:#C9CBD0}
+.ib{width:26px;height:26px;border-radius:7px;background:#34373C;display:flex;align-items:center;justify-content:center;font-size:12px;color:#E8D9B0;flex:none}
+/* stepper A */
+.step{display:flex;background:#fff;border-bottom:1px solid #E5DFD2;flex:none}
+.step div{flex:1;padding:6px 8px;font-size:9.5px;color:#8A8E95;border-bottom:3px solid transparent;display:flex;gap:5px;align-items:center;font-family:Montserrat;font-weight:600}
+.step .dn{color:#3F444B}.step .dn::before{content:'✓';color:#2F6B47}
+.step .cu{color:#1F2124;border-bottom-color:#C09F51}
+.step .cu::before{content:'';width:7px;height:7px;border-radius:50%;background:#C09F51}
+.mstep{background:#fff;border-bottom:1px solid #E5DFD2;padding:6px 12px;flex:none}
+.mstep b{font-family:Montserrat;font-size:10px}.mstep span{font-size:9px;color:#6B7078;float:right}
+.seg{display:flex;gap:3px;margin-top:5px}.seg i{flex:1;height:4px;border-radius:2px;background:#E5DFD2}.seg i.f{background:#C09F51}.seg i.h{background:linear-gradient(90deg,#C09F51 50%,#E5DFD2 50%)}
+/* bar B */
+.barb{display:flex;gap:3px;padding:0 12px 8px;background:#1F2124;flex:none}.barb i{flex:1;height:3px;border-radius:2px;background:#45484E}.barb i.f{background:#C09F51}.barb i.h{background:linear-gradient(90deg,#C09F51 50%,#45484E 50%)}
+/* rail C */
+.wrap{display:flex;flex:1;min-height:0}
+.rail{width:150px;background:#fff;border-right:1px solid #E5DFD2;padding:12px 10px;flex:none}
+.rail .k{font-size:8.5px;text-transform:uppercase;letter-spacing:.08em;color:#7A5F1A;font-family:Montserrat;font-weight:700;margin-bottom:8px}
+.rail div{display:flex;gap:7px;align-items:center;padding:5px 0;font-size:10px;color:#8A8E95}
+.rail div i{width:14px;height:14px;border-radius:50%;border:1.5px solid #CFC8B8;flex:none;font-style:normal;font-size:8px;display:flex;align-items:center;justify-content:center}
+.rail .dn{color:#3F444B}.rail .dn i{background:#2F6B47;border-color:#2F6B47;color:#fff}
+.rail .cu{color:#1F2124;font-weight:600}.rail .cu i{border-color:#C09F51;background:#C09F51}
+/* dialogue */
+.dlg{flex:1;display:flex;flex-direction:column;min-height:0;min-width:0}
+.per{display:flex;align-items:center;gap:9px;padding:8px 12px;background:#fff;border-bottom:1px solid #EEE9DF;flex:none}
+.av{width:30px;height:30px;border-radius:50%;background:#6E5A86;color:#fff;font-family:Montserrat;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;flex:none}
+.per b{font-family:Montserrat;font-size:11px;display:block}.per span{font-size:9px;color:#6B7078}
+.per .tc{margin-left:auto;font-size:9px;color:#6B7078;white-space:nowrap}
+.msgs{flex:1;overflow:hidden;padding:10px 12px;display:flex;flex-direction:column;gap:7px;justify-content:flex-end}
+.m{max-width:78%;padding:7px 10px;border-radius:12px;line-height:1.4}
+.m.them{background:#fff;border:1px solid #E5DFD2;border-bottom-left-radius:3px;align-self:flex-start}
+.m.me{background:#1F2124;color:#fff;border-bottom-right-radius:3px;align-self:flex-end}
+.typ{align-self:flex-start;background:#fff;border:1px solid #E5DFD2;border-radius:12px;padding:7px 10px;color:#8A8E95;letter-spacing:2px}
+.cmp{display:flex;gap:7px;padding:8px 10px;background:#fff;border-top:1px solid #E5DFD2;flex:none}
+.cmp div{flex:1;border:1px solid #CFC8B8;border-radius:18px;padding:7px 11px;color:#8A8E95}
+.cmp b{background:#C09F51;color:#1F2124;border-radius:18px;padding:7px 12px;font-family:Montserrat;font-size:10px}
+.why{font-size:.8rem;color:var(--text-secondary);margin:10px 0 0;line-height:1.45}
+</style>
+
+<h2>How should progress and the in-scenario shell look?</h2>
+<p class="subtitle">The Doorstep's conversation screen, laptop and phone, in each treatment. Progress counts stages (Briefing, Doorstep 1, Doorstep 2, Review), not screens. All three share the same new conversation design: persona avatar, typing indicator, composer pinned to the bottom, one scroll area. Click one.</p>
+
+<!-- A -->
+<div class="row" data-choice="a" onclick="toggleSelect(this)">
+  <h3>A. Named stage stepper</h3>
+  <p class="d">Stages spelled out under the header on laptop; on phone, "Stage 2 of 4" with the stage name and a segmented bar.</p>
+  <div class="pair">
+    <div class="lap"><div class="scr">
+      <div class="hd"><img src="gt-logo-rev.png" alt=""><div class="t"><b>The Doorstep: Refusal-of-Entry Practice</b></div><div class="ib">☰</div><div class="ib">✎</div></div>
+      <div class="step"><div class="dn">Briefing</div><div class="cu">Doorstep 1</div><div>Doorstep 2</div><div>Review</div></div>
+      <div class="dlg">
+        <div class="per"><div class="av">MH</div><div><b>Margaret Hale</b><span>Behind the door chain, wary</span></div><span class="tc">Turn 3 of up to 8</span></div>
+        <div class="msgs"><div class="m them">I wasn't told anyone was coming. How do I know you're from the water company?</div><div class="m me">That's a fair question. I can give you a password scheme number to ring, and I'll wait here while you check.</div><div class="typ">• • •</div></div>
+        <div class="cmp"><div>Type what you'd say…</div><b>Send</b></div>
+      </div>
+    </div></div>
+    <div class="ph"><div class="scr">
+      <div class="hd"><span class="mk"><img src="gt-logo-rev.png" alt=""></span><div class="t"><b>The Doorstep</b></div><div class="ib">☰</div><div class="ib">✎</div></div>
+      <div class="mstep"><b>Doorstep 1</b><span>Stage 2 of 4</span><div class="seg"><i class="f"></i><i class="h"></i><i></i><i></i></div></div>
+      <div class="dlg">
+        <div class="per"><div class="av">MH</div><div><b>Margaret Hale</b><span>Behind the door chain</span></div><span class="tc">3 / 8</span></div>
+        <div class="msgs"><div class="m them">How do I know you're from the water company?</div><div class="m me">Fair question. I can give you a number to ring, and I'll wait here.</div><div class="typ">• • •</div></div>
+        <div class="cmp"><div>Type what you'd say…</div><b>Send</b></div>
+      </div>
+    </div></div>
+  </div>
+  <p class="why">Always clear where you are and what's left. Costs one row of height on phone.</p>
+</div>
+
+<!-- B -->
+<div class="row" data-choice="b" onclick="toggleSelect(this)">
+  <h3>B. Stage in the header</h3>
+  <p class="d">The header itself carries course name small and stage name large, with a thin segmented bar along its bottom edge. No extra row.</p>
+  <div class="pair">
+    <div class="lap"><div class="scr">
+      <div class="hd"><img src="gt-logo-rev.png" alt=""><div class="t"><span>The Doorstep: Refusal-of-Entry Practice</span><b>Doorstep 1 · stage 2 of 4</b></div><div class="ib">☰</div><div class="ib">✎</div></div>
+      <div class="barb"><i class="f"></i><i class="h"></i><i></i><i></i></div>
+      <div class="dlg">
+        <div class="per"><div class="av">MH</div><div><b>Margaret Hale</b><span>Behind the door chain, wary</span></div><span class="tc">Turn 3 of up to 8</span></div>
+        <div class="msgs"><div class="m them">I wasn't told anyone was coming. How do I know you're from the water company?</div><div class="m me">That's a fair question. I can give you a password scheme number to ring, and I'll wait here while you check.</div><div class="typ">• • •</div></div>
+        <div class="cmp"><div>Type what you'd say…</div><b>Send</b></div>
+      </div>
+    </div></div>
+    <div class="ph"><div class="scr">
+      <div class="hd"><span class="mk"><img src="gt-logo-rev.png" alt=""></span><div class="t"><span>The Doorstep</span><b>Doorstep 1 · 2 of 4</b></div><div class="ib">☰</div><div class="ib">✎</div></div>
+      <div class="barb"><i class="f"></i><i class="h"></i><i></i><i></i></div>
+      <div class="dlg">
+        <div class="per"><div class="av">MH</div><div><b>Margaret Hale</b><span>Behind the door chain</span></div><span class="tc">3 / 8</span></div>
+        <div class="msgs"><div class="m them">How do I know you're from the water company?</div><div class="m me">Fair question. I can give you a number to ring, and I'll wait here.</div><div class="typ">• • •</div></div>
+        <div class="cmp"><div>Type what you'd say…</div><b>Send</b></div>
+      </div>
+    </div></div>
+  </div>
+  <p class="why">Most screen space for the conversation, especially on phone. Upcoming stage names aren't visible.</p>
+</div>
+
+<!-- C -->
+<div class="row" data-choice="c" onclick="toggleSelect(this)">
+  <h3>C. Side rail on laptop</h3>
+  <p class="d">A persistent stage list down the left on laptop (room for the course map); phone falls back to the header bar from B.</p>
+  <div class="pair">
+    <div class="lap"><div class="scr">
+      <div class="hd"><img src="gt-logo-rev.png" alt=""><div class="t"><b>The Doorstep: Refusal-of-Entry Practice</b></div><div class="ib">☰</div><div class="ib">✎</div></div>
+      <div class="wrap">
+        <div class="rail"><div class="k">Your progress</div><div class="dn"><i>✓</i>Briefing</div><div class="cu"><i></i>Doorstep 1</div><div><i></i>Doorstep 2</div><div><i></i>Coaching review</div><div><i></i>Your record</div></div>
+        <div class="dlg">
+          <div class="per"><div class="av">MH</div><div><b>Margaret Hale</b><span>Behind the door chain, wary</span></div><span class="tc">Turn 3 of up to 8</span></div>
+          <div class="msgs"><div class="m them">I wasn't told anyone was coming. How do I know you're from the water company?</div><div class="m me">That's a fair question. I can give you a password scheme number to ring, and I'll wait here.</div><div class="typ">• • •</div></div>
+          <div class="cmp"><div>Type what you'd say…</div><b>Send</b></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="ph"><div class="scr">
+      <div class="hd"><span class="mk"><img src="gt-logo-rev.png" alt=""></span><div class="t"><span>The Doorstep</span><b>Doorstep 1 · 2 of 4</b></div><div class="ib">☰</div><div class="ib">✎</div></div>
+      <div class="barb"><i class="f"></i><i class="h"></i><i></i><i></i></div>
+      <div class="dlg">
+        <div class="per"><div class="av">MH</div><div><b>Margaret Hale</b><span>Behind the door chain</span></div><span class="tc">3 / 8</span></div>
+        <div class="msgs"><div class="m them">How do I know you're from the water company?</div><div class="m me">Fair question. I can give you a number to ring, and I'll wait here.</div><div class="typ">• • •</div></div>
+        <div class="cmp"><div>Type what you'd say…</div><b>Send</b></div>
+      </div>
+    </div></div>
+  </div>
+  <p class="why">Feels like a structured course on laptop and uses wide screens well. Two different layouts to build and test; the rail is empty space on short courses.</p>
+</div>

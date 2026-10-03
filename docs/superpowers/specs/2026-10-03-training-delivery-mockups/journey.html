@@ -1,0 +1,172 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Open+Sans:ital,wght@0,400;0,600;1,400&display=swap');
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:1150px){.grid{grid-template-columns:repeat(2,1fr)}}
+.cap{font-size:.8rem;color:var(--text-secondary);margin:8px 2px 0;line-height:1.4}.cap b{color:var(--text-primary)}
+.ph{border:6px solid #111;border-radius:22px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:260px;margin:0 auto}
+.s{font-family:'Open Sans',sans-serif;color:#1F2124;background:#F7F4EE;font-size:10.5px;line-height:1.45;height:500px;display:flex;flex-direction:column;position:relative}
+.hd{background:#1F2124;color:#fff;display:flex;align-items:center;gap:8px;padding:8px 10px;flex:none}
+.mk{width:24px;height:24px;overflow:hidden;flex:none}.mk img{height:26px;margin:-1px 0 0 -1px}
+.logo{height:34px}
+.hd .t{flex:1;min-width:0}.hd .t span{display:block;font-size:8.5px;color:#C9CBD0}.hd .t b{font-family:Montserrat;font-size:10.5px;display:block}
+.ib{width:24px;height:24px;border-radius:6px;background:#34373C;display:flex;align-items:center;justify-content:center;font-size:11px;color:#E8D9B0;flex:none}
+.ib.off{opacity:.35}
+.bar{display:flex;gap:3px;padding:0 10px 7px;background:#1F2124;flex:none}.bar i{flex:1;height:3px;border-radius:2px;background:#45484E}.bar i.f{background:#C09F51}.bar i.h{background:linear-gradient(90deg,#C09F51 50%,#45484E 50%)}
+.bd{padding:12px;flex:1;overflow:hidden}
+.mh{font-family:Montserrat}
+.k{font-family:Montserrat;font-weight:700;font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:#7A5F1A;display:flex;align-items:center;gap:6px;margin:2px 0 7px}
+.k::before{content:'';width:7px;height:7px;border-radius:50%;background:#C09F51}
+.btn{display:block;text-align:center;background:#C09F51;color:#1F2124;font-family:Montserrat;font-weight:700;font-size:11px;padding:10px;border-radius:8px}
+.btn.o{background:#fff;border:1.5px solid #1F2124}
+.foot{padding:10px 12px;background:#F7F4EE;border-top:1px solid #E5DFD2;flex:none;display:flex;flex-direction:column;gap:6px}
+.card{background:#fff;border-radius:9px;box-shadow:0 1px 3px rgba(31,33,36,.12);padding:10px;margin-bottom:8px}
+.chip{display:inline-block;font-size:8.5px;font-weight:600;padding:1px 7px;border-radius:99px;white-space:nowrap}
+.c-p{background:#E7F2EB;color:#245A3A}.c-n{background:#F8E6E3;color:#8E2B22}.c-na{background:#fff;color:#4A535E;border:1px dashed #8A929C}.c-dk{background:#1F2124;color:#fff}.c-lt{background:#EFE7D3;color:#5E4A14}
+/* library */
+.hero{position:relative;height:118px;background:url(EUSR-SHEA-Water-1.jpg) center/cover;flex:none}
+.hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(31,33,36,.05),rgba(31,33,36,.88))}
+.hero div{position:absolute;left:12px;right:12px;bottom:9px;z-index:1;color:#fff;font-family:Montserrat;font-weight:700;font-size:14px;line-height:1.15}
+.hero small{display:block;font-family:'Open Sans';font-weight:400;font-size:8.5px;color:#E8D9B0;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.hero .go{display:inline-block;margin-top:6px;background:#C09F51;color:#1F2124;font-size:9.5px;padding:4px 10px;border-radius:99px}
+.lc{display:flex;background:#fff;border-radius:9px;overflow:hidden;box-shadow:0 1px 3px rgba(31,33,36,.12);margin-bottom:8px}
+.lc .im{width:70px;background:url(NRSWA-Signing-Lighting-Guarding-Operative.jpg) center/cover;flex:none}
+.lc .tx{padding:8px 9px}.lc b{font-family:Montserrat;font-size:10.5px;display:block;line-height:1.25}.lc i{font-style:normal;font-size:9px;color:#5D6168}
+.badges{display:flex;gap:3px;margin-top:4px;align-items:center}.badges img{height:24px}
+/* cover */
+.chero{height:120px;background:url(EUSR-SHEA-Water-1.jpg) center 30%/cover;position:relative;flex:none}
+.chero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(31,33,36,.1),rgba(31,33,36,.75))}
+.chero b{position:absolute;left:12px;right:12px;bottom:9px;z-index:1;color:#fff;font-family:Montserrat;font-size:15px;line-height:1.15}
+.meta{display:flex;gap:10px;font-size:9px;color:#5D6168;margin-bottom:8px}
+ul.obj{list-style:none;padding:0;margin:0 0 8px}ul.obj li{display:flex;gap:6px;margin-bottom:4px}ul.obj li::before{content:'✓';color:#2F6B47;font-weight:700}
+.stg{display:flex;gap:4px;margin-bottom:8px}.stg span{flex:1;background:#fff;border:1px solid #E5DFD2;border-radius:6px;padding:4px;text-align:center;font-size:8.5px;font-family:Montserrat;font-weight:600}
+.part{display:flex;gap:6px;align-items:center;background:#fff;border-radius:7px;padding:5px 7px;font-size:8.5px}.part img{height:30px}
+.note{font-size:8.5px;color:#4A4F57;margin-top:6px}
+/* scene */
+.paper{background:#fff;border-radius:9px;padding:13px;box-shadow:0 1px 3px rgba(31,33,36,.1);font-size:11px;line-height:1.6}
+.paper h5{font-family:Montserrat;font-size:13px;margin:0 0 6px;line-height:1.2}
+/* skeleton */
+.sk{background:linear-gradient(90deg,#EEE8DB 0%,#F7F2E7 50%,#EEE8DB 100%);border-radius:5px;height:9px;margin-bottom:7px}
+/* decision */
+.opt{background:#fff;border:1.5px solid #E5DFD2;border-radius:9px;padding:9px;margin-bottom:7px;display:flex;gap:8px}
+.opt .l{width:20px;height:20px;border-radius:50%;background:#F7F4EE;border:1.5px solid #CFC8B8;font-family:Montserrat;font-weight:700;font-size:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.opt.sel{border-color:#1F2124;box-shadow:0 0 0 1px #1F2124}.opt.sel .l{background:#1F2124;color:#fff;border-color:#1F2124}
+.closed{font-size:8.5px;color:#5D6168;display:flex;align-items:center;gap:5px;margin-bottom:8px}
+/* feedback */
+.fb{border-left:3px solid #2F6B47;background:#fff;border-radius:0 9px 9px 0;padding:10px;margin-bottom:8px}
+.fb .tl{font-family:Montserrat;font-weight:700;font-size:11px;color:#245A3A;margin-bottom:3px}
+/* assessment */
+.cr{background:#fff;border-radius:9px;padding:8px 9px;margin-bottom:6px;box-shadow:0 1px 2px rgba(31,33,36,.1)}
+.cr .t{display:flex;justify-content:space-between;gap:6px;font-weight:600;font-size:10px;margin-bottom:3px}
+.cr q{font-style:italic;color:#3F444B;font-size:9.5px}
+.cr .n{font-size:9px;color:#5D6168}
+/* debrief */
+.dhero{background:#1F2124;color:#fff;padding:14px 12px;flex:none}
+.dhero small{color:#E8D9B0;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase}
+.dhero b{display:block;font-family:Montserrat;font-size:15px;margin:3px 0 8px}
+.ver{display:flex;gap:8px;align-items:center;background:#EEF0F3;color:#1F2124;border-radius:8px;padding:8px}
+.ver .ic{width:20px;height:20px;border-radius:50%;background:#5B6572;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.rec{background:#fff;border-radius:9px;padding:10px;box-shadow:0 1px 3px rgba(31,33,36,.12);display:flex;gap:9px;align-items:center;margin-bottom:8px}
+.rec .doc{width:34px;height:46px;background:#fff;border:1px solid #E5DFD2;border-top:3px solid #C09F51;border-radius:2px;flex:none}
+</style>
+
+<h2>The learner journey in Direction A</h2>
+<p class="subtitle">Every screen, phone width, Gold Tap pack. Not options this time: tell me what's off. Laptop gets the same screens with a wider reading column, a two-column library grid and the cover's hero beside its details.</p>
+
+<div class="grid">
+
+<div><div class="ph"><div class="s">
+  <div class="hd"><img class="logo" src="gt-logo-rev.png" alt=""><div class="t"></div><span style="font-size:9px;color:#C9CBD0">Sam Taylor</span></div>
+  <div class="hero"><div><small>Continue where you left off</small>The Doorstep: Refusal-of-Entry Practice<br><span class="go">Resume · stage 2 of 4</span></div></div>
+  <div class="bd">
+    <div class="k">Practice and rehearsal</div>
+    <div class="lc"><div class="im" style="background-image:url(EUSR-SHEA-Water-1.jpg)"></div><div class="tx"><b>Valve operations: the night call</b><i>Scenario · 20 min</i><div class="badges"><span class="chip c-p">Record: demonstrated</span></div></div></div>
+    <div class="k">Certification</div>
+    <div class="lc"><div class="im"></div><div class="tx"><b>National Water Hygiene</b><i>Course · 25 questions</i><div class="badges"><img src="EUSRsmall-300x300.png" alt=""><span class="chip c-lt">Not started</span></div></div></div>
+  </div>
+</div></div><p class="cap"><b>1. Library.</b> Resume hero, aligned sections, card imagery from <code>presentation</code>, status per course, accreditation badges.</p></div>
+
+<div><div class="ph"><div class="s">
+  <div class="hd"><span class="mk"><img src="gt-logo-rev.png" alt=""></span><div class="t"><b>Course</b></div><div class="ib">✕</div></div>
+  <div class="chero"><b>The Doorstep: Refusal-of-Entry Practice</b></div>
+  <div class="bd">
+    <div class="meta"><span>⏱ About 20 min</span><span>💬 2 conversations</span></div>
+    <div class="stg"><span>Briefing</span><span>Doorstep 1</span><span>Doorstep 2</span><span>Review</span></div>
+    <div class="k">You will practise</div>
+    <ul class="obj"><li>Verifying identity on the customer's terms</li><li>Staying level when a resident is hostile</li><li>Treating refusal as a valid outcome</li></ul>
+    <div class="part"><img src="EUSRsmall-300x300.png" alt=""><span><b>Prepares for</b> EUSR National Water Hygiene</span></div>
+    <p class="note">What you say is assessed by AI against Gold Tap's criteria. Anything that can't be assessed is marked as such, never as a fail.</p>
+  </div>
+  <div class="foot"><span class="btn">Start</span></div>
+</div></div><p class="cap"><b>2. Cover.</b> Hero image, stage map, objectives as a real list, "Part of" strip, readable disclosure, sticky Start.</p></div>
+
+<div><div class="ph"><div class="s">
+  <div class="hd"><span class="mk"><img src="gt-logo-rev.png" alt=""></span><div class="t"><span>The Doorstep</span><b>Doorstep 2 · 3 of 4</b></div><div class="ib">☰</div><div class="ib">✎</div></div>
+  <div class="bar"><i class="f"></i><i class="f"></i><i class="h"></i><i></i></div>
+  <div class="bd">
+    <div class="paper"><h5>Already angry</h5>Number 14 has the door open before you reach the gate. Dean Currie is in his work boots, phone in hand, and he has clearly been waiting for someone to blame. Behind him a kettle clicks off. "Third time this month," he says. "Go on then. Tell me it's someone else's fault."</div>
+  </div>
+  <div class="foot"><span class="btn">Continue</span></div>
+</div></div><p class="cap"><b>3. Scene.</b> Prose on a paper card with a scene title; comfortable reading size; sticky Continue. Layout templates (image left, quote...) restyled to match.</p></div>
+
+<div><div class="ph"><div class="s">
+  <div class="hd"><span class="mk"><img src="gt-logo-rev.png" alt=""></span><div class="t"><span>The Doorstep</span><b>Doorstep 2 · 3 of 4</b></div><div class="ib">☰</div><div class="ib">✎</div></div>
+  <div class="bar"><i class="f"></i><i class="f"></i><i class="h"></i><i></i></div>
+  <div class="bd">
+    <div class="k">Setting the scene</div>
+    <div class="mh" style="font-weight:700;font-size:13px;margin-bottom:10px">Doorstep 2: already angry</div>
+    <div class="paper"><div class="sk" style="width:55%;height:12px"></div><div class="sk"></div><div class="sk"></div><div class="sk" style="width:85%"></div><div class="sk"></div><div class="sk" style="width:60%"></div></div>
+  </div>
+</div></div><p class="cap"><b>4. Waiting.</b> Stage-aware line, then a shimmering skeleton the shape of the coming screen. Assessment wait reads "Reviewing your two doorsteps against 5 criteria".</p></div>
+
+<div><div class="ph"><div class="s">
+  <div class="hd"><span class="mk"><img src="gt-logo-rev.png" alt=""></span><div class="t"><span>Valve operations</span><b>The night call · 2 of 3</b></div><div class="ib off">☰</div><div class="ib off">✎</div></div>
+  <div class="bar"><i class="f"></i><i class="h"></i><i></i></div>
+  <div class="bd">
+    <div class="closed">🔒 Notes are closed while you decide</div>
+    <div class="mh" style="font-weight:700;font-size:12.5px;margin-bottom:9px">The pressure is still dropping. What do you do first?</div>
+    <div class="opt"><span class="l">A</span>Close the next valve downstream and call it in</div>
+    <div class="opt sel"><span class="l">B</span>Ring control and confirm the isolation plan before touching anything</div>
+    <div class="opt"><span class="l">C</span>Wait for the supervisor to arrive</div>
+  </div>
+  <div class="foot"><span class="btn">Confirm choice</span></div>
+</div></div><p class="cap"><b>5. Decision.</b> Big tappable options, explicit confirm, closed-book state shown rather than silently disabled.</p></div>
+
+<div><div class="ph"><div class="s">
+  <div class="hd"><span class="mk"><img src="gt-logo-rev.png" alt=""></span><div class="t"><span>Valve operations</span><b>The night call · 2 of 3</b></div><div class="ib off">☰</div><div class="ib off">✎</div></div>
+  <div class="bar"><i class="f"></i><i class="h"></i><i></i></div>
+  <div class="bd">
+    <div class="k">Your choice</div>
+    <div class="card" style="font-weight:600">Ring control and confirm the isolation plan before touching anything</div>
+    <div class="fb"><div class="tl">✓ Strong call</div>Confirming the plan stops two crews isolating the same main from opposite ends. Control can also warn affected customers before pressure drops further.</div>
+    <div class="k">Why it matters</div>
+    <div style="color:#3F444B">Uncoordinated isolation is the most common cause of secondary bursts on trunk mains.</div>
+  </div>
+  <div class="foot"><span class="btn">Continue</span></div>
+</div></div><p class="cap"><b>6. Feedback.</b> Tone as a labelled heading (Strong call / Worth reflecting on), not just a coloured border. MCQ courses use the same panel with Correct / Not quite.</p></div>
+
+<div><div class="ph"><div class="s">
+  <div class="hd"><span class="mk"><img src="gt-logo-rev.png" alt=""></span><div class="t"><span>The Doorstep</span><b>Review · 4 of 4</b></div><div class="ib off">☰</div><div class="ib off">✎</div></div>
+  <div class="bar"><i class="f"></i><i class="f"></i><i class="f"></i><i class="h"></i></div>
+  <div class="bd">
+    <div class="mh" style="font-weight:700;font-size:13px;margin-bottom:8px">Coaching review: your two doorsteps</div>
+    <div class="cr"><div class="t">Acknowledged before answering<span class="chip c-p">Demonstrated</span></div><q>"That's a fair question, you should check."</q></div>
+    <div class="cr"><div class="t">Stayed level under hostility<span class="chip c-n">Not yet</span></div><q>"Look, it's not my fault, mate."</q><div class="n">Matched the resident's tone instead of lowering it.</div></div>
+    <div class="cr"><div class="t">Treated refusal as valid<span class="chip c-na">Not assessed</span></div><div class="n">The assessment service did not respond. Not a judgement of you.</div><div style="margin-top:5px"><span class="chip c-dk">↻ Re-run assessment</span></div></div>
+  </div>
+  <div class="foot"><span class="btn">Continue</span></div>
+</div></div><p class="cap"><b>7. Assessment.</b> Every criterion has a text label (Demonstrated / Not yet demonstrated / Not assessed) in the fixed status colours, the learner's own words, and re-run where it applies.</p></div>
+
+<div><div class="ph"><div class="s">
+  <div class="hd"><span class="mk"><img src="gt-logo-rev.png" alt=""></span><div class="t"><b>The Doorstep</b></div><div class="ib">✕</div></div>
+  <div class="dhero"><small>Practice complete</small><b>Well done, Sam</b><div class="ver"><div class="ic">!</div><div><b class="mh" style="font-size:11px;margin:0">Incomplete</b><span style="font-size:9px">3 of 5 demonstrated, 1 not yet, 1 not assessed</span></div></div></div>
+  <div class="bd">
+    <div class="rec"><div class="doc"></div><div style="flex:1"><b class="mh">Your evidence record</b><br><span style="font-size:9px;color:#5D6168">Ref GT-7F3K-2Q9D · ready to print or save as PDF</span></div></div>
+    <div class="k">Coaching summary</div>
+    <div style="color:#3F444B;margin-bottom:8px">You gave Margaret real control over checking who you were. With Dean, slow down before you answer: acknowledge the third outage first.</div>
+    <div class="k">Your decisions</div>
+    <div style="color:#3F444B">Offered the password scheme · Left a card when refused</div>
+  </div>
+  <div class="foot"><span class="btn">Open evidence record</span><span class="btn o">Back to library</span></div>
+</div></div><p class="cap"><b>8. Debrief.</b> Dark hero with the verdict, the record as the main action, then coaching summary and decisions. Re-run lives here too when needed.</p></div>
+
+</div>
