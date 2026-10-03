@@ -1,0 +1,145 @@
+/* Debrief hero, verdict panel (shared with the record), record card, decisions. */
+
+.tg-debrief-hero {
+  background: var(--tg-header-bg);
+  color: var(--tg-header-fg);
+}
+.tg-scope[data-header="light"] .tg-debrief-hero {
+  border-bottom: 1px solid var(--tg-border);
+}
+.tg-debrief-hero-inner {
+  max-width: calc(var(--tg-read-width) + 2 * var(--tg-space-4));
+  margin: 0 auto;
+  padding: var(--tg-space-6) var(--tg-space-4);
+}
+.tg-debrief-kicker {
+  font-size: var(--tg-fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tg-header-muted);
+}
+.tg-debrief-title {
+  margin: var(--tg-space-1) 0 var(--tg-space-4);
+  font-size: var(--tg-fs-xl);
+}
+.tg-debrief-score {
+  margin-top: var(--tg-space-3);
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-header-muted);
+}
+
+.tg-verdict {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tg-space-3);
+  padding: var(--tg-space-3) var(--tg-space-4);
+  border: 1px solid;
+  border-radius: var(--tg-radius-md);
+  color: var(--tg-text);
+}
+.tg-verdict--pass {
+  background: var(--tg-status-pass-tint);
+  border-color: var(--tg-status-pass-line);
+}
+.tg-verdict--notyet {
+  background: var(--tg-status-fail-tint);
+  border-color: var(--tg-status-fail-line);
+}
+.tg-verdict--incomplete {
+  background: var(--tg-status-na-tint);
+  border-color: var(--tg-status-na-line);
+}
+.tg-verdict-icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tg-avatar-fg);
+}
+.tg-verdict--pass .tg-verdict-icon {
+  background: var(--tg-status-pass);
+}
+.tg-verdict--notyet .tg-verdict-icon {
+  background: var(--tg-status-fail);
+}
+.tg-verdict--incomplete .tg-verdict-icon {
+  background: var(--tg-status-na);
+}
+.tg-verdict-label {
+  font-family: var(--tg-font-heading);
+  font-weight: 700;
+  font-size: var(--tg-fs-lg);
+}
+.tg-verdict-summary {
+  font-size: var(--tg-fs-sm);
+}
+.tg-verdict-rule {
+  margin-top: var(--tg-space-1);
+  font-size: var(--tg-fs-xs);
+  color: var(--tg-text-muted);
+}
+
+.tg-record-card {
+  display: flex;
+  align-items: center;
+  gap: var(--tg-space-3);
+  padding: var(--tg-space-4);
+  border-radius: var(--tg-radius-md);
+  background: var(--tg-surface-raised);
+  box-shadow: var(--tg-shadow-card);
+  color: var(--tg-text);
+  text-decoration: none;
+}
+.tg-record-card-doc {
+  flex: none;
+  width: 40px;
+  height: 52px;
+  border: 1px solid var(--tg-border);
+  border-top: 3px solid var(--tg-brand);
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tg-text-muted);
+}
+.tg-record-card-text {
+  display: flex;
+  flex-direction: column;
+}
+.tg-record-card-title {
+  font-family: var(--tg-font-heading);
+  font-weight: 700;
+}
+.tg-record-card-hint {
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-text-muted);
+}
+
+.tg-debrief-section {
+  margin-top: var(--tg-space-6);
+}
+.tg-debrief-summary {
+  font-size: var(--tg-fs-read);
+}
+.tg-decisions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tg-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tg-decision-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--tg-space-3);
+  padding: var(--tg-space-2) 0;
+  border-bottom: 1px solid var(--tg-border);
+}
+.tg-decision-choice {
+  min-width: 0;
+}

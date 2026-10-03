@@ -7,6 +7,8 @@ import "@/components/training-ui/styles/slides.css"
 import "@/components/training-ui/styles/states.css"
 import "@/components/training-ui/styles/decision.css"
 import "@/components/training-ui/styles/conversation.css"
+import "@/components/training-ui/styles/assessment.css"
+import "@/components/training-ui/styles/debrief.css"
 import type { Metadata } from "next"
 import { fontVariables } from "./fonts"
 

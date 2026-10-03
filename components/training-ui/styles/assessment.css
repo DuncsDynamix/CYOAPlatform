@@ -1,0 +1,49 @@
+/* Assessment results and the re-run control (also used on the debrief). */
+
+.tg-assess-title {
+  margin-bottom: var(--tg-space-3);
+  font-size: var(--tg-fs-lg);
+}
+.tg-assess-feedback {
+  margin-bottom: var(--tg-space-4);
+  color: var(--tg-text-muted);
+}
+.tg-criteria {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tg-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tg-criterion {
+  padding: var(--tg-space-3) var(--tg-space-4);
+  border-radius: var(--tg-radius-md);
+  background: var(--tg-surface-raised);
+  box-shadow: var(--tg-shadow-card);
+}
+.tg-criterion-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--tg-space-3);
+  margin-bottom: var(--tg-space-1);
+}
+.tg-criterion-label {
+  font-weight: 600;
+}
+.tg-criterion-evidence {
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-text-muted);
+}
+.tg-rerun {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--tg-space-2);
+  margin-top: var(--tg-space-4);
+}
+.tg-rerun-error {
+  font-size: var(--tg-fs-sm);
+  color: var(--tg-status-fail-ink);
+}
