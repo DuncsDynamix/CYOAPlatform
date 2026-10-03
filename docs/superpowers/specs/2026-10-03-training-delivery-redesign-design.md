@@ -105,7 +105,7 @@ Near-black header, cool neutral surfaces, muted slate-blue brand, Inter for both
 - Pack assets live in `public/brands/<org-slug>/` and are committed. (Uploads are not persistent on Vercel, so self-serve upload waits for cloud storage.)
 - Gold Tap pack, from goldtaptraining.co.uk: brand `#C09F51`, onBrand `#1F2124`, header dark, surface warm, Montserrat headings, Open Sans body, logo (on-light and reversed versions) and a disc mark cropped from the logo. Brand ink is derived (in the region of `#7A5F1A`).
 - Fernbrook Care and Hartley & Voss packs move from `lib/branding.ts` into seed data; `lib/branding.ts` is deleted.
-- Before Gold Tap's logo is shown to anyone outside Gold Tap, get their permission (owner action, not a code task).
+- Gold Tap assets are cleared for use (see Owner decisions).
 
 ## 3. Accreditations
 
@@ -260,8 +260,8 @@ When the last screen lands:
 - The breakthrough-detector failure branch (engine ticket).
 - The library/story reader (TraverseStories) surfaces.
 
-## Open items for the owner
+## Owner decisions (2026-10-03)
 
-- Confirm which Gold Tap courses link to which accreditation and with which relationship, before seeding them.
-- Gold Tap's permission to use their logo and photography beyond a pitch.
-- Course images per course: reuse photos from Gold Tap's site (with permission) or source licensed images.
+- **Accreditation links:** seed a plausible guessed mapping for the Gold Tap courses (e.g. the NWH courses "Part of" EUSR National Water Hygiene); the owner corrects it later. It does not block the build.
+- **Gold Tap assets:** fine to use their logo and photography; the build is being shown to Gold Tap (Neil). Course images reuse photos from goldtaptraining.co.uk.
+- **Second brand:** the no-hardcoding proof uses the Fernbrook pack. A fully made-up demo company for other prospects can be added later as just another seeded org and pack.
