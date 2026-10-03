@@ -7,6 +7,9 @@ import type { ResolvedBrandPack } from "./brand-pack"
 import { accreditationDisclaimer, type ResolvedAccreditation } from "./accreditations"
 import { CRITERION_STATUS_LABEL, NOT_ASSESSED_NOTE, VERDICT_LABEL, VERDICT_PASS_RULE, verdictSummary } from "./copy"
 import { toDisplayText } from "./display"
+import { recordReference } from "./reference"
+
+export { recordReference }
 
 /**
  * The evidence record as a document: everything the printable record page
@@ -51,11 +54,6 @@ export interface RecordDocument {
   reflection: string | null
   accreditations: RecordAccreditation[]
   appendix: SessionRecordStep[]
-}
-
-export function recordReference(sessionId: string, prefix = "TR"): string {
-  const hex = sessionId.replace(/-/g, "").slice(0, 8).toUpperCase()
-  return `${prefix}-${hex.slice(0, 4)}-${hex.slice(4, 8)}`
 }
 
 export function recordScore(experience: Experience, session: ExperienceSession): RecordScore | null {
