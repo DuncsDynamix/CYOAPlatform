@@ -1,3 +1,10 @@
+// ─── CONTRACT V2 TYPES (engine-owned) ────────────────────────
+
+export type {
+  ContextPack, Character, ReferenceItem, ReferenceRole, Visibility, ContextRule,
+  TrainingExtension, StoryExtension, SessionContext, LearnerProfileEntry, CompetencyStatus,
+} from "@/lib/engine/contract"
+
 // ─── EXPERIENCE USE CASE PACK (platform-owned) ──────────────
 
 export interface ExperienceUseCasePack {
