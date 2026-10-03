@@ -29,6 +29,7 @@ const nodes: Node[] = [
     { id: "b", label: "B", nextNodeId: "end", isLoadBearing: false, displayConditions: [{ type: "flag_exists", key: "never", ifNotMet: "suppress_option" }] },
   ] } as unknown as Node,
   { id: "o1", type: "OBSERVED_DIALOGUE", label: "Watch", actorAId: "Margaret Hale", actorBId: "Margaret Hale", purpose: "p", nextNodeId: "end" } as unknown as Node,
+  { id: "d2", type: "DIALOGUE", label: "Call", actorId: "Margaret Hale", breakthroughCriteria: "c", maxTurns: 4, nextNodeId: "q1", failureNodeId: "f1" } as unknown as Node,
   { id: "end", type: "ENDPOINT", label: "End", endpointId: "e" } as unknown as Node,
 ]
 
@@ -116,5 +117,62 @@ describe("resumeSession", () => {
       { speaker: "Margaret Hale", line: "Hello: there." },
       { speaker: "Margaret Hale", line: "Bye." },
     ] })
+  })
+
+  describe("an interaction whose result is already committed", () => {
+    const choiceEntry = { nodeId: "q1", choiceId: "a", choiceLabel: "A", nextNodeId: "f1", timestamp: "t" }
+
+    it("arrives at the recorded next node instead of re-presenting a committed choice", async () => {
+      mockSession({ currentNodeId: "q1", state: { nodesVisited: ["f1", "q1"] }, choiceHistory: [choiceEntry] })
+      vi.mocked(db.experienceSession.update).mockResolvedValue({} as never)
+      const { node, content } = await resumeSession(SID, experience())
+      expect(node.id).toBe("f1")
+      expect(content).toMatchObject({ type: "prose", content: "Read this." })
+    })
+
+    it("still re-presents a choice made on an earlier visit but not this one", async () => {
+      mockSession({ currentNodeId: "q1", state: { nodesVisited: ["q1", "f1", "q1"] }, choiceHistory: [choiceEntry] })
+      const { node, content } = await resumeSession(SID, experience())
+      expect(node.id).toBe("q1")
+      expect(content.type).toBe("choice")
+      expect(db.experienceSession.update).not.toHaveBeenCalled()
+    })
+
+    const transcript = [{ role: "participant", content: "Hello.", timestamp: "t" }]
+    const dialogueEntry = (over: Record<string, unknown>) => ({
+      nodeId: "d2", content: "You: Hello.", generatedAt: "", transcript, actorName: "Margaret Hale",
+      scaffold: { nodeId: "d2", nodeLabel: "Call", beatAchieved: "", keyFactsEstablished: [], stateSnapshot: {} },
+      ...over,
+    })
+
+    it("routes a finished conversation without a breakthrough to its failure node", async () => {
+      mockSession({ currentNodeId: "d2", state: { dialogue: null }, narrativeHistory: [dialogueEntry({ breakthrough: false })] })
+      vi.mocked(db.experienceSession.update).mockResolvedValue({} as never)
+      const { node } = await resumeSession(SID, experience())
+      expect(node.id).toBe("f1")
+      expect(generateDialogueOpener).not.toHaveBeenCalled()
+    })
+
+    it("routes a finished conversation with a breakthrough to its next node", async () => {
+      mockSession({ currentNodeId: "d2", state: { dialogue: null }, narrativeHistory: [dialogueEntry({ breakthrough: true })] })
+      vi.mocked(db.experienceSession.update).mockResolvedValue({} as never)
+      const { node, content } = await resumeSession(SID, experience())
+      expect(node.id).toBe("q1")
+      expect(content.type).toBe("choice")
+      expect(generateDialogueOpener).not.toHaveBeenCalled()
+    })
+
+    it("reads the outcome of an older transcript entry from its scaffold", async () => {
+      vi.mocked(db.experienceSession.update).mockResolvedValue({} as never)
+      mockSession({ currentNodeId: "d2", state: { dialogue: null }, narrativeHistory: [dialogueEntry({
+        scaffold: { nodeId: "d2", nodeLabel: "Call", beatAchieved: "The conversation with Margaret Hale reached its goal.", keyFactsEstablished: [], stateSnapshot: {} },
+      })] })
+      expect((await resumeSession(SID, experience())).node.id).toBe("q1")
+      mockSession({ currentNodeId: "d2", state: { dialogue: null }, narrativeHistory: [dialogueEntry({
+        scaffold: { nodeId: "d2", nodeLabel: "Call", beatAchieved: "The conversation with Margaret Hale ended without reaching its goal.", keyFactsEstablished: [], stateSnapshot: {} },
+      })] })
+      expect((await resumeSession(SID, experience())).node.id).toBe("f1")
+      expect(generateDialogueOpener).not.toHaveBeenCalled()
+    })
   })
 })

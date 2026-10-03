@@ -30,6 +30,7 @@ function transcriptEntry(node: DialogueNode, turns: DialogueTurn[], breakthrough
     generatedAt: new Date().toISOString(),
     transcript: turns,
     actorName: node.actorId,
+    breakthrough,
   }
 }
 

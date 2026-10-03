@@ -166,6 +166,8 @@ describe("POST /api/v1/engine/dialogue — conclude", () => {
     const entry = draft.narrativeHistory[0] as { nodeId: string; transcript?: unknown[]; scaffold: { nodeLabel: string } }
     expect(entry.nodeId).toBe("d1")
     expect(entry.transcript).toHaveLength(2)
+    // Resume routes a finished conversation from this flag
+    expect((entry as { breakthrough?: boolean }).breakthrough).toBe(false)
   })
 
   it("persists the transcript including the final turns on normal completion", async () => {
@@ -195,5 +197,6 @@ describe("POST /api/v1/engine/dialogue — conclude", () => {
     expect(entry.transcript).toHaveLength(3)
     expect(entry.transcript?.[1].content).toBe("Quality own this decision.")
     expect(entry.transcript?.[2].content).toBe("Fine. Quality can have it.")
+    expect((entry as { breakthrough?: boolean }).breakthrough).toBe(true)
   })
 })

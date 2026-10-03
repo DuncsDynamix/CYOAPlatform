@@ -98,6 +98,13 @@ export interface NarrativeHistoryEntry {
   /** DIALOGUE entries: the character's name, used to label transcript lines in later prompts. */
   actorName?: string
   /**
+   * DIALOGUE entries: whether the conversation reached its goal. Resume uses
+   * it to route a finished conversation exactly as the dialogue route did
+   * (failure path when false and the node has one). Absent on entries written
+   * before it existed; readers fall back to scaffold.beatAchieved.
+   */
+  breakthrough?: boolean
+  /**
    * Entries that are not engine-generated scenes: "authored" (a FIXED page,
    * content verbatim) or "observed" (an OBSERVED_DIALOGUE exchange). Absent
    * for GENERATED scenes and DIALOGUE transcripts.

@@ -107,4 +107,64 @@ describe("useTrainingSession resume and restart", () => {
     act(() => result.current.begin("resume"))
     await waitFor(() => expect(result.current.sessionId).toBe("s1"))
   })
+
+  it("falls back to a fresh start when the session is gone (404)", async () => {
+    const fetchFn = vi.fn((url: string) =>
+      url.includes("/engine/resume")
+        ? Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({ error: "Session not found" }) } as Response)
+        : Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(startBody) } as Response)
+    )
+    vi.stubGlobal("fetch", fetchFn)
+    const { result } = renderHook(() => useTrainingSession({ experienceSlug: "doorstep", autoStart: false, resumeSessionId: "old" }))
+    act(() => result.current.begin("resume"))
+    await waitFor(() => expect(result.current.sessionId).toBe("s1"))
+  })
+
+  it("shows a retryable error, and never starts afresh, when resume fails for another reason", async () => {
+    let resumeCalls = 0
+    const fetchFn = vi.fn((url: string) => {
+      if (url.includes("/engine/resume")) {
+        resumeCalls++
+        return resumeCalls === 1
+          ? Promise.resolve({ ok: false, status: 503, json: () => Promise.resolve({ error: "The engine is busy.", retryable: true }) } as Response)
+          : Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(resumeBody) } as Response)
+      }
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(startBody) } as Response)
+    })
+    vi.stubGlobal("fetch", fetchFn)
+    const { result } = renderHook(() => useTrainingSession({ experienceSlug: "doorstep", autoStart: false, resumeSessionId: "s9" }))
+    act(() => result.current.begin("resume"))
+    await waitFor(() => expect(result.current.playerStatus.status).toBe("error"))
+    const status = result.current.playerStatus
+    expect(status.status === "error" && status.message).toBe("The engine is busy.")
+    expect(status.status === "error" && status.retryable).toBe(true)
+    expect(fetchFn.mock.calls.some(([url]) => String(url).includes("/engine/start"))).toBe(false)
+
+    act(() => { if (status.status === "error") status.retry?.() })
+    await waitFor(() => expect(result.current.sessionId).toBe("s9"))
+    expect(fetchFn.mock.calls.filter(([url]) => String(url) === "/api/v1/engine/resume?sessionId=s9")).toHaveLength(2)
+    expect(fetchFn.mock.calls.some(([url]) => String(url).includes("/engine/start"))).toBe(false)
+  })
+
+  it("does not start again when the resume prop changes after begin", async () => {
+    const fetchFn = stubFetch()
+    const { result, rerender } = renderHook(
+      (props: { resumeSessionId?: string }) => useTrainingSession({ experienceSlug: "doorstep", autoStart: false, ...props }),
+      { initialProps: {} }
+    )
+    act(() => result.current.begin("new"))
+    await waitFor(() => expect(result.current.sessionId).toBe("s1"))
+    rerender({ resumeSessionId: "s9" })
+    await waitFor(() => expect(result.current.playerStatus.status).toBe("reading_scenario"))
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+  })
+
+  it("only restarts when startSession is passed exactly true", async () => {
+    const fetchFn = vi.fn((_url: string, _init?: RequestInit) => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(startBody) } as Response))
+    vi.stubGlobal("fetch", fetchFn)
+    const { result } = renderHook(() => useTrainingSession({ experienceSlug: "doorstep", autoStart: false }))
+    // e.g. onClick={startSession} hands it a click event
+    await act(() => (result.current.startSession as (arg: unknown) => Promise<void>)({ type: "click" }))
+    expect(JSON.parse(String(fetchFn.mock.calls[0][1]?.body))).toEqual({ experienceSlug: "doorstep" })
+  })
 })

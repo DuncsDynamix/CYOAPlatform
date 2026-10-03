@@ -47,8 +47,13 @@ export interface UseTrainingSessionOptions {
 type BeginMode = "new" | "resume" | "restart"
 
 export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId }: UseTrainingSessionOptions) {
-  const [startMode, setStartMode] = useState<BeginMode | null>(autoStart ? "new" : null)
-  const started = startMode !== null
+  // What begin() asked for, with the session to resume captured at call time:
+  // the start effect keys on this, never on the resumeSessionId prop, so a
+  // prop change after the session began cannot start (or abandon) one again.
+  const [startRequest, setStartRequest] = useState<{ mode: BeginMode; resumeId?: string } | null>(
+    autoStart ? { mode: "new" } : null
+  )
+  const started = startRequest !== null
   const [visitedNodeIds, setVisitedNodeIds] = useState<string[]>([])
   const [playerStatus, setPlayerStatus] = useState<TrainingPlayerStatus>({ status: "loading_module" })
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -91,7 +96,8 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
     return err instanceof DOMException && err.name === "AbortError"
   }
 
-  const startSession = useCallback(async (restart = false) => {
+  /** Only `true` restarts: a stray truthy argument (onClick={startSession}) must not abandon the learner's sessions. */
+  const startSession = useCallback(async (restart?: boolean) => {
     setPlayerStatus({ status: "loading_module" })
     setVisitedNodeIds([])
     setDecisionHistory([])
@@ -105,7 +111,7 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
       const res = await fetch("/api/v1/engine/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(restart ? { experienceSlug, restart: true } : { experienceSlug }),
+        body: JSON.stringify(restart === true ? { experienceSlug, restart: true } : { experienceSlug }),
         signal: nextSignal(),
       })
       if (!res.ok) {
@@ -145,9 +151,16 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
     setPlayerStatus({ status: "loading_module" })
     try {
       const res = await fetch(`/api/v1/engine/resume?sessionId=${sid}`, { signal: nextSignal() })
-      if (!res.ok) {
-        // Finished or no longer ours: start fresh rather than strand the learner.
+      if (res.status === 403 || res.status === 404 || res.status === 409) {
+        // Finished, gone or no longer ours: start fresh rather than strand the learner.
         await startSession()
+        return
+      }
+      if (!res.ok) {
+        // Anything else (busy, rate limited, signed out) is temporary: keep the
+        // learner's place and offer to try the same session again.
+        const failure = await readFailure(res, "Could not resume")
+        setPlayerStatus({ status: "error", ...failure, retry: () => resume(sid) })
         return
       }
       const data = (await res.json()) as { sessionId: string; node: Node; content: ResolvedContent; snapshot: ResumeSnapshot }
@@ -174,10 +187,10 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
   }, [startSession])
 
   useEffect(() => {
-    if (startMode === null) return
-    if (startMode === "resume" && resumeSessionId) resumeExisting(resumeSessionId)
-    else startSession(startMode === "restart")
-  }, [startMode, resumeSessionId, startSession, resumeExisting])
+    if (startRequest === null) return
+    if (startRequest.mode === "resume" && startRequest.resumeId) resumeExisting(startRequest.resumeId)
+    else startSession(startRequest.mode === "restart")
+  }, [startRequest, startSession, resumeExisting])
 
   /** Replaces (never appends) results for the nodes in `results`, so re-assessment cannot duplicate. */
   function replaceResultsForNodes(results: CompetencyResult[]) {
@@ -526,7 +539,7 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
 
   return {
     started,
-    begin: (mode: BeginMode = "new") => setStartMode(mode),
+    begin: (mode: BeginMode = "new") => setStartRequest({ mode, resumeId: resumeSessionId }),
     visitedNodeIds,
     playerStatus,
     sessionId,

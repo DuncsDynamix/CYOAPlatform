@@ -1,6 +1,6 @@
 import type { Experience, Node, FixedNode, ChoiceNode, DialogueNode, EvaluativeNode, SlideDeckNode, ObservedDialogueNode } from "@/types/experience"
 import type { ArrivalResult, ResolvedContent } from "@/types/engine"
-import type { NarrativeHistoryEntry } from "@/types/session"
+import type { ChoiceHistoryEntry, ExperienceSession, NarrativeHistoryEntry } from "@/types/session"
 import { arriveAtNode, findFirstNodeId, findNode, getAllNodes } from "./executor"
 import { getSession } from "./session"
 import { getFromCache } from "./cache"
@@ -19,6 +19,29 @@ function parseExchanges(text: string): { speaker: string; line: string }[] {
       return at > 0 ? { speaker: row.slice(0, at), line: row.slice(at + 2) } : null
     })
     .filter((x): x is { speaker: string; line: string } => x !== null)
+}
+
+/**
+ * The choice already recorded for the learner's latest visit to a CHOICE
+ * node, or null. The choose route commits the choice before arriving at the
+ * next node, so if that arrival failed the session still sits on the CHOICE:
+ * re-presenting it would apply its counters and decisions twice.
+ */
+function committedChoice(session: ExperienceSession, nodeId: string): ChoiceHistoryEntry | null {
+  const entries = (session.choiceHistory ?? []).filter((c) => c.nodeId === nodeId)
+  const visits = session.state.nodesVisited.filter((id) => id === nodeId).length
+  return entries.length > 0 && entries.length >= visits ? entries[entries.length - 1] : null
+}
+
+/**
+ * Whether a finished conversation reached its goal. Entries written before
+ * the breakthrough flag existed carry it only in the scaffold sentence the
+ * dialogue route wrote ("... reached its goal." vs "... ended without
+ * reaching its goal."), so derive it from that.
+ */
+function reachedGoal(entry: NarrativeHistoryEntry): boolean {
+  if (typeof entry.breakthrough === "boolean") return entry.breakthrough
+  return entry.scaffold?.beatAchieved?.includes("reached its goal") ?? false
 }
 
 /**
@@ -49,6 +72,8 @@ export async function resumeSession(sessionId: string, experience: Experience, a
       return entry ? done({ type: "prose", content: entry.content }) : arriveAgain()
 
     case "CHOICE": {
+      const committed = committedChoice(session, node.id)
+      if (committed) return arriveAtNode(sessionId, committed.nextNodeId, experience, apiKey)
       const choice = node as ChoiceNode
       return done({ type: "choice", options: applyDisplayConditions(choice.options ?? [], session.state), prompt: choice.prompt })
     }
@@ -63,7 +88,17 @@ export async function resumeSession(sessionId: string, experience: Experience, a
       const dialogue = session.state.dialogue
       const inProgress =
         dialogue && dialogue.nodeId === node.id && !dialogue.breakthroughAchieved && dialogue.turnCount < dialogueNode.maxTurns
-      if (!inProgress) return arriveAgain()
+      if (!inProgress) {
+        // A finished conversation (its transcript is recorded) whose next
+        // arrival failed: route on as the dialogue route does. Arriving again
+        // would open a second conversation that is never recorded or assessed.
+        const finished = history.find((h) => h.nodeId === node.id && h.transcript)
+        if (finished) {
+          const target = !reachedGoal(finished) && dialogueNode.failureNodeId ? dialogueNode.failureNodeId : dialogueNode.nextNodeId
+          return arriveAtNode(sessionId, target, experience, apiKey)
+        }
+        return arriveAgain()
+      }
       const actor = getContextPack(experience).core.characters.find((a) => a.name === dialogueNode.actorId)
       const lastCharacterLine = [...dialogue.turns].reverse().find((t) => t.role === "character")?.content ?? ""
       return done({
