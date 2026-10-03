@@ -99,3 +99,20 @@ describe("loadCourseStatuses", () => {
     expect(statuses.get("c1")).toMatchObject({ kind: "in_progress", sessionId: "s1" })
   })
 })
+
+describe("course-status-view", () => {
+  it("holds the pure helpers, re-exported unchanged by course-status", async () => {
+    const view = await import("@/lib/training/course-status-view")
+    expect(courseStatusLabel).toBe(view.courseStatusLabel)
+    expect(pickHero).toBe(view.pickHero)
+  })
+
+  it("imports no db or server engine code", async () => {
+    const { readFileSync } = await import("node:fs")
+    const src = readFileSync("lib/training/course-status-view.ts", "utf8")
+    const imports = src.split("\n").filter((l) => l.startsWith("import"))
+    expect(imports.some((l) => l.includes("@/lib/db"))).toBe(false)
+    expect(imports.some((l) => /"@\/lib\/engine"/.test(l))).toBe(false)
+    expect(imports.some((l) => l.includes("./course-status\""))).toBe(false)
+  })
+})

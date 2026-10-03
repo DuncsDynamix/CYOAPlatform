@@ -129,7 +129,8 @@ Every GENERATED node produces a `NarrativeScaffold` (via a cheap Haiku call) sto
 
 All engine routes are versioned under `app/api/v1/`:
 
-- `POST /api/v1/engine/start` — Create session, arrive at first node
+- `POST /api/v1/engine/start` — Create session, arrive at first node. `restart: true` abandons the learner's earlier active sessions for the course
+- `GET /api/v1/engine/resume?sessionId=` — Owner only, generation-limited. Rebuilds the current screen from stored data with no writes (arrives normally only when stored data is missing, or to route on past a choice or conversation already committed); 409 when the session has finished
 - `POST /api/v1/engine/choose` — Submit a choice, arrive at next node
 - `POST /api/v1/engine/dialogue` — Submit a participant turn in a DIALOGUE node
 - `GET /api/v1/engine/node?sessionId=` — Advance from current node to its `nextNodeId`
@@ -165,7 +166,7 @@ Operators (`isOperator: true`) can supply their own Anthropic key (BYOK), which 
 Key models in `prisma/schema.prisma`:
 
 - **`User`** — has `orgId`, `orgRole` (`owner` | `author` | `learner`), `subscriptionTier`
-- **`Org`** — multi-tenant org with `trainingTier`, `studioTier`, `stripeCustomerId`, `isOperator`, `operatorApiKey`, `personalisationEnabled`, `competencyFramework`
+- **`Org`** — multi-tenant org with `trainingTier`, `studioTier`, `stripeCustomerId`, `isOperator`, `operatorApiKey`, `personalisationEnabled`, `competencyFramework`, `brandPack`, `accreditations`
 - **`Experience`** — has `orgId` linking to Org; `presentation` (app display data)
 - **`ExperienceSession`** — runtime session state; `context` (server-built `SessionContext`)
 
@@ -253,3 +254,4 @@ See `docs/platform_roadmap_vercel.md` for the full plan. As of 2026-03-30:
 - **Assessor isolation** — `buildEvaluativePrompt` must never receive learner profile, history or session context (test-pinned).
 - **Evidence verdict** — the debrief record is built from the session's stored results (sent on the ENDPOINT content), not from player state. An experience with no EVALUATIVE node shows no competence verdict.
 - **Deploying the engine-contract branch** — after deploy, run `prisma migrate deploy`, then `npx tsx prisma/migrate-context-packs.ts --apply` against the deployed DB (dry-run first; **owner approval required**) so stored packs become v2 and shelf categories move into `presentation`.
+- **Deploy order (training delivery)** — run `prisma migrate deploy` before new code serves traffic (new `Org` columns). Run `npx tsx prisma/seed-goldtap-brand.ts` after any course reseed: course seeds reset `presentation`.
