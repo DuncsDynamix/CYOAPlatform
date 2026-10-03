@@ -1,0 +1,102 @@
+/* Waiting skeletons and the error state. */
+
+.tg-wait-title {
+  margin-bottom: var(--tg-space-4);
+  font-size: var(--tg-fs-lg);
+}
+
+.tg-skel {
+  display: block;
+  border-radius: var(--tg-radius-sm);
+  background: linear-gradient(90deg, var(--tg-border) 0%, var(--tg-surface) 50%, var(--tg-border) 100%);
+  background-size: 200% 100%;
+  animation: tg-shimmer 1.4s linear infinite;
+}
+@keyframes tg-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tg-skel {
+    animation: none;
+  }
+}
+.tg-skel--heading {
+  width: 55%;
+  height: 18px;
+  margin-bottom: var(--tg-space-4);
+}
+.tg-skel--line {
+  height: 12px;
+  margin-bottom: var(--tg-space-3);
+}
+.tg-skel--w85 {
+  width: 85%;
+}
+.tg-skel--w60 {
+  width: 60%;
+}
+.tg-skel--w40 {
+  width: 40%;
+  margin-bottom: 0;
+}
+.tg-skel--option {
+  height: 56px;
+  margin-bottom: var(--tg-space-3);
+  border-radius: var(--tg-radius-md);
+}
+.tg-skel-persona {
+  display: flex;
+  align-items: center;
+  gap: var(--tg-space-3);
+  margin-bottom: var(--tg-space-5);
+}
+.tg-skel--avatar {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+.tg-skel--bubble {
+  width: 70%;
+  height: 44px;
+  margin-bottom: var(--tg-space-3);
+  border-radius: var(--tg-radius-lg);
+}
+.tg-skel--bubble-mine {
+  width: 55%;
+  margin-left: auto;
+}
+.tg-skel--row {
+  height: 72px;
+  margin-bottom: var(--tg-space-3);
+  border-radius: var(--tg-radius-md);
+}
+.tg-skel--hero {
+  height: 140px;
+  margin-bottom: var(--tg-space-4);
+  border-radius: var(--tg-radius-md);
+}
+
+.tg-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tg-space-3);
+  padding: var(--tg-space-5);
+  border-left: 4px solid var(--tg-status-na);
+  border-radius: 0 var(--tg-radius-md) var(--tg-radius-md) 0;
+  background: var(--tg-surface-raised);
+  box-shadow: var(--tg-shadow-card);
+}
+.tg-error-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--tg-status-na);
+}
+.tg-error-message {
+  font-size: var(--tg-fs-read);
+}
