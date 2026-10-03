@@ -1,0 +1,86 @@
+/*
+ * Platform-fixed design tokens for the training UI. The only stylesheet
+ * allowed to hold colour literals (tests/training-ui/hardcoding.test.ts).
+ * Brand colours and the two brand fonts arrive as inline --tg-* properties
+ * from BrandScope; nothing below can be set by a brand pack, so no pack can
+ * make "Not assessed" read as a pass.
+ */
+.tg-scope {
+  /* Assessment status */
+  --tg-status-pass: #2F6B47;
+  --tg-status-pass-ink: #245A3A;
+  --tg-status-pass-tint: #E7F2EB;
+  --tg-status-pass-line: #A9CDB6;
+  --tg-status-fail: #B03A2E;
+  --tg-status-fail-ink: #8E2B22;
+  --tg-status-fail-tint: #F8E6E3;
+  --tg-status-fail-line: #E3B5AE;
+  --tg-status-na: #5B6572;
+  --tg-status-na-ink: #4A535E;
+  --tg-status-na-tint: #EEF0F3;
+  --tg-status-na-line: #8A929C;
+
+  /* Decision feedback tone (coaching, not assessment) */
+  --tg-tone-develop: #8A5A00;
+  --tg-tone-develop-tint: #FBF1DC;
+
+  /* Persona avatars: white initials reach 4.5:1 on each */
+  --tg-avatar-1: #6E5A86;
+  --tg-avatar-2: #3E5C76;
+  --tg-avatar-3: #1F6F78;
+  --tg-avatar-4: #7A4E2D;
+  --tg-avatar-5: #4F6B34;
+  --tg-avatar-6: #8A3B5C;
+  --tg-avatar-fg: #FFFFFF;
+
+  /* Over photographs, and behind drawers */
+  --tg-on-image: #FFFFFF;
+  --tg-on-image-muted: rgba(255, 255, 255, 0.85);
+  --tg-image-scrim: linear-gradient(180deg, rgba(31, 33, 36, 0.05) 0%, rgba(31, 33, 36, 0.88) 100%);
+  --tg-backdrop: rgba(31, 33, 36, 0.55);
+
+  /* Shape and depth */
+  --tg-radius-sm: 6px;
+  --tg-radius-md: 10px;
+  --tg-radius-lg: 16px;
+  --tg-radius-pill: 999px;
+  --tg-shadow-card: 0 1px 3px rgba(31, 33, 36, 0.12);
+  --tg-shadow-raised: 0 8px 28px rgba(31, 33, 36, 0.2);
+
+  /* Space, on a 4px grid */
+  --tg-space-1: 4px;
+  --tg-space-2: 8px;
+  --tg-space-3: 12px;
+  --tg-space-4: 16px;
+  --tg-space-5: 20px;
+  --tg-space-6: 24px;
+  --tg-space-8: 32px;
+  --tg-space-10: 40px;
+
+  /* Type */
+  --tg-fs-xs: 0.75rem;
+  --tg-fs-sm: 0.875rem;
+  --tg-fs-base: 1rem;
+  --tg-fs-read: 1.0625rem;
+  --tg-fs-lg: 1.25rem;
+  --tg-fs-xl: 1.5rem;
+  --tg-fs-2xl: 2rem;
+  --tg-lh-tight: 1.2;
+  --tg-lh-body: 1.6;
+
+  /* Layout */
+  --tg-read-width: 68ch;
+  --tg-page-width: 1080px;
+  --tg-header-h: 60px;
+  --tg-record-width: 210mm;
+
+  /* Motion */
+  --tg-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --tg-dur: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-scope {
+    --tg-dur: 0ms;
+  }
+}

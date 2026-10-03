@@ -1,14 +1,16 @@
 import "@/app/globals-traverse-training.css"
+import "@/components/training-ui/styles/tokens.css"
+import "@/components/training-ui/styles/base.css"
 import type { Metadata } from "next"
+import { fontVariables } from "./fonts"
 
 export const metadata: Metadata = {
-  title: "TraverseTraining",
+  title: "Training",
 }
 
+// The font variables sit on the layout so every training page can resolve
+// --tg-ff-*; BrandScope (per page) picks which two the pack uses. The legacy
+// wrapper class and stylesheet go when the legacy player is deleted.
 export default function TraverseTrainingLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="traverse-training-theme">
-      {children}
-    </div>
-  )
+  return <div className={`traverse-training-theme ${fontVariables}`}>{children}</div>
 }
