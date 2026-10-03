@@ -1,4 +1,3 @@
-import "@/app/globals-traverse-training.css"
 import "@/components/training-ui/styles/tokens.css"
 import "@/components/training-ui/styles/base.css"
 import "@/components/training-ui/styles/shell.css"
@@ -20,8 +19,7 @@ export const metadata: Metadata = {
 }
 
 // The font variables sit on the layout so every training page can resolve
-// --tg-ff-*; BrandScope (per page) picks which two the pack uses. The legacy
-// wrapper class and stylesheet go when the legacy player is deleted.
+// --tg-ff-*; BrandScope (per page) picks which two the pack uses.
 export default function TraverseTrainingLayout({ children }: { children: React.ReactNode }) {
-  return <div className={`traverse-training-theme ${fontVariables}`}>{children}</div>
+  return <div className={fontVariables}>{children}</div>
 }

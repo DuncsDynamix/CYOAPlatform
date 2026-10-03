@@ -48,7 +48,7 @@ Three Next.js route groups, each with its own layout and CSS:
 | Group | Path | Purpose |
 |-------|------|---------|
 | `(library)` | `/` (Atrium), `/hall/[genre]`, `/story/[id]` | The Grand Library + book-style CYOA reader — TraverseStories |
-| `(traverse-training)` | `/scenario/[id]` | L&D training scenario player — TraverseTraining |
+| `(traverse-training)` | `/scenario`, `/scenario/[id]`, `/scenario/[id]/record/[sessionId]` | TraverseTraining: library, player, evidence record |
 | `(authoring)` | `/experience/[id]` | Experience editor — TraverseStudio |
 
 The story page (`app/(library)/story/[id]/page.tsx`) checks `experience.renderingTheme` and redirects to `/scenario/[id]` if the theme is `"training"`. Library listings (Atrium, halls, `/api/v1/stories`) come from the single-source query in `lib/library/stories.ts`, which excludes training experiences (`status: "published"`, `type: "cyoa_story"`, `NOT renderingTheme: "training"`).
@@ -108,7 +108,7 @@ Node graphs can be flat (`experience.nodes`) or segmented (`experience.segments`
 | `quote` | Pull-quote style |
 | `diagram-with-callouts` | Image with positioned marker + label callouts |
 
-`NodeLayout` fields: `template`, `mediaUrl?`, `caption?`, `callouts?: Callout[]`. Authoring UI: `LayoutPanel` in `components/authoring/LayoutEditor.tsx`. Player rendering: `LayoutRenderer` in `components/traverse-training/LayoutRenderer.tsx` — dispatches to template components in `components/traverse-training/templates/`. Template body text is rendered with `react-markdown`.
+`NodeLayout` fields: `template`, `mediaUrl?`, `caption?`, `callouts?: Callout[]`. Authoring UI: `LayoutPanel` in `components/authoring/LayoutEditor.tsx`. Player rendering: `LayoutView` in `components/training-ui/layouts/LayoutView.tsx` (all seven templates; body text through `Prose`, i.e. react-markdown with remark-gfm; images always as `<img>`, never CSS `url()`).
 
 Image upload writes to `public/uploads/` via `lib/storage/index.ts` and is served as a static asset. Not persistent across deploys — swap for cloud storage in production.
 
@@ -191,18 +191,18 @@ Canonical tier string values (in `lib/subscriptions.ts`):
 ### CSS Architecture
 
 - `app/globals.css` — Base styles + all `.auth-*` authoring classes
-- `app/globals-traverse-training.css` — TraverseTraining CSS, scoped under `.traverse-training-theme`. Used by `app/(traverse-training)/layout.tsx`. New tokens use `--c-` prefix; legacy `--t-` tokens are also defined here for backwards compatibility with existing `components/training/` components.
+- `components/training-ui/styles/*.css` — TraverseTraining styles (`tg-` classes, `--tg-*` tokens), each imported by `app/(traverse-training)/layout.tsx`. See TraverseTraining UI.
 
-The TraverseTraining layout wraps everything in `<div className="traverse-training-theme">`.
+### TraverseTraining UI
 
-**CSS token migration:** `components/training/` uses `t-` class names and `--t-` tokens. `components/traverse-training/` uses `tt-` class names and `--c-` tokens. Both sets are defined in `globals-traverse-training.css`.
+One component family, `components/training-ui/`, renders every learner surface: library, cover, player screens, debrief and the evidence record.
 
-### TraverseTraining Components
-
-Two component directories exist in parallel during migration:
-
-- **`components/training/`** — Working full-featured player (`TrainingPlayer.tsx`) with every node type, feedback panels, debrief screen, objectives drawer. Uses `t-` CSS classes. Currently rendered by `app/(traverse-training)/scenario/[id]/page.tsx`.
-- **`components/traverse-training/`** — New components using `tt-` CSS classes: `ScenePanel.tsx`, `ChoicePanel.tsx`, `GeneratingScreen.tsx`, `SlideDeckPanel.tsx`, `LayoutRenderer.tsx` + `templates/` (7 layout templates, each using `react-markdown` for body text). A full `TraversePlayer` to replace `TrainingPlayer` is deferred (post-April 2026).
+- **Logic:** `useTrainingSession` holds all player state and engine calls (start, resume, restart, `currentNode`, `pendingNodeId`). `TrainingPlayer` composes it with one screen per player status (`screens/`) inside `shell/Shell` (stage line and segmented bar in the header; notes and objectives drawers, closed on decision, feedback, assessment, waiting and error screens).
+- **Pages and loaders:** `app/(traverse-training)/scenario/page.tsx` (library), `scenario/[id]/page.tsx` (player; `?resume=1` resumes), `scenario/[id]/record/[sessionId]/page.tsx` (evidence record). Each calls a server loader in `lib/training/` (`library-page.ts`, `scenario-page.ts`, `record-page.ts`) that decides access and builds view models (`course-view.ts`, `wait-plan.ts`; types in `views.ts`). Components render what they are given and hold no rules.
+- **Branding:** `BrandScope` applies `brandTokens(resolveBrandPack(org))` as inline `--tg-*` properties (library: the learner's org; scenario and record: the course's org). Fonts come from `app/(traverse-training)/fonts.ts` (`next/font`, the six `FONT_KEYS` as `--tg-ff-*`, no preload).
+- **Styles:** `components/training-ui/styles/`. `tokens.css` holds every platform-fixed colour (assessment status, tone, avatars, overlays); it and `fonts.ts` are the only places a colour or font name may appear. One stylesheet per screen area. Class names are `tg-` string literals.
+- **Guards (`tests/training-ui/`):** `hardcoding.test.ts`, `class-sweep.test.ts` (every `tg-` class has a rule; every stylesheet is imported by the layout), `token-contrast.test.ts`, `fonts.test.ts`, `two-packs.test.tsx` (Gold Tap and Fernbrook render identical markup), `no-legacy-names.test.ts`.
+- **Copy:** fixed learner and record strings live in `lib/training/copy.ts`; author strings shown to learners go through `toDisplayText`.
 
 ### Authoring Autosave
 
@@ -242,7 +242,7 @@ See `docs/platform_roadmap_vercel.md` for the full plan. As of 2026-03-30:
 | 5. Middleware | ✅ Done | `/scenario` paths protected behind org/operator gate |
 | 6. Tier strings | ✅ Done | New canonical values in `lib/subscriptions.ts` |
 
-**Deferred (post-April 2026):** Full `TraversePlayer` using `tt-` components (replacing `TrainingPlayer`), `DebriefScreen`, `ProgressIndicator`, `ScenarioCard`, scenario library home, account page.
+**Done (training delivery redesign, October 2026):** `components/training-ui/` replaced the legacy player, library, debrief and record. **Still deferred:** account page.
 
 ## Known Gotchas
 
@@ -255,3 +255,5 @@ See `docs/platform_roadmap_vercel.md` for the full plan. As of 2026-03-30:
 - **Evidence verdict** — the debrief record is built from the session's stored results (sent on the ENDPOINT content), not from player state. An experience with no EVALUATIVE node shows no competence verdict.
 - **Deploying the engine-contract branch** — after deploy, run `prisma migrate deploy`, then `npx tsx prisma/migrate-context-packs.ts --apply` against the deployed DB (dry-run first; **owner approval required**) so stored packs become v2 and shelf categories move into `presentation`.
 - **Deploy order (training delivery)** — run `prisma migrate deploy` before new code serves traffic (new `Org` columns). Run `npx tsx prisma/seed-goldtap-brand.ts` after any course reseed: course seeds reset `presentation`.
+- **Training UI styling** — colours and font names only in `components/training-ui/styles/tokens.css` and `app/(traverse-training)/fonts.ts`; a new stylesheet must be imported by `app/(traverse-training)/layout.tsx`; every `tg-` class used in markup needs a rule. The guard tests in `tests/training-ui/` fail otherwise.
+- **Evidence record access** — `loadRecordPage` returns null (404) unless the session is a completed session of that course and the viewer is its learner or an editor of the course's org. No share links or public view without an owner decision.
