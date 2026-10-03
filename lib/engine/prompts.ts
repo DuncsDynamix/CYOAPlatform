@@ -126,6 +126,10 @@ export const TRAINING_PROSE_RULES = `TRAINING PROSE — VOICE:
  * is assessed ONLY on their own words and chosen options. Everything the
  * engine generated (scene beats, key facts, consequences, character lines)
  * is background — visible for context, out of bounds as evidence.
+ *
+ * RULE: this function takes no learner profile, history or context, and must
+ * never gain one. Same rubric for everyone; personalisation changes the route,
+ * never the verdict.
  */
 export function buildEvaluativePrompt(
   node: EvaluativeNode,

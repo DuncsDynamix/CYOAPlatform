@@ -43,6 +43,13 @@ describe("CoverScreen", () => {
     expect(onBegin).toHaveBeenCalledOnce()
   })
 
+  it("tells a personalised learner that the session adapts, and says nothing otherwise", () => {
+    const { rerender } = render(<CoverScreen {...baseProps} />)
+    expect(screen.queryByText("This session adapts to your previous training.")).not.toBeInTheDocument()
+    rerender(<CoverScreen {...baseProps} personalised />)
+    expect(screen.getByText("This session adapts to your previous training.")).toBeInTheDocument()
+  })
+
   it("renders without objectives when none are authored", () => {
     render(<CoverScreen {...baseProps} objectives={[]} />)
     expect(screen.queryByText(/you will learn/i)).not.toBeInTheDocument()

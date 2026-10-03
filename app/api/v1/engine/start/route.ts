@@ -6,10 +6,11 @@ import { hasTrainingTier } from "@/lib/subscriptions"
 import { db } from "@/lib/db/prisma"
 import { checkEngineLimit, checkGenerationLimit } from "@/lib/security/ratelimit"
 import { trackEvent } from "@/lib/analytics"
+import { buildSessionContext } from "@/lib/training/learner-profile"
 import { StartSessionSchema } from "@/lib/validation"
 import { validateExperienceGraph } from "@/lib/authoring/graph"
 import { engineErrorResponse } from "@/lib/api/errors"
-import type { ShapeDefinition } from "@/types/experience"
+import type { ShapeDefinition, SessionContext } from "@/types/experience"
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "anonymous"
@@ -31,6 +32,10 @@ export async function POST(req: NextRequest) {
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     )
+  }
+
+  if (parsed.data.sessionContext !== undefined) {
+    return NextResponse.json({ error: "Session context is supplied by the server, not the client" }, { status: 400 })
   }
 
   const { experienceId, experienceSlug } = parsed.data
@@ -60,16 +65,26 @@ export async function POST(req: NextRequest) {
   }
 
   // Org content also requires the org to hold an active training tier.
+  let context: SessionContext = {}
   if (experience.orgId) {
     const org = await db.org.findUnique({
       where: { id: experience.orgId },
-      select: { trainingTier: true },
+      select: { trainingTier: true, personalisationEnabled: true, competencyFramework: true },
     })
     if (!hasTrainingTier(org?.trainingTier)) {
       return NextResponse.json(
         { error: "This organisation does not have an active training subscription" },
         { status: 403 }
       )
+    }
+    // Personalisation is an org opt-in; context is always built here, never
+    // taken from the client.
+    if (org?.personalisationEnabled && user?.id) {
+      context = await buildSessionContext({
+        userId: user.id,
+        orgId: experience.orgId,
+        framework: (org.competencyFramework ?? []) as { id: string; label: string }[],
+      })
     }
   }
 
@@ -93,6 +108,7 @@ export async function POST(req: NextRequest) {
   const session = await createSession({
     experienceId: experience.id,
     userId: user?.id ?? null,
+    context,
   })
 
   const firstNodeId = findFirstNodeId(experience)
@@ -122,6 +138,7 @@ export async function POST(req: NextRequest) {
       node: arrival.node,
       content: arrival.content,
       experienceTitle: experience.title,
+      personalised: Boolean(context.profile?.length),
       // Trimmed on purpose: references, characters and rules are authored
       // internals (they contain the answers) and must never reach the client.
       contextPack: { learningObjectives: pack.extension.kind === "training" ? pack.extension.learningObjectives : [] },

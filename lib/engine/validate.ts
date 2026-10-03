@@ -2,7 +2,7 @@ import { getAllNodes, validateExperienceGraph } from "./graph"
 import { USE_CASE_PACKS } from "./usecases"
 import { normaliseContextPack, extensionKindFor, ContextPackSchema, type ContextPack } from "./contract"
 import { mustOverBudget } from "./references"
-import type { Experience, Node, DialogueNode, ObservedDialogueNode, EvaluativeNode } from "@/types/experience"
+import type { Experience, Node, DialogueNode, ObservedDialogueNode, EvaluativeNode, CheckpointNode, ChoiceNode } from "@/types/experience"
 
 export interface ValidationIssue { code: string; message: string; nodeId?: string; path?: string }
 
@@ -62,6 +62,18 @@ export function validateExperience(
       const o = node as ObservedDialogueNode
       for (const name of [o.actorAId, o.actorBId]) {
         if (!characters.has(name)) errors.push({ code: "unknown_character", message: `${node.label || node.id} features "${name}", who is not in the character list.`, nodeId: node.id })
+      }
+    }
+    if (node.type === "CHECKPOINT") {
+      const cp = node as CheckpointNode
+      if ((cp.branches?.length ?? 0) > 0 && !cp.nextNodeId) {
+        errors.push({ code: "no_default_route", message: `${node.label || node.id} has personalised routes but no default route for learners without a profile.`, nodeId: node.id })
+      }
+    }
+    if (node.type === "CHOICE") {
+      const options = (node as ChoiceNode).options ?? []
+      if (options.length > 0 && options.every((o) => (o.displayConditions ?? []).some((c) => c.type === "profile_status"))) {
+        errors.push({ code: "no_default_route", message: `${node.label || node.id} would show no options to a learner without a profile.`, nodeId: node.id })
       }
     }
     if (node.type === "EVALUATIVE") {

@@ -200,6 +200,14 @@ export interface CounterEqualsCondition {
   ifNotMet: "suppress_option" | "show_disabled"
 }
 
+export interface ProfileStatusCondition {
+  type: "profile_status"
+  competencyId: string
+  status: "strength" | "developing" | "not_yet_seen"
+  /** Defaults to suppress_option when omitted. */
+  ifNotMet?: "suppress_option" | "show_disabled"
+}
+
 export type DisplayCondition =
   | MinChoicesCondition
   | FlagEqualsCondition
@@ -208,6 +216,7 @@ export type DisplayCondition =
   | CounterGteCondition
   | CounterLteCondition
   | CounterEqualsCondition
+  | ProfileStatusCondition
 
 export interface ChoiceOption {
   id: string
@@ -242,6 +251,8 @@ export interface CheckpointNode extends BaseNode {
   unlocks: string[]
   /** When true, engine emits a checkpoint_reached analytics event with full session state. */
   snapshotsState?: boolean
+  /** Personalised routes, first match wins. nextNodeId is the default for learners without a matching profile. */
+  branches?: { when: DisplayCondition[]; nextNodeId: string }[]
   nextNodeId: string
 }
 

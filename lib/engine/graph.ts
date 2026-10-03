@@ -21,10 +21,16 @@ export const TERMINAL_TYPES = new Set<Node["type"]>(["ENDPOINT"])
 export function getChildLinks(node: Node): ChildLink[] {
   switch (node.type) {
     case "FIXED":
-    case "GENERATED":
-    case "CHECKPOINT": {
-      const n = node as FixedNode | GeneratedNode | CheckpointNode
+    case "GENERATED": {
+      const n = node as FixedNode | GeneratedNode
       return [{ handle: "next", targetId: n.nextNodeId ?? "" }]
+    }
+    case "CHECKPOINT": {
+      const n = node as CheckpointNode
+      return [
+        { handle: "next", targetId: n.nextNodeId ?? "" },
+        ...(n.branches ?? []).map((b, i) => ({ handle: `branch:${i}`, targetId: b.nextNodeId ?? "", label: "personalised" })),
+      ]
     }
     case "CHOICE": {
       const c = node as ChoiceNode

@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { db } from "@/lib/db/prisma"
+import { SessionContextSchema, type SessionContext } from "./contract"
 import type { ExperienceSession, SessionState, NarrativeHistoryEntry, ChoiceHistoryEntry, DialogueTurn, DialogueSessionState, CompetencyResult } from "@/types/session"
 
 const DEFAULT_STATE: SessionState = {
@@ -13,6 +14,7 @@ const DEFAULT_STATE: SessionState = {
   dialogue: null,
   competencyProfile: [],
   endpointSummary: null,
+  profile: {},
 }
 
 /** Narrative history is capped so long sessions can't grow the row unboundedly. */
@@ -70,6 +72,7 @@ const SessionStateSchema = z.object({
   dialogue: DialogueStateSchema.nullable().catch(null),
   competencyProfile: z.array(CompetencyResultSchema).catch([]),
   endpointSummary: z.string().nullable().catch(null),
+  profile: z.record(z.enum(["strength", "developing", "not_yet_seen"])).catch({}),
 })
 
 export function parseSessionState(raw: unknown): SessionState {
@@ -191,6 +194,7 @@ export async function commitSessionMutation(
 
     return {
       ...updated,
+      context: parseContext(updated.context),
       state: draft.state,
       narrativeHistory: draft.narrativeHistory,
       choiceHistory: draft.choiceHistory,
@@ -200,25 +204,35 @@ export async function commitSessionMutation(
 
 // ─── SESSION CRUD ─────────────────────────────────────────────
 
+function parseContext(raw: unknown): SessionContext {
+  return SessionContextSchema.catch({}).parse(raw ?? {})
+}
+
 export async function createSession({
   experienceId,
   userId,
+  context,
 }: {
   experienceId: string
   userId?: string | null
+  context?: SessionContext
 }): Promise<ExperienceSession> {
   const session = await db.experienceSession.create({
     data: {
       experienceId,
       userId: userId ?? null,
       status: "active",
-      state: DEFAULT_STATE as object,
+      state: {
+        ...DEFAULT_STATE,
+        profile: Object.fromEntries((context?.profile ?? []).map((p) => [p.competencyId, p.status])),
+      } as object,
+      context: (context ?? {}) as object,
       narrativeHistory: [],
       choiceHistory: [],
       choiceCount: 0,
     },
   })
-  return { ...session, state: parseSessionState(session.state) } as unknown as ExperienceSession
+  return { ...session, state: parseSessionState(session.state), context: parseContext(session.context) } as unknown as ExperienceSession
 }
 
 export async function getSession(sessionId: string): Promise<ExperienceSession | null> {
@@ -226,7 +240,7 @@ export async function getSession(sessionId: string): Promise<ExperienceSession |
     where: { id: sessionId },
   })
   if (!session) return null
-  return { ...session, state: parseSessionState(session.state) } as unknown as ExperienceSession
+  return { ...session, state: parseSessionState(session.state), context: parseContext(session.context) } as unknown as ExperienceSession
 }
 
 export async function updateSessionState(

@@ -1,8 +1,12 @@
 import type { Node, CheckpointNode, DialogueNode } from "@/types/experience"
 import type { SessionState } from "@/types/session"
+import { evaluateCondition } from "./conditions"
 
-export function resolveCheckpointTarget(node: CheckpointNode, _state: SessionState): { nextNodeId: string; branchIndex: number | null } {
-  return { nextNodeId: node.nextNodeId, branchIndex: null }
+/** First branch whose conditions all hold wins; otherwise the default route. */
+export function resolveCheckpointTarget(node: CheckpointNode, state: SessionState): { nextNodeId: string; branchIndex: number | null } {
+  const branches = node.branches ?? []
+  const i = branches.findIndex((b) => b.when.length > 0 && b.when.every((c) => evaluateCondition(c, state)))
+  return i >= 0 ? { nextNodeId: branches[i].nextNodeId, branchIndex: i } : { nextNodeId: node.nextNodeId, branchIndex: null }
 }
 
 /** Where "Continue" goes from a node, or undefined if the node does not advance on its own. */

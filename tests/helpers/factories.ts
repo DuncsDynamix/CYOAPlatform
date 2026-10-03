@@ -217,6 +217,7 @@ export function createTestSession(
     dialogue: null,
     competencyProfile: [],
     endpointSummary: null,
+    profile: {},
   }
 
   return {
@@ -233,6 +234,7 @@ export function createTestSession(
     startedAt: new Date(),
     lastActiveAt: new Date(),
     completedAt: null,
+    context: {},
     ...overrides,
   }
 }
@@ -250,6 +252,7 @@ export function createTestSessionWithChoices(choicesMade: number): ExperienceSes
       dialogue: null,
       competencyProfile: [],
       endpointSummary: null,
+      profile: {},
     },
     choiceCount: choicesMade,
   })

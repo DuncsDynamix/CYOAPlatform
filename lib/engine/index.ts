@@ -62,6 +62,7 @@ export {
   clearSessionCache,
 } from "./cache"
 export { applyDisplayConditions, evaluateCondition } from "./conditions"
+export { buildLearnerBlock } from "./learner"
 export { USE_CASE_PACKS } from "./usecases"
 export { buildArcAwareness } from "./arc"
 export * from "./contract"

@@ -62,3 +62,23 @@ describe("validateExperience", () => {
     expect(codes(validateExperience(exp, { competencyIds: ["id-check"] })).w).toContain("unknown_competency")
   })
 })
+
+describe("validateExperience no_default_route", () => {
+  const cond = { type: "profile_status" as const, competencyId: "c", status: "developing" as const }
+  it("flags a checkpoint with branches but no default route", () => {
+    const nodes = [
+      ...createTestNodeGraph(),
+      { id: "cp-x", type: "CHECKPOINT", label: "Gate", visible: false, marksCompletionOf: "", unlocks: [], nextNodeId: "", branches: [{ when: [cond], nextNodeId: "node-1" }] },
+    ]
+    const r = validateExperience(story({ nodes }))
+    expect(r.errors.find((i) => i.code === "no_default_route" && i.nodeId === "cp-x")?.message).toContain("no default route")
+  })
+  it("flags a choice whose every option needs a profile", () => {
+    const nodes = [
+      ...createTestNodeGraph(),
+      { id: "ch-x", type: "CHOICE", label: "Pick", prompt: "p", options: [{ id: "a", label: "A", nextNodeId: "node-1", isLoadBearing: false, displayConditions: [cond] }] },
+    ]
+    const r = validateExperience(story({ nodes }))
+    expect(r.errors.find((i) => i.code === "no_default_route" && i.nodeId === "ch-x")?.message).toContain("no options")
+  })
+})

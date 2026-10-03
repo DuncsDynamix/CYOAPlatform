@@ -6,6 +6,7 @@ import { USE_CASE_PACKS } from "./usecases"
 import { callModel } from "./llm"
 import { getContextPack, type Character } from "./contract"
 import { buildReferenceBlock } from "./references"
+import { buildLearnerBlock } from "./learner"
 import { trackEvent } from "@/lib/analytics"
 import type { GeneratedNode, EndpointNode, Experience, DialogueNode, EvaluativeNode, ObservedDialogueNode, RubricCriterion } from "@/types/experience"
 import type { ExperienceSession, NarrativeHistoryEntry, ChoiceHistoryEntry, NarrativeScaffold, DialogueTurn, CompetencyResult } from "@/types/session"
@@ -23,10 +24,11 @@ export async function generateNode(
 
   const useCasePack = USE_CASE_PACKS[experience.type] ?? USE_CASE_PACKS.cyoa_story
   const pack = getContextPack(experience)
-  const referenceBlock = buildReferenceBlock(pack, "scenes")
+  const referenceBlock = buildReferenceBlock(pack, "scenes", session.context?.caseData)
+  const learnerBlock = buildLearnerBlock(session.context, "scenes")
 
   const systemPrompt = buildSystemPrompt(useCasePack, pack)
-  const prompt = buildGenerationPrompt(node, session, pack, arcAwareness, referenceBlock)
+  const prompt = buildGenerationPrompt(node, session, pack, arcAwareness, referenceBlock) + (learnerBlock ? `\n\n${learnerBlock}` : "")
 
   const { text } = await callModel({
     kind: "prose",
@@ -126,7 +128,8 @@ export async function generateEndpointSummary(
   const narrativeSummary = narrativeHistory.map((entry) => entry.content).join("\n\n---\n\n")
   const choiceHistory = session.choiceHistory as ChoiceHistoryEntry[]
 
-  const prompt = buildEndpointSummaryPrompt(narrativeSummary, choiceHistory, summaryInstruction, session.state.counters)
+  const learnerBlock = buildLearnerBlock(session.context, "summary")
+  const prompt = buildEndpointSummaryPrompt(narrativeSummary, choiceHistory, summaryInstruction, session.state.counters) + (learnerBlock ? `\n\n${learnerBlock}` : "")
   const systemPrompt = `You are a master storyteller writing a personalised ending reflection. ${pack.core.style.notes}
 
 ${WRITING_STYLE_RULES}`
@@ -157,6 +160,7 @@ export async function generateDialogueOpener(
 ): Promise<string> {
   const pack = getContextPack(experience)
   const characterRefs = buildReferenceBlock(pack, "characters")
+  const learnerBlock = buildLearnerBlock(session.context, "characters")
 
   const systemPrompt = `You are ${actor.name}, ${actor.role}. ${actor.personality}
 Your speech style: ${actor.speech}
@@ -167,7 +171,7 @@ Tone: ${pack.core.style.tone || "professional"}
 
 What has just happened (the participant was there and knows all of this):
 ${buildSceneContext(session)}
-${characterRefs ? `\n${characterRefs}\n` : ""}
+${characterRefs ? `\n${characterRefs}\n` : ""}${learnerBlock ? `\n${learnerBlock}\n` : ""}
 ${DIALOGUE_ENGAGEMENT_RULES}
 
 ${buildLearningDialogueRules(node.breakthroughCriteria)}
@@ -206,6 +210,7 @@ export async function generateDialogueResponse(
 ): Promise<string> {
   const pack = getContextPack(experience)
   const characterRefs = buildReferenceBlock(pack, "characters")
+  const learnerBlock = buildLearnerBlock(session.context, "characters")
 
   const systemPrompt = `You are ${actor.name}, ${actor.role}. ${actor.personality}
 Your speech style: ${actor.speech}
@@ -216,7 +221,7 @@ Tone: ${pack.core.style.tone || "professional"}
 
 What has just happened (the participant was there and knows all of this):
 ${buildSceneContext(session)}
-${characterRefs ? `\n${characterRefs}\n` : ""}
+${characterRefs ? `\n${characterRefs}\n` : ""}${learnerBlock ? `\n${learnerBlock}\n` : ""}
 ${DIALOGUE_ENGAGEMENT_RULES}
 
 ${buildLearningDialogueRules(node.breakthroughCriteria)}

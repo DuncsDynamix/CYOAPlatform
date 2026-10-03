@@ -34,6 +34,7 @@ interface TrainingPlayerProps {
     description: string
     objectives: string[]
     steps: number
+    personalised?: boolean
   }
 }
 
@@ -504,6 +505,7 @@ export function TrainingPlayer({ experienceSlug, brand = DEFAULT_BRAND, cover }:
           description={cover.description}
           objectives={cover.objectives}
           steps={cover.steps}
+          personalised={cover.personalised}
           onBegin={() => setStarted(true)}
         />
       </div>

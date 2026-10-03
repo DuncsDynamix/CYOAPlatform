@@ -1,3 +1,5 @@
+import type { SessionContext } from "@/types/experience"
+
 // ─── SESSION STATE ────────────────────────────────────────────
 
 export interface SessionState {
@@ -19,6 +21,9 @@ export interface SessionState {
 
   /** AI closing reflection, persisted at completion so the session record is complete. */
   endpointSummary: string | null
+
+  /** Per-competency status from the learner's prior sessions (empty unless the org opted in to personalisation). */
+  profile: Record<string, "strength" | "developing" | "not_yet_seen">
 }
 
 // ─── DIALOGUE STATE ───────────────────────────────────────────
@@ -116,4 +121,6 @@ export interface ExperienceSession {
   startedAt: Date
   lastActiveAt: Date
   completedAt?: Date | null
+  /** Server-built learner context (profile, history). Never client-supplied. */
+  context: SessionContext
 }

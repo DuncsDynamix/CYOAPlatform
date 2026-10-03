@@ -817,6 +817,7 @@
   background: var(--t-surface-scene); border-radius: 8px; padding: 0.75rem 1rem;
   margin: 0 0 1.5rem;
 }
+.traverse-training-theme .t-cover-personalised { font-size: 0.875rem; color: var(--t-text-muted); margin: 0 0 1rem; }
 .traverse-training-theme .t-cover-begin { width: 100%; padding: 0.875rem; font-size: 1rem; }
 
 /* ─── ORG TRAINING LIBRARY ───────────────────────────────────── */

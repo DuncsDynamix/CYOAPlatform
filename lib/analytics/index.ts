@@ -119,6 +119,8 @@ export interface EventProperties {
     experienceId: string
     userId?: string | null
     checkpointLabel: string
+    /** Index of the personalised branch taken, or null for the default route. */
+    branchIndex?: number | null
     stateSnapshot: {
       flags: Record<string, string | boolean>
       counters: Record<string, number>

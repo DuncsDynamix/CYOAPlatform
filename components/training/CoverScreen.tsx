@@ -13,6 +13,7 @@ export function CoverScreen({
   description,
   objectives,
   steps,
+  personalised = false,
   onBegin,
 }: {
   title: string
@@ -20,6 +21,8 @@ export function CoverScreen({
   description: string
   objectives: string[]
   steps: number
+  /** True when this session will adapt to the learner's earlier training. */
+  personalised?: boolean
   onBegin: () => void
 }) {
   const minutes = Math.max(10, Math.round((steps * 1.5) / 5) * 5)
@@ -41,6 +44,8 @@ export function CoverScreen({
             </ul>
           </div>
         )}
+
+        {personalised && <p className="t-cover-personalised">This session adapts to your previous training.</p>}
 
         <div className="t-cover-meta">
           <span>About {minutes} minutes</span>

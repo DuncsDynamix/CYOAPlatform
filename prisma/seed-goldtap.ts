@@ -251,13 +251,14 @@ async function main() {
 
   await db.org.upsert({
     where: { id: ORG_ID },
-    update: { competencyFramework: GOLDTAP_COMPETENCIES as unknown as object[] },
+    update: { competencyFramework: GOLDTAP_COMPETENCIES as unknown as object[], personalisationEnabled: true },
     create: {
       id: ORG_ID,
       name: "Gold Tap Training",
       slug: "gold-tap-training",
       trainingTier: "training_pilot",
       isOperator: false,
+      personalisationEnabled: true,
       competencyFramework: GOLDTAP_COMPETENCIES as unknown as object[],
     },
   })

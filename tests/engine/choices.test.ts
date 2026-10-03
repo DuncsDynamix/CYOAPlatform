@@ -16,6 +16,7 @@ function makeState(choicesMade: number, flags: Record<string, string | boolean> 
     dialogue: null,
     competencyProfile: [],
     endpointSummary: null,
+    profile: {},
   }
 }
 

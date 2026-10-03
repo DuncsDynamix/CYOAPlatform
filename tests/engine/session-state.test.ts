@@ -29,6 +29,7 @@ const validState: SessionState = {
     },
   ],
   endpointSummary: null,
+  profile: {},
 }
 
 describe("parseSessionState", () => {

@@ -24,6 +24,8 @@ export function evaluateCondition(
       return (state.counters[condition.key] ?? 0) <= condition.value
     case "counter_equals":
       return (state.counters[condition.key] ?? 0) === condition.value
+    case "profile_status":
+      return state.profile?.[condition.competencyId] === condition.status
     default: {
       const exhaustiveCheck: never = condition
       console.warn(`[conditions] unknown condition type: ${(exhaustiveCheck as { type: string }).type}`)
@@ -64,7 +66,7 @@ export function applyDisplayConditions(
 
     for (const condition of conditions) {
       if (!evaluateCondition(condition, state)) {
-        if (condition.ifNotMet === "suppress_option") {
+        if ((condition.ifNotMet ?? "suppress_option") === "suppress_option") {
           suppressed = true
           break
         }

@@ -6,6 +6,7 @@ import { buildArcAwareness } from "./arc"
 import { assessmentOutcome, type AssessmentOutcome } from "./assessment-outcome"
 import { getContextPack } from "./contract"
 import { applyDisplayConditions } from "./conditions"
+import { resolveCheckpointTarget } from "./navigation"
 import { getAllNodes } from "./graph"
 import { trackEvent } from "@/lib/analytics"
 import type {
@@ -194,8 +195,10 @@ export function getReachableGeneratedChildren(
         if (gc?.type === "GENERATED") results.push(gc as GeneratedNode)
       }
     } else if (child.type === "CHECKPOINT") {
-      const grandchild = findNode(nodes, (child as CheckpointNode).nextNodeId)
-      if (grandchild?.type === "GENERATED") results.push(grandchild as GeneratedNode)
+      for (const id of getImmediateChildIds(child)) {
+        const grandchild = findNode(nodes, id)
+        if (grandchild?.type === "GENERATED" && !results.includes(grandchild as GeneratedNode)) results.push(grandchild as GeneratedNode)
+      }
     }
   }
 
@@ -350,6 +353,7 @@ async function resolveNodeContent(
           experienceId: experience.id,
           userId: session.userId ?? null,
           checkpointLabel: checkpointNode.marksCompletionOf,
+          branchIndex: resolveCheckpointTarget(checkpointNode, state).branchIndex,
           stateSnapshot: {
             flags: state.flags,
             counters: state.counters,
@@ -567,8 +571,10 @@ function getImmediateChildIds(node: Node): string[] {
       return [(node as GeneratedNode).nextNodeId]
     case "CHOICE":
       return (node as ChoiceNode).options?.map((o) => o.nextNodeId) ?? []
-    case "CHECKPOINT":
-      return [(node as CheckpointNode).nextNodeId]
+    case "CHECKPOINT": {
+      const c = node as CheckpointNode
+      return [c.nextNodeId, ...(c.branches ?? []).map((b) => b.nextNodeId)]
+    }
     case "ENDPOINT":
       return []
     case "DIALOGUE": {
