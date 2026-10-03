@@ -129,7 +129,8 @@ export const TRAINING_PROSE_RULES = `TRAINING PROSE — VOICE:
  */
 export function buildEvaluativePrompt(
   node: EvaluativeNode,
-  scaffoldEntries: NarrativeHistoryEntry[]
+  scaffoldEntries: NarrativeHistoryEntry[],
+  standardsBlock = ""
 ): { system: string; user: string } {
   const learnerParts: string[] = []
   const backgroundParts: string[] = []
@@ -172,7 +173,7 @@ ${learnerParts.join("\n\n") || "(The learner gave no responses.)"}
 
 BACKGROUND — engine-generated context. None of this was said or done by the learner. Use it only to understand the situation; NEVER cite it as evidence of learner competence or failure:
 ${backgroundParts.join("\n\n")}
-
+${standardsBlock ? `\n${standardsBlock}\n` : ""}
 Rubric criteria:
 ${rubricText}
 

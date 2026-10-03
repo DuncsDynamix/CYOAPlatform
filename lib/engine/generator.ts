@@ -3,7 +3,8 @@ import { stripEmDashes, stripJsonFence } from "./style"
 import { buildArcAwareness } from "./arc"
 import { USE_CASE_PACKS } from "./usecases"
 import { callModel } from "./llm"
-import { getContextPack, type ContextPack, type Character } from "./contract"
+import { getContextPack, type Character } from "./contract"
+import { buildReferenceBlock } from "./references"
 import { trackEvent } from "@/lib/analytics"
 import type { GeneratedNode, EndpointNode, Experience, DialogueNode, EvaluativeNode, ObservedDialogueNode } from "@/types/experience"
 import type { ExperienceSession, NarrativeHistoryEntry, ChoiceHistoryEntry, NarrativeScaffold, DialogueTurn, CompetencyResult } from "@/types/session"
@@ -21,7 +22,7 @@ export async function generateNode(
 
   const useCasePack = USE_CASE_PACKS[experience.type] ?? USE_CASE_PACKS.cyoa_story
   const pack = getContextPack(experience)
-  const referenceBlock = renderLegacyReferences(pack)
+  const referenceBlock = buildReferenceBlock(pack, "scenes")
 
   const systemPrompt = buildSystemPrompt(useCasePack, pack)
   const prompt = buildGenerationPrompt(node, session, pack, arcAwareness, referenceBlock)
@@ -154,6 +155,7 @@ export async function generateDialogueOpener(
   apiKey?: string
 ): Promise<string> {
   const pack = getContextPack(experience)
+  const characterRefs = buildReferenceBlock(pack, "characters")
 
   const systemPrompt = `You are ${actor.name}, ${actor.role}. ${actor.personality}
 Your speech style: ${actor.speech}
@@ -164,7 +166,7 @@ Tone: ${pack.core.style.tone || "professional"}
 
 What has just happened (the participant was there and knows all of this):
 ${buildSceneContext(session)}
-
+${characterRefs ? `\n${characterRefs}\n` : ""}
 ${DIALOGUE_ENGAGEMENT_RULES}
 
 ${buildLearningDialogueRules(node.breakthroughCriteria)}
@@ -202,6 +204,7 @@ export async function generateDialogueResponse(
   apiKey?: string
 ): Promise<string> {
   const pack = getContextPack(experience)
+  const characterRefs = buildReferenceBlock(pack, "characters")
 
   const systemPrompt = `You are ${actor.name}, ${actor.role}. ${actor.personality}
 Your speech style: ${actor.speech}
@@ -212,7 +215,7 @@ Tone: ${pack.core.style.tone || "professional"}
 
 What has just happened (the participant was there and knows all of this):
 ${buildSceneContext(session)}
-
+${characterRefs ? `\n${characterRefs}\n` : ""}
 ${DIALOGUE_ENGAGEMENT_RULES}
 
 ${buildLearningDialogueRules(node.breakthroughCriteria)}
@@ -310,6 +313,7 @@ export async function generateObservedDialogue(
 
   try {
     const pack = getContextPack(experience)
+    const characterRefs = buildReferenceBlock(pack, "characters")
 
     const systemPrompt = `You are writing a realistic workplace conversation for a training scenario.
 Setting: ${pack.core.setting.summary || "a professional workplace"}
@@ -320,7 +324,7 @@ ${buildSceneContext(session)}
 
 Character A — ${actorA.name}: ${actorA.role}. ${actorA.personality} Speech: ${actorA.speech}
 Character B — ${actorB.name}: ${actorB.role}. ${actorB.personality} Speech: ${actorB.speech}
-
+${characterRefs ? `\n${characterRefs}\n` : ""}
 Write realistic, natural dialogue. Each line should be 1–3 sentences. Include occasional brief action beats in parentheses if they add clarity (e.g., "(glances at the clipboard)"). Keep it grounded and authentic to the workplace context.
 
 ${WRITING_STYLE_RULES}`
@@ -401,7 +405,7 @@ export async function generateEvaluativeAssessment(
   try {
     // CB-003: scaffold context, structurally split so the learner is judged
     // only on their own words and chosen options — see buildEvaluativePrompt.
-    const { system, user } = buildEvaluativePrompt(node, scaffoldEntries)
+    const { system, user } = buildEvaluativePrompt(node, scaffoldEntries, buildReferenceBlock(getContextPack(experience), "assessor"))
 
     const { text } = await callModel({
       kind: "evaluative",
@@ -437,13 +441,4 @@ export async function generateEvaluativeAssessment(
     console.error(`[evaluative] Assessment failed for node ${node.id}:`, err)
     return fallback
   }
-}
-
-// ─── REFERENCES (temporary; replaced in Task 4) ──────────────
-
-function renderLegacyReferences(pack: ContextPack): string {
-  const lines = pack.core.references
-    .filter((r) => r.source.kind === "text")
-    .map((r) => `[${r.priority.toUpperCase()}] ${r.label}: ${(r.source as { text: string }).text}`)
-  return lines.length ? `GROUND TRUTH — facts you must treat as authoritative:\n${lines.join("\n")}` : ""
 }
