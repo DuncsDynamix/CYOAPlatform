@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 npm run dev          # Start Next.js dev server (Turbopack)
 npm run build        # Production build
-npm run lint         # ESLint
+npm run lint         # ESLint 9 CLI (`eslint .`); enforces the engine boundary
 npm test             # Run all tests (Vitest)
 npx vitest tests/engine/arc.test.ts   # Run a single test file
 
@@ -55,16 +55,26 @@ The story page (`app/(library)/story/[id]/page.tsx`) checks `experience.renderin
 
 ### The Engine
 
-The engine lives in `lib/engine/` and is the core of the platform:
+The engine lives in `lib/engine/` and is the core of the platform.
 
-- **`executor.ts`** — Entry point. `arriveAtNode()` resolves a node to `ResolvedContent`, updates session state, and fires parallel pre-generation for reachable GENERATED children. The `resolveNodeContent` switch handles all 9 node types.
-- **`generator.ts`** — All Anthropic API calls. Uses `claude-sonnet-5` for generation (migrated July 2026 — `claude-sonnet-4-20250514` was retired by Anthropic; thinking is explicitly disabled because Sonnet 5 defaults to adaptive thinking, which would eat the small max_tokens budgets), `claude-haiku-4-5-20251001` for scaffolding/assessment (cheap extraction calls). All calls go through `generationQueue` (p-queue, default concurrency 5).
-- **`session.ts`** — All DB reads/writes for `ExperienceSession`. The session state JSON includes `flags`, `dialogue`, and `competencyProfile`.
-- **`cache.ts`** — Redis (Upstash) + in-memory fallback for generated node prose. Key: `node:{sessionId}:{nodeId}`.
-- **`arc.ts`** — Calculates arc phase (opening → resolution) from `choicesMade / totalDepthMid` to inject pacing instructions into generation prompts.
-- **`router.ts`** — For open/free-text choices, uses Claude to classify the response into the correct branch.
-- **`prompts.ts`** — Builds the system and user prompts from context pack + arc awareness.
-- **`usecases/index.ts`** — `USE_CASE_PACKS` map: `cyoa_story`, `l_and_d`, `education`, `publisher_ip`. These define the narrator role and engine behaviour injected into every generation prompt.
+**Entry points (enforced by ESLint `no-restricted-imports`):** server code imports `@/lib/engine` (`lib/engine/index.ts`, explicit named exports); `"use client"` code and anything it imports uses `@/lib/engine/client` (pure, browser-safe modules only: contract, graph, validation, `assessmentOutcome`, `USE_CASE_PACKS`). Nothing outside `lib/engine/` imports `@/lib/engine/*` internals. Inside `lib/engine/`, nothing imports `@/lib/library/*`, `@/lib/training/*`, `@/components/*` or `@/app/*`.
+
+- **`executor.ts`** — `arriveAtNode()` resolves a node to `ResolvedContent`, updates session state, and fires background pre-generation for reachable GENERATED children (never for a DIALOGUE node's children: that scene depends on what the learner says). `resolveNodeContent` handles all 9 node types. FIXED pages, OBSERVED_DIALOGUE exchanges and GENERATED scenes all enter `narrativeHistory` (idempotent per node). ENDPOINT completes the session even if the summary call fails (fallback reflection) and carries the session's stored assessment results (`assessment`) when the experience has an EVALUATIVE node. `reassessNode()` re-runs one EVALUATIVE node.
+- **`llm.ts`** — `callModel(opts)` is the **only** Anthropic call site (beta messages API, queue-wrapped via `generationQueue`, BYOK, refusal fallback opt-in, per-call token tracking). It checks `stop_reason` and throws `ModelCallError` (reason `refusal` | `max_tokens` | `no_text` | `queue`).
+- **`models.ts`** — `MODEL_MAP`, the one place that names models: one entry per call kind with model, `maxTokens`, thinking and effort. Sonnet 5.5 (`claude-sonnet-5-5`) for prose, summary, dialogue, observed dialogue, router, evaluative and Bindery; Haiku 4.5 (`claude-haiku-4-5`) for scaffold and breakthrough extraction. Sonnet 5.5 **rejects** `thinking: { type: "disabled" }`; its thinking-off mode is `{ type: "between_tools" }`. Prose and summary use adaptive thinking at low effort (thinking off leaked reasoning into the page); thinking tokens count toward `max_tokens`. A test forbids model strings anywhere else in `lib/engine/` and any `disabled` thinking.
+- **`generator.ts`** — builds each call's prompts and calls `callModel`: prose, scaffold, endpoint summary, dialogue opener/response, breakthrough, observed dialogue, evaluative assessment (structured output, one retry, failure means `not_assessed`).
+- **`prompts.ts`** — system and user prompts. `buildGenerationPrompt` renders scaffolds, the verbatim conversation since the last generated scene (fenced as spoken dialogue only), and the previous scene's closing words. Prose and summary system prompts carry `OUTPUT_RULES`. `buildEvaluativePrompt` takes no learner profile, history or session context, and must never gain one.
+- **`contract/`** — the v2 contract (Zod schemas are the source of truth): `ContextPack` (shared `core` + `extension` of kind `training` or `story`), `ReferenceItem`, `SessionContext`. `normaliseContextPack(raw, useCaseId)` upgrades stored v1 packs on read; `getContextPack(experience)` is what engine code calls. The experience PUT route normalises on write. `planRowMigration` backs `prisma/migrate-context-packs.ts`.
+- **`references.ts`** — reference roles (`reference`, `exemplar`, `case_data`) and visibility (`scenes`, `characters`, `assessor`; omitted means the role default), per-audience character budgets, transcripts rendered as speaker-labelled lines. Session `caseData` reaches scenes and characters.
+- **`learner.ts`** — profile/history guidance blocks for scenes, characters and the summary. Never passed to the assessor.
+- **`validate.ts`** — `validateExperience(experience, { competencyIds? })`: blocking errors and warnings with plain-language messages. Runs at publish (`/api/v1/experience/[id]/publish`, with the org's competency ids) and under the Bindery's bind step.
+- **`graph.ts` / `navigation.ts`** — pure graph links and validation; `getAdvanceTarget` (where Continue goes) and `resolveCheckpointTarget` (personalised checkpoint branches, first match wins, empty targets skipped).
+- **`assessment-outcome.ts`** — three-valued gate: `passed` | `not_passed` | `incomplete`. A criterion the engine could not assess is `not_assessed`, never a learner failure.
+- **`session.ts`** — all DB reads/writes for `ExperienceSession` via `commitSessionMutation` (one transactional read-mutate-write). State includes `flags`, `counters`, `dialogue`, `competencyProfile`, `endpointSummary`, `profile`.
+- **`cache.ts`** — Redis (Upstash) + in-memory fallback for generated prose. Key: `node:{sessionId}:{nodeId}`.
+- **`arc.ts`**, **`router.ts`**, **`conditions.ts`**, **`style.ts`**, **`usecases/index.ts`** — pacing, open-choice routing, display/branch conditions (incl. `profile_status`), `stripEmDashes`/`stripJsonFence`, and `USE_CASE_PACKS` (`cyoa_story`, `l_and_d`, `education`, `publisher_ip`; each declares `allowedNodeTypes`, `requiredContextFields` and `extensionKind`).
+
+**Personalisation (org opt-in).** `Org.personalisationEnabled` + `Org.competencyFramework` (`[{ id, label, description? }]`). The start route rejects a client-supplied `sessionContext` and builds it server-side (`lib/training/learner-profile.ts`); it is stored on `ExperienceSession.context` and statuses are copied into `state.profile`. Rubric criteria may carry `competencyId`. Personalisation changes the route and emphasis, never the verdict: the assessor never sees learner data.
 
 ### Node Types
 
@@ -82,7 +92,7 @@ Nine node types defined in `types/experience.ts`:
 | `EVALUATIVE` | Rubric-based assessment using scaffold context (CB-003 pattern) |
 | `SLIDE_DECK` | Ordered slide carousel; player navigates with prev/next/dots, then continues |
 
-Node graphs can be flat (`experience.nodes`) or segmented (`experience.segments`). `getAllNodes()` in `executor.ts` flattens segments into a single traversable array.
+Node graphs can be flat (`experience.nodes`) or segmented (`experience.segments`). `getAllNodes()` in `lib/engine/graph.ts` flattens segments into a single traversable array. CHECKPOINT may carry personalised `branches` (`{ when, nextNodeId }[]`, default route = `nextNodeId`).
 
 ### Node Layouts (FIXED and GENERATED)
 
@@ -104,15 +114,16 @@ Image upload writes to `public/uploads/` via `lib/storage/index.ts` and is serve
 
 ### Experience Configuration
 
-Each experience has three JSON fields:
+Each experience has these JSON fields:
 
 - **`useCasePack`** — Platform-owned. Defines engine behaviour (narrator role, failure modes). Set from `USE_CASE_PACKS[experience.type]`.
-- **`contextPack`** — Author-owned. World, actors, protagonist, style, ground truth, scripts, learning objectives. Typed as `ExperienceContextPack`.
+- **`contextPack`** — Author-owned, v2 contract (`lib/engine/contract/`): `core` (setting, participant, characters, style, references, rules) + `extension` (`training`: learning objectives, organisation; `story`: atmosphere, world rules, canon). Stored v1 packs are normalised on read; always go through `getContextPack` / `normaliseContextPack`, never read raw fields.
 - **`shape`** — Structural metadata: depth range, endpoint definitions, load-bearing choice indices, convergence points, pacing model.
+- **`presentation`** — App-owned display data, not engine context (e.g. `useCaseCategory`, the training shelf grouping read by `lib/training/use-case-categories.ts`).
 
 ### Narrative Scaffold (CB-002 / CB-003)
 
-Every GENERATED node produces a `NarrativeScaffold` (via a cheap Haiku call) stored alongside the prose in `narrativeHistory`. The scaffold — not the raw prose — is what generation prompts use as context. This prevents context window bloat and is what EVALUATIVE nodes assess against.
+Every GENERATED node produces a `NarrativeScaffold` (via a cheap Haiku call) stored alongside the prose in `narrativeHistory`. FIXED pages and observed exchanges are appended with a minimal scaffold (no model call, `kind: "authored" | "observed"`); completed DIALOGUEs are appended with their verbatim `transcript`. Scene prompts use scaffolds, not raw prose, plus the verbatim conversation since the last generated scene. EVALUATIVE nodes assess only the learner's own words and choices from the entries listed in `assessesNodeIds`.
 
 ### API Routes
 
@@ -123,6 +134,8 @@ All engine routes are versioned under `app/api/v1/`:
 - `POST /api/v1/engine/dialogue` — Submit a participant turn in a DIALOGUE node
 - `GET /api/v1/engine/node?sessionId=` — Advance from current node to its `nextNodeId`
 - `GET /api/v1/engine/stream` — Streaming variant (separate concern)
+- `POST /api/v1/engine/reassess` — Re-run one EVALUATIVE node. Session owner only when that node has a `not_assessed` criterion (otherwise 403 "Nothing to re-run"); org editors always. Generation-limited, audited (`assessment_rerun`), results stamped `reassessedAt`
+- `GET /api/v1/engine/record?sessionId=` — Full session record (timeline + evaluation); the evidence verdict is `null` when the experience has no assessment
 - `/api/v1/experience/...` — Experience CRUD
 - `POST /api/v1/bindery/outline` — AI-drafts a chapter outline proposal for a Bindery draft (Sonnet, Zod-validated, retry-once)
 - `POST /api/v1/bindery/draft-chapter` — AI-drafts one chapter's nodes; `nodeId` scopes to a single page; `mode: "sample"` returns a one-off prose sample (never stored)
@@ -136,7 +149,7 @@ Old paths (`/api/engine/...`) redirect to v1 via `next.config.js` 308 redirects.
 
 - `lib/library/bindery-packs.ts` — the use-case seam: vocabulary ("written by you" / "told by the engine"), sheet titles, templates, prompt framing. `cyoa_story` is the only pack; a Training bindery is a new pack, not a component rewrite.
 - `lib/library/bindery.ts` — pure logic: outline model + Zod proposal schemas (labels/refs validated pre-materialisation), `proposalToNodes`, `derivePlan`, `looseStitches` (in-fiction validation copy; severities `blocking`/`adrift`).
-- `lib/engine/bindery-prompts.ts` + `lib/engine/bindery-draft.ts` — drafting prompts and model calls (queue-wrapped, BYOK, `stripJsonFence` + Zod + one retry; drafted labels humanised, em-dashes stripped).
+- `lib/library/bindery-prompts.ts` + `lib/library/bindery-draft.ts` — drafting prompts and model calls, importing only from `@/lib/engine` (`callModel` kinds `bindery_json` / `bindery_sample`; `stripJsonFence` + Zod + one retry; drafted labels humanised, em-dashes stripped). The bind step runs `validateExperience` under its `looseStitches` copy.
 - `components/library/bindery/` — Desk shell, Drawer, five sheets, ChapterPlan/PageCard/ChoiceCard, read-only BindingMap.
 
 **Gotchas:** the engine strings FIXED/GENERATED/CHOICE/ENDPOINT must never render in Bindery UI (tests pin this, along with a no-em-dash regex). Any Bindery `shape` write must preserve the structural fields (`loadBearingChoices`, `convergencePoints`, `mandatoryNodeIds`, `endpoints`, `pacingModel`) — `lib/engine/arc.ts` reads them (it now has defensive guards, but don't rely on them). Story-page visibility is `canViewStory` in `lib/library/story-access.ts` (published public; draft/preview author/org-editors only) — deliberately stricter than `canAccessExperience`, whose preview-is-public carve-out serves other surfaces; do not "simplify" the page back to the shared helper.
@@ -152,9 +165,9 @@ Operators (`isOperator: true`) can supply their own Anthropic key (BYOK), which 
 Key models in `prisma/schema.prisma`:
 
 - **`User`** — has `orgId`, `orgRole` (`owner` | `author` | `learner`), `subscriptionTier`
-- **`Org`** — multi-tenant org with `trainingTier`, `studioTier`, `stripeCustomerId`, `isOperator`, `operatorApiKey`
-- **`Experience`** — has `orgId` linking to Org
-- **`ExperienceSession`** — runtime session state
+- **`Org`** — multi-tenant org with `trainingTier`, `studioTier`, `stripeCustomerId`, `isOperator`, `operatorApiKey`, `personalisationEnabled`, `competencyFramework`
+- **`Experience`** — has `orgId` linking to Org; `presentation` (app display data)
+- **`ExperienceSession`** — runtime session state; `context` (server-built `SessionContext`)
 
 ### Subscription Tiers
 
@@ -187,7 +200,7 @@ The TraverseTraining layout wraps everything in `<div className="traverse-traini
 
 Two component directories exist in parallel during migration:
 
-- **`components/training/`** — Working full-featured player (`TrainingPlayer.tsx`) with all 7 node types, feedback panels, debrief screen, objectives drawer. Uses `t-` CSS classes. Currently rendered by `app/(traverse-training)/scenario/[id]/page.tsx`.
+- **`components/training/`** — Working full-featured player (`TrainingPlayer.tsx`) with every node type, feedback panels, debrief screen, objectives drawer. Uses `t-` CSS classes. Currently rendered by `app/(traverse-training)/scenario/[id]/page.tsx`.
 - **`components/traverse-training/`** — New components using `tt-` CSS classes: `ScenePanel.tsx`, `ChoicePanel.tsx`, `GeneratingScreen.tsx`, `SlideDeckPanel.tsx`, `LayoutRenderer.tsx` + `templates/` (7 layout templates, each using `react-markdown` for body text). A full `TraversePlayer` to replace `TrainingPlayer` is deferred (post-April 2026).
 
 ### Authoring Autosave
@@ -200,7 +213,9 @@ The authoring page (`app/(authoring)/experience/[id]/page.tsx`) uses a 2-second 
 
 Tests live in `tests/`. Vitest with jsdom. Run against real logic using factory helpers in `tests/helpers/factories.ts`.
 
-When adding a new field to `SessionState`, update both `DEFAULT_STATE` in `lib/engine/session.ts` **and** the factories in `tests/helpers/factories.ts`.
+When adding a new field to `SessionState`, update both `DEFAULT_STATE` in `lib/engine/session.ts` **and** the factories in `tests/helpers/factories.ts`. A new field on stored results (`CompetencyResult`) also needs the session state Zod schema in `session.ts`, which strips unknown keys.
+
+Mocking the SDK: a `vi.hoisted` create fn exposed as both `messages.create` and `beta.messages.create`, responses including `stop_reason`; mock `@/lib/engine/queue` (`add: fn => fn()`). `@/lib/db/prisma`, `@/lib/engine/cache` and `@/lib/analytics` are mocked globally in `tests/setup.ts`.
 
 ### Seeding
 
@@ -232,3 +247,8 @@ See `docs/platform_roadmap_vercel.md` for the full plan. As of 2026-03-30:
 - **`UpdateExperienceSchema` nullable fields** — `description` and `genre` use `.optional().nullable()`. Omitting `.nullable()` causes autosave to silently fail (400) for any experience where these fields are null in the DB.
 - **Image uploads** (`public/uploads/`) are written to disk and not tracked by git. They are not persistent across deploys or fresh clones. Seed images live in `public/uploads/seed/` and are copied by seed scripts.
 - **Advancing past a node** — `getAdvanceTarget` in `lib/engine/navigation.ts` is the single source of where Continue goes; a new node type with `nextNodeId` must be added there.
+- **Model calls** — go through `callModel` with a `CallKind` from `MODEL_MAP`. Never name a model elsewhere and never send `thinking: { type: "disabled" }` (Sonnet 5.5 returns 400). A `ModelCallError` reaching a route is mapped to a retryable envelope by `classifyEngineError` (`lib/api/errors.ts`).
+- **Route durations** — `/engine/node`, `/engine/choose`, `/engine/dialogue` and `/engine/reassess` set `maxDuration = 120` (an EVALUATIVE arrival can make two assessment attempts: 50s SDK timeout, one SDK retry). Vercel Hobby caps functions at 60s, so deploy on a plan that allows 120s.
+- **Assessor isolation** — `buildEvaluativePrompt` must never receive learner profile, history or session context (test-pinned).
+- **Evidence verdict** — the debrief record is built from the session's stored results (sent on the ENDPOINT content), not from player state. An experience with no EVALUATIVE node shows no competence verdict.
+- **Deploying the engine-contract branch** — after deploy, run `prisma migrate deploy`, then `npx tsx prisma/migrate-context-packs.ts --apply` against the deployed DB (dry-run first; **owner approval required**) so stored packs become v2 and shelf categories move into `presentation`.
