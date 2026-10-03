@@ -36,22 +36,39 @@ async function readFailure(res: Response, fallback: string): Promise<{ message: 
   }
 }
 
+/**
+ * Where moving on from this node heads, for the waiting screen's shape.
+ * Best effort: the server decides real routing (choices, branches).
+ */
+function nextNodeIdOf(node: Node | null): string | null {
+  const next = (node as { nextNodeId?: unknown } | null)?.nextNodeId
+  return typeof next === "string" && next ? next : null
+}
+
+export interface CurrentNode {
+  id: string
+  label: string
+  type: Node["type"]
+}
+
 export interface UseTrainingSessionOptions {
   experienceSlug: string
   /** True when there is no cover: the session starts on mount. */
   autoStart: boolean
   /** The learner's unfinished session for this course, offered as Resume on the cover. */
   resumeSessionId?: string
+  /** Resume `resumeSessionId` on mount, without the cover (the library hero's Resume link). */
+  autoResume?: boolean
 }
 
 type BeginMode = "new" | "resume" | "restart"
 
-export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId }: UseTrainingSessionOptions) {
+export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId, autoResume = false }: UseTrainingSessionOptions) {
   // What begin() asked for, with the session to resume captured at call time:
   // the start effect keys on this, never on the resumeSessionId prop, so a
   // prop change after the session began cannot start (or abandon) one again.
   const [startRequest, setStartRequest] = useState<{ mode: BeginMode; resumeId?: string } | null>(
-    autoStart ? { mode: "new" } : null
+    autoStart ? { mode: "new" } : autoResume && resumeSessionId ? { mode: "resume", resumeId: resumeSessionId } : null
   )
   const started = startRequest !== null
   const [visitedNodeIds, setVisitedNodeIds] = useState<string[]>([])
@@ -67,6 +84,10 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
   const [competencyResults, setCompetencyResults] = useState<CompetencyResult[]>([])
   const [courseNotes, setCourseNotes] = useState<CourseNote[]>([])
   const [currentNodeKey, setCurrentNodeKey] = useState<string | null>(null)
+  const [currentNode, setCurrentNode] = useState<CurrentNode | null>(null)
+  const [pendingNodeId, setPendingNodeId] = useState<string | null>(null)
+  // The last node arrived at, checkpoints included: where "advance" heads from.
+  const lastNodeRef = useRef<Node | null>(null)
 
   const addCourseNote = (note: CourseNote) =>
     setCourseNotes((prev) => (prev.some((n) => n.nodeId === note.nodeId) ? prev : [...prev, note]))
@@ -106,6 +127,8 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
     setDialogueHistory([])
     setCompetencyResults([])
     setCourseNotes([])
+    setCurrentNode(null)
+    setPendingNodeId(null)
 
     try {
       const res = await fetch("/api/v1/engine/start", {
@@ -149,6 +172,7 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
 
   const resumeExisting = useCallback(async function resume(sid: string): Promise<void> {
     setPlayerStatus({ status: "loading_module" })
+    setPendingNodeId(null)
     try {
       const res = await fetch(`/api/v1/engine/resume?sessionId=${sid}`, { signal: nextSignal() })
       if (res.status === 403 || res.status === 404 || res.status === 409) {
@@ -228,6 +252,9 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
   }
 
   function arriveAtNode(sid: string, node: Node, content: ResolvedContent) {
+    lastNodeRef.current = node
+    setPendingNodeId(null)
+    if (node.type !== "CHECKPOINT") setCurrentNode({ id: node.id, label: node.label, type: node.type })
     setVisitedNodeIds((prev) => [...prev, node.id])
     // Demo badge key: node type, with the open-choice variant distinguished.
     // Checkpoints are skipped so the previous screen's key survives auto-advance.
@@ -363,6 +390,7 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
   }
 
   async function advanceToNextNode(sid: string) {
+    setPendingNodeId(nextNodeIdOf(lastNodeRef.current))
     setPlayerStatus({ status: "advancing" })
     try {
       const res = await fetch(`/api/v1/engine/node?sessionId=${sid}`, { signal: nextSignal() })
@@ -404,13 +432,13 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
         choiceLabel,
         onContinue: () => {
           setFeedbackVisible(false)
-          setTimeout(() => submitChoice(choiceId), 350)
+          setTimeout(() => submitChoice(choiceId, option.nextNodeId || null), 350)
         },
       })
       // Trigger slide-in animation on next tick
       setTimeout(() => setFeedbackVisible(true), 20)
     } else {
-      submitChoice(choiceId)
+      submitChoice(choiceId, option.nextNodeId || null)
     }
   }
 
@@ -480,6 +508,10 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
   // Early wrap-up: participant declares the conversation done before max turns
   async function handleConcludeDialogue() {
     if (!sessionId) return
+    // The conversation is over from the learner's side: show the wait for
+    // what follows (usually the assessment) rather than a frozen conversation.
+    setPendingNodeId(nextNodeIdOf(lastNodeRef.current))
+    setPlayerStatus({ status: "advancing" })
     try {
       const res = await fetch("/api/v1/engine/dialogue", {
         method: "POST",
@@ -496,6 +528,8 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
       if (data.nextNode && data.nextContent) {
         setDialogueHistory([])
         arriveRef.current?.(sessionId, data.nextNode, data.nextContent)
+      } else {
+        setPlayerStatus({ status: "error", message: "Could not finish the conversation", retryable: true, retry: handleConcludeDialogue })
       }
     } catch (err) {
       if (isAbort(err)) return
@@ -508,8 +542,9 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
     advanceToNextNode(sessionId)
   }
 
-  async function submitChoice(choiceId: string) {
+  async function submitChoice(choiceId: string, towards: string | null = null) {
     if (!sessionId) return
+    setPendingNodeId(towards)
     setPlayerStatus({ status: "advancing" })
     try {
       const res = await fetch("/api/v1/engine/choose", {
@@ -520,7 +555,7 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
       })
       if (!res.ok) {
         const failure = await readFailure(res, "Could not submit response")
-        setPlayerStatus({ status: "error", ...failure, retry: () => submitChoice(choiceId) })
+        setPlayerStatus({ status: "error", ...failure, retry: () => submitChoice(choiceId, towards) })
         return
       }
       const data = await res.json() as { node: Node; content: ResolvedContent }
@@ -528,7 +563,7 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
     } catch (err) {
       if (isAbort(err)) return
       console.error("[player] choice failed:", err)
-      setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: () => submitChoice(choiceId) })
+      setPlayerStatus({ status: "error", message: "Network error", retryable: true, retry: () => submitChoice(choiceId, towards) })
     }
   }
 
@@ -551,6 +586,8 @@ export function useTrainingSession({ experienceSlug, autoStart, resumeSessionId 
     feedbackVisible,
     courseNotes,
     currentNodeKey,
+    currentNode,
+    pendingNodeId,
     startSession,
     advanceToNextNode,
     handleChoice,

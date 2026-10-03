@@ -168,3 +168,76 @@ describe("useTrainingSession resume and restart", () => {
     expect(JSON.parse(String(fetchFn.mock.calls[0][1]?.body))).toEqual({ experienceSlug: "doorstep" })
   })
 })
+
+describe("useTrainingSession screen hints", () => {
+  const okResponse = (body: unknown) => ({ ok: true, status: 200, json: () => Promise.resolve(body) }) as Response
+  const never = () => new Promise<Response>(() => {})
+
+  it("resumes on mount when autoResume is set and there is a session to resume", async () => {
+    const fetchFn = vi.fn(() => Promise.resolve(okResponse(resumeBody)))
+    vi.stubGlobal("fetch", fetchFn)
+    const { result } = renderHook(() =>
+      useTrainingSession({ experienceSlug: "doorstep", autoStart: false, autoResume: true, resumeSessionId: "s9" })
+    )
+    expect(result.current.started).toBe(true)
+    await waitFor(() => expect(result.current.sessionId).toBe("s9"))
+    expect(fetchFn).toHaveBeenCalledWith("/api/v1/engine/resume?sessionId=s9", expect.anything())
+  })
+
+  it("ignores autoResume when there is nothing to resume", () => {
+    const fetchFn = stubFetch()
+    const { result } = renderHook(() => useTrainingSession({ experienceSlug: "doorstep", autoStart: false, autoResume: true }))
+    expect(result.current.started).toBe(false)
+    expect(fetchFn).not.toHaveBeenCalled()
+  })
+
+  it("exposes the node on screen", async () => {
+    stubFetch()
+    const { result } = renderHook(() => useTrainingSession({ experienceSlug: "doorstep", autoStart: true }))
+    await waitFor(() => expect(result.current.currentNode).toEqual({ id: "n1", label: "Intro", type: "FIXED" }))
+  })
+
+  it("names the node it is advancing towards", async () => {
+    vi.stubGlobal("fetch", vi.fn((url: string) => (url.includes("/engine/start") ? Promise.resolve(okResponse(startBody)) : never())))
+    const { result } = renderHook(() => useTrainingSession({ experienceSlug: "doorstep", autoStart: true }))
+    await waitFor(() => expect(result.current.playerStatus.status).toBe("reading_scenario"))
+    act(() => {
+      void result.current.advanceToNextNode("s1")
+    })
+    expect(result.current.playerStatus.status).toBe("advancing")
+    expect(result.current.pendingNodeId).toBe("n2")
+  })
+
+  it("names a chosen option's destination while the choice is submitted", async () => {
+    const option = { id: "a", label: "Ask for ID", nextNodeId: "n5", isLoadBearing: false }
+    const choiceStart = {
+      ...startBody,
+      node: { id: "c1", type: "CHOICE", label: "Decision", responseType: "closed", options: [option] },
+      content: { type: "choice", options: [option], prompt: "What do you do?" },
+    }
+    vi.stubGlobal("fetch", vi.fn((url: string) => (url.includes("/engine/start") ? Promise.resolve(okResponse(choiceStart)) : never())))
+    const { result } = renderHook(() => useTrainingSession({ experienceSlug: "doorstep", autoStart: true }))
+    await waitFor(() => expect(result.current.playerStatus.status).toBe("at_decision"))
+    act(() => {
+      void result.current.handleChoice("a", "Ask for ID", option)
+    })
+    expect(result.current.playerStatus.status).toBe("advancing")
+    expect(result.current.pendingNodeId).toBe("n5")
+  })
+
+  it("shows the wait for what follows a conversation when the learner finishes it", async () => {
+    const dialogueStart = {
+      ...startBody,
+      node: { id: "d1", type: "DIALOGUE", label: "Margaret", actorId: "Margaret Hale", maxTurns: 6, breakthroughCriteria: "x", nextNodeId: "ev" },
+      content: { type: "dialogue", actorName: "Margaret Hale", actorRole: "Resident", characterLine: "Who are you?", turnCount: 1, maxTurns: 6 },
+    }
+    vi.stubGlobal("fetch", vi.fn((url: string) => (url.includes("/engine/start") ? Promise.resolve(okResponse(dialogueStart)) : never())))
+    const { result } = renderHook(() => useTrainingSession({ experienceSlug: "doorstep", autoStart: true }))
+    await waitFor(() => expect(result.current.playerStatus.status).toBe("in_dialogue"))
+    act(() => {
+      void result.current.handleConcludeDialogue()
+    })
+    expect(result.current.playerStatus.status).toBe("advancing")
+    expect(result.current.pendingNodeId).toBe("ev")
+  })
+})
