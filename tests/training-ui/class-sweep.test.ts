@@ -39,6 +39,16 @@ describe("training UI class sweep", () => {
     expect([...new Set(missing)]).toEqual([])
   })
 
+  it("never builds a class name dynamically", () => {
+    const BARE = /(?<![\w-])tg-(?=["'`]|\$\{)/
+    expect(BARE.test('"tg-" + x')).toBe(true)
+    expect(BARE.test("`tg-${x}`")).toBe(true)
+    expect(BARE.test("`tg-chip--${x}`")).toBe(false)
+    expect(BARE.test('"tg-btn"')).toBe(false)
+    const offenders = tsxFiles.flatMap((f) => (BARE.test(read(f)) ? [rel(f)] : []))
+    expect(offenders).toEqual([])
+  })
+
   it("every training stylesheet is imported by the training layout", () => {
     const layout = read(path.join(PAGES, "layout.tsx"))
     for (const f of cssFiles) expect(layout, path.basename(f)).toContain(`@/components/training-ui/styles/${path.basename(f)}`)

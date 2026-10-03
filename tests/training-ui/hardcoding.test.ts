@@ -18,7 +18,9 @@ const FONT_DECL = /font-family\s*:(?!\s*(?:var\(--tg-font-(?:heading|body)\)|inh
 const FONT_SHORTHAND = /(?<![\w-])font\s*:(?!\s*inherit\s*[;}])/
 
 function stripComments(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
+  // Each comment becomes the same number of newlines, so line numbers stay true.
+  const blank = (m: string) => m.replace(/[^\n]/g, "")
+  return src.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/^[ \t]*\/\/.*$/gm, "")
 }
 
 describe("training UI hardcoding guard", () => {
