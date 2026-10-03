@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { getBinderyPack } from "@/lib/library/bindery-packs"
 import { normalizeGenre } from "@/lib/library/halls"
-import { emptyContextPack, normaliseContextPack, type ContextPack } from "@/lib/engine/contract"
+import { emptyContextPack, normaliseContextPack, type ContextPack } from "@/lib/engine/client"
 import { Drawer, type DraftListItem } from "./Drawer"
 import { SheetTitle, type SheetTitleFields } from "./SheetTitle"
 import { SheetPremise } from "./SheetPremise"

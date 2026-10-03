@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/engine/session"
-import { arriveAtNode, findNode, getAllNodes } from "@/lib/engine/executor"
+import { getSession, arriveAtNode, findNode, getAllNodes } from "@/lib/engine"
 import { getExperienceById } from "@/lib/db/queries/experience"
 import { requireAuth, getAnthropicKey, canAccessSession } from "@/lib/auth"
 import { checkEngineLimit } from "@/lib/security/ratelimit"

@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import type { NodeType } from "@/types/experience"
-import { DEFAULT_VISIBILITY } from "@/lib/engine/contract"
-import type { ContextPack, Character, ReferenceItem, ReferenceRole, ContextRule, Visibility } from "@/lib/engine/contract"
+import { DEFAULT_VISIBILITY } from "@/lib/engine/client"
+import type { ContextPack, Character, ReferenceItem, ReferenceRole, ContextRule, Visibility } from "@/lib/engine/client"
 
 interface ContextPackEditorProps {
   data: ContextPack

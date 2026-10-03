@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db/prisma"
 import { requireAuth, canEditExperience } from "@/lib/auth"
 import { validateExperienceGraph } from "@/lib/authoring/graph"
-import { getAllNodes } from "@/lib/engine/executor"
+import { getAllNodes } from "@/lib/engine"
 import type { Experience } from "@/types/experience"
 
 type Params = { params: Promise<{ id: string }> }

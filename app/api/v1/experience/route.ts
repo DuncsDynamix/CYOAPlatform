@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db/prisma"
 import { requireAuth } from "@/lib/auth"
 import { CreateExperienceSchema } from "@/lib/validation"
-import { USE_CASE_PACKS } from "@/lib/engine/usecases"
-import { emptyContextPack } from "@/lib/engine/contract"
+import { USE_CASE_PACKS, emptyContextPack } from "@/lib/engine"
 
 function slugify(title: string): string {
   return title

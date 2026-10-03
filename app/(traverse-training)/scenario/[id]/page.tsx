@@ -2,7 +2,7 @@ import { TrainingPlayer } from "@/components/training/TrainingPlayer"
 import { db } from "@/lib/db/prisma"
 import { resolveBrand } from "@/lib/branding"
 import type { ShapeDefinition } from "@/types/experience"
-import { normaliseContextPack } from "@/lib/engine/contract"
+import { normaliseContextPack } from "@/lib/engine"
 
 export default async function ScenarioPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

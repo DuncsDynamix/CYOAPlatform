@@ -5,10 +5,10 @@
 // prose-generation guidance with no bearing on JSON shape. The sample
 // builder is reader-facing prose and reuses WRITING_STYLE_RULES verbatim,
 // same as lib/engine/prompts.ts does for in-session generation.
-import type { BinderyPack, BinderyTemplate } from "@/lib/library/bindery-packs"
-import type { BookOutline } from "@/lib/library/bindery"
+import type { BinderyPack, BinderyTemplate } from "./bindery-packs"
+import type { BookOutline } from "./bindery"
 import type { ContextPack } from "@/types/experience"
-import { WRITING_STYLE_RULES, FICTION_CRAFT_RULES } from "@/lib/engine/prompts"
+import { WRITING_STYLE_RULES, FICTION_CRAFT_RULES } from "@/lib/engine"
 
 const REF_CONVENTIONS =
   "Each node's `next` must be the `label` of another node in THIS chapter, or " +

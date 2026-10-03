@@ -3,7 +3,7 @@
 import { z } from "zod"
 import type { ChoiceNode, EndpointNode, FixedNode, GeneratedNode, Node, Segment } from "@/types/experience"
 import { getChildLinks, makeNode, type GraphValidationResult } from "@/lib/authoring/graph"
-import { USE_CASE_PACKS } from "@/lib/engine/usecases"
+import { USE_CASE_PACKS } from "@/lib/engine/client"
 
 export interface ChapterOutline {
   title: string

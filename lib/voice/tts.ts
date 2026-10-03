@@ -1,4 +1,4 @@
-import type { ContextPack } from "@/lib/engine/contract"
+import type { ContextPack } from "@/lib/engine/client"
 
 /**
  * TTS vendor adapter (ElevenLabs). Voice is transport, text is truth:

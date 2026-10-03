@@ -1,6 +1,6 @@
 "use client"
 
-import type { ContextPack } from "@/lib/engine/contract"
+import type { ContextPack } from "@/lib/engine/client"
 
 // Plain-language questions → contextPack fields (Milestone 4 Task 9). No
 // jargon reaches the page: authors never see "world", "protagonist", or

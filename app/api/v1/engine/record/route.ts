@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/engine/session"
+import { getSession } from "@/lib/engine"
 import { getExperienceById } from "@/lib/db/queries/experience"
 import { requireAuth, canAccessSession } from "@/lib/auth"
 import { checkEngineLimit } from "@/lib/security/ratelimit"

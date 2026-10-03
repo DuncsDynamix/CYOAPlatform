@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { getSession } from "@/lib/engine/session"
+import { getSession, getContextPack } from "@/lib/engine"
 import { getExperienceById } from "@/lib/db/queries/experience"
 import { requireAuth, canAccessSession } from "@/lib/auth"
 import { checkEngineLimit } from "@/lib/security/ratelimit"
 import { isVoiceEnabled, resolveActorVoice, synthesizeSpeech } from "@/lib/voice/tts"
-import { getContextPack } from "@/lib/engine/contract"
 
 const TtsRequestSchema = z.object({
   sessionId: z.string().uuid(),

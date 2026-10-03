@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db/prisma"
 import { requireAuth, canEditExperience, getAnthropicKey } from "@/lib/auth"
-import { draftOutline } from "@/lib/engine/bindery-draft"
+import { draftOutline } from "@/lib/library/bindery-draft"
 import type { Experience } from "@/types/experience"
 
 const MODEL_FAILURE = { error: "The Bindery's assistant lost the thread. Try again." }

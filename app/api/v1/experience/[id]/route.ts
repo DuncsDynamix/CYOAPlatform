@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db/prisma"
 import { requireAuth, canEditExperience, canDeleteExperience } from "@/lib/auth"
 import { UpdateExperienceSchema } from "@/lib/validation"
-import { normaliseContextPack } from "@/lib/engine/contract"
+import { normaliseContextPack } from "@/lib/engine"
 
 type Params = { params: Promise<{ id: string }> }
 

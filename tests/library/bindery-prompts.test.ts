@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { buildOutlinePrompt, buildChapterPrompt, buildSamplePrompt } from "@/lib/engine/bindery-prompts"
+import { buildOutlinePrompt, buildChapterPrompt, buildSamplePrompt } from "@/lib/library/bindery-prompts"
 import { WRITING_STYLE_RULES } from "@/lib/engine/prompts"
 import { getBinderyPack } from "@/lib/library/bindery-packs"
 import { createTestContextPack } from "../helpers/factories"

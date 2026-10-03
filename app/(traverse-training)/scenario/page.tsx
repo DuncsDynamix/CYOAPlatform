@@ -6,7 +6,7 @@ import { db } from "@/lib/db/prisma"
 import { resolveBrand } from "@/lib/branding"
 import { groupCoursesByCategory } from "@/lib/training/use-case-categories"
 import type { ShapeDefinition } from "@/types/experience"
-import { normaliseContextPack } from "@/lib/engine/contract"
+import { normaliseContextPack } from "@/lib/engine"
 
 // DB-backed page: render per request, never at build time
 export const dynamic = "force-dynamic"

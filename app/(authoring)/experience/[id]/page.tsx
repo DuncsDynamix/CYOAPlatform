@@ -9,7 +9,7 @@ import { NodeGraph } from "@/components/authoring/NodeGraph"
 import { NodeEditor } from "@/components/authoring/NodeEditor"
 import { HelpPanel } from "@/components/authoring/HelpPanel"
 import { makeNode } from "@/lib/authoring/graph"
-import { normaliseContextPack } from "@/lib/engine/contract"
+import { normaliseContextPack } from "@/lib/engine/client"
 
 type Tab = "details" | "context" | "nodes"
 

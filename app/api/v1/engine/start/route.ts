@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createSession } from "@/lib/engine/session"
-import { arriveAtNode, findFirstNodeId, getAllNodes } from "@/lib/engine/executor"
+import { createSession, arriveAtNode, findFirstNodeId, getAllNodes, getContextPack } from "@/lib/engine"
 import { getExperience } from "@/lib/db/queries/experience"
 import { requireAuth, getAnthropicKey, canAccessExperience } from "@/lib/auth"
 import { hasTrainingTier } from "@/lib/subscriptions"
@@ -10,7 +9,6 @@ import { trackEvent } from "@/lib/analytics"
 import { StartSessionSchema } from "@/lib/validation"
 import { validateExperienceGraph } from "@/lib/authoring/graph"
 import { engineErrorResponse } from "@/lib/api/errors"
-import { getContextPack } from "@/lib/engine/contract"
 import type { ShapeDefinition } from "@/types/experience"
 
 export async function POST(req: NextRequest) {

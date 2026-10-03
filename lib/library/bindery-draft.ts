@@ -3,10 +3,9 @@
 // lookup, and the fixed 502 error envelope live in the route handlers; this
 // module owns prompt assembly, the model call, and Zod validation.
 import { z } from "zod"
-import { callModel } from "./llm"
-import { stripEmDashes, stripJsonFence } from "./style"
+import { callModel, stripEmDashes, stripJsonFence, getAllNodes, getContextPack } from "@/lib/engine"
 import { buildOutlinePrompt, buildChapterPrompt, buildSamplePrompt, buildSinglePagePrompt } from "./bindery-prompts"
-import { getBinderyPack } from "@/lib/library/bindery-packs"
+import { getBinderyPack } from "./bindery-packs"
 import {
   OutlineProposalSchema,
   ChapterProposalSchema,
@@ -14,9 +13,7 @@ import {
   outlineFromSegments,
   type BookOutline,
   type PendingRef,
-} from "@/lib/library/bindery"
-import { getAllNodes } from "./executor"
-import { getContextPack } from "./contract"
+} from "./bindery"
 import type { Experience, FixedNode, GeneratedNode, Node } from "@/types/experience"
 
 /**

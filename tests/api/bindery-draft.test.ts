@@ -26,7 +26,7 @@ vi.mock("@/lib/auth", () => ({
 }))
 
 // Import after mocks are registered
-const { draftOutline, draftChapter, draftSinglePage, sampleTelling } = await import("@/lib/engine/bindery-draft")
+const { draftOutline, draftChapter, draftSinglePage, sampleTelling } = await import("@/lib/library/bindery-draft")
 const { POST: draftOutlineRoute } = await import("@/app/api/v1/bindery/outline/route")
 const { POST: draftChapterRoute } = await import("@/app/api/v1/bindery/draft-chapter/route")
 const { db } = await import("@/lib/db/prisma")

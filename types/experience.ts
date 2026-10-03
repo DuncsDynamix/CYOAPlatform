@@ -3,7 +3,7 @@
 export type {
   ContextPack, Character, ReferenceItem, ReferenceRole, Visibility, ContextRule,
   TrainingExtension, StoryExtension, SessionContext, LearnerProfileEntry, CompetencyStatus,
-} from "@/lib/engine/contract"
+} from "@/lib/engine/client"
 
 // ─── EXPERIENCE USE CASE PACK (platform-owned) ──────────────
 
