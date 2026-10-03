@@ -3,6 +3,13 @@ import { CourseAccreditationLinkSchema, type CourseAccreditationLink } from "./a
 
 /**
  * Experience.presentation: app-owned display data, never engine context.
+ *
+ * parsePresentation() is a read-only view of known fields only. It returns only the
+ * fields in FIELDS (useCaseCategory, image, durationMinutes, stages, accreditations);
+ * any other keys in the raw object are silently dropped. If you need to write
+ * Experience.presentation, you MUST merge into the raw stored object, never write
+ * the parsed result back, or other app-owned keys will be erased.
+ *
  * Parsed field by field so one bad field never hides the rest.
  */
 

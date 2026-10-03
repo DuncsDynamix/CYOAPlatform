@@ -27,4 +27,8 @@ describe("parsePresentation", () => {
     expect(parsePresentation(null)).toEqual({})
     expect(parsePresentation([1, 2])).toEqual({})
   })
+
+  it("is a read-only view: unknown keys are dropped", () => {
+    expect(parsePresentation({ useCaseCategory: "x", somethingElse: 1 })).toEqual({ useCaseCategory: "x" })
+  })
 })
