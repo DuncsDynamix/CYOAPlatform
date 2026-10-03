@@ -22,6 +22,12 @@ Type-check without building:
 npx tsc --noEmit
 ```
 
+## Working Conventions
+
+- **Use subagents for independent or bulky work** — parallel reviews, broad codebase sweeps, per-task implementation from a written plan. Keep the main session for decisions and integration.
+- **Match the model to the task; default subagents to the cheaper tier.** Haiku for mechanical work (searches, file sweeps, renames, test runs, seed edits). Sonnet for standard implementation and reviews. Reserve Opus/Fable for design, architecture, adversarial final reviews, and anything where a subtle mistake is costly.
+- The same rule applies inside the product: Haiku for cheap extraction calls, Sonnet for generation, and a stronger model only where the output is the thing the customer pays for (e.g. EVALUATIVE assessment).
+
 ## Product Names
 
 | Product | Name |
