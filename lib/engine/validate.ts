@@ -72,7 +72,7 @@ export function validateExperience(
     }
     if (node.type === "CHOICE") {
       const options = (node as ChoiceNode).options ?? []
-      if (options.length > 0 && options.every((o) => (o.displayConditions ?? []).some((c) => c.type === "profile_status"))) {
+      if (options.length > 0 && options.every((o) => (o.displayConditions ?? []).some((c) => c.type === "profile_status" && (c.ifNotMet ?? "suppress_option") === "suppress_option"))) {
         errors.push({ code: "no_default_route", message: `${node.label || node.id} would show no options to a learner without a profile.`, nodeId: node.id })
       }
     }

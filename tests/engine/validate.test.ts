@@ -81,4 +81,13 @@ describe("validateExperience no_default_route", () => {
     const r = validateExperience(story({ nodes }))
     expect(r.errors.find((i) => i.code === "no_default_route" && i.nodeId === "ch-x")?.message).toContain("no options")
   })
+  it("does not flag a choice whose profile options are only show_disabled", () => {
+    const soft = { ...cond, ifNotMet: "show_disabled" as const }
+    const nodes = [
+      ...createTestNodeGraph(),
+      { id: "ch-y", type: "CHOICE", label: "Pick", prompt: "p", options: [{ id: "a", label: "A", nextNodeId: "node-1", isLoadBearing: false, displayConditions: [soft] }] },
+    ]
+    const r = validateExperience(story({ nodes }))
+    expect(r.errors.find((i) => i.code === "no_default_route" && i.nodeId === "ch-y")).toBeUndefined()
+  })
 })

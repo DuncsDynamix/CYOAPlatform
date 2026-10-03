@@ -1,4 +1,4 @@
-import type { Node, ChoiceNode } from "@/types/experience"
+import type { Node, ChoiceNode, CheckpointNode } from "@/types/experience"
 import { getChildLinks } from "@/lib/engine/client"
 
 export { getChildLinks, validateExperienceGraph } from "@/lib/engine/client"
@@ -46,11 +46,15 @@ export function getNodeHandles(node: Node): NodeHandleSpec[] {
   switch (node.type) {
     case "FIXED":
     case "GENERATED":
-    case "CHECKPOINT":
     case "EVALUATIVE":
     case "OBSERVED_DIALOGUE":
     case "SLIDE_DECK":
       return [{ id: "next" }]
+    case "CHECKPOINT":
+      return [
+        { id: "next" },
+        ...((node as CheckpointNode).branches ?? []).map((_, i) => ({ id: `branch:${i}`, label: "personalised" })),
+      ]
     case "CHOICE":
       return ((node as ChoiceNode).options ?? []).map((o) => ({
         id: `option:${o.id}`,
@@ -87,6 +91,15 @@ export function applyConnection(node: Node, handleId: string, targetId: string):
     }
   }
 
+  if (handleId.startsWith("branch:")) {
+    const index = Number(handleId.slice("branch:".length))
+    const cp = node as CheckpointNode
+    return {
+      ...cp,
+      branches: (cp.branches ?? []).map((b, i) => (i === index ? { ...b, nextNodeId: targetId } : b)),
+    }
+  }
+
   switch (handleId) {
     case "next":
       return { ...node, nextNodeId: targetId } as Node
@@ -100,4 +113,19 @@ export function applyConnection(node: Node, handleId: string, targetId: string):
 /** Clears the link behind a handle. Empty string is the "unset" convention. */
 export function removeConnection(node: Node, handleId: string): Node {
   return applyConnection(node, handleId, "")
+}
+
+/** Removes the given nodes and clears every link (including branch links) that pointed at them. */
+export function removeNodesAndLinks(nodes: Node[], deletedIds: Set<string>): Node[] {
+  return nodes
+    .filter((n) => !deletedIds.has(n.id))
+    .map((n) => {
+      let updated = n
+      for (const link of getChildLinks(n)) {
+        if (link.targetId && deletedIds.has(link.targetId)) {
+          updated = removeConnection(updated, link.handle)
+        }
+      }
+      return updated
+    })
 }

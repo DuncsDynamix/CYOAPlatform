@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
-import { getChildLinks, validateExperienceGraph } from "@/lib/authoring/graph"
+import { getChildLinks, validateExperienceGraph, removeNodesAndLinks } from "@/lib/authoring/graph"
 import { createTestNodeGraph } from "../helpers/factories"
-import type { Node, DialogueNode, ChoiceNode } from "@/types/experience"
+import type { Node, DialogueNode, ChoiceNode, CheckpointNode } from "@/types/experience"
 
 describe("getChildLinks", () => {
   it("returns a single next handle for linear nodes", () => {
@@ -201,5 +201,37 @@ describe("applyConnection / removeConnection", () => {
     const fixed = createTestNodeGraph().find((n) => n.id === "node-1")!
     const unlinked = removeConnection(fixed, "next")
     expect(getChildLinks(unlinked)[0].targetId).toBe("")
+  })
+})
+
+describe("checkpoint branch handles", () => {
+  const cond = { type: "profile_status" as const, competencyId: "c", status: "developing" as const }
+  const cp: CheckpointNode = {
+    id: "cp", type: "CHECKPOINT", label: "cp", visible: false, marksCompletionOf: "", unlocks: [], nextNodeId: "d",
+    branches: [{ when: [cond], nextNodeId: "a" }, { when: [cond], nextNodeId: "b" }],
+  }
+  it("exposes next plus one handle per branch", () => {
+    expect(getNodeHandles(cp)).toEqual([
+      { id: "next" },
+      { id: "branch:0", label: "personalised" },
+      { id: "branch:1", label: "personalised" },
+    ])
+  })
+  it("applies and removes a branch connection immutably", () => {
+    const linked = applyConnection(cp, "branch:1", "z") as CheckpointNode
+    expect(linked.branches![1].nextNodeId).toBe("z")
+    expect(linked.branches![0].nextNodeId).toBe("a")
+    expect(cp.branches![1].nextNodeId).toBe("b")
+    const cleared = removeConnection(cp, "branch:1") as CheckpointNode
+    expect(cleared.branches![1].nextNodeId).toBe("")
+  })
+  it("deleting a branch-target node clears the link without throwing", () => {
+    const target: Node = { id: "a", type: "FIXED", label: "a", content: "x", mandatory: false, nextNodeId: "" }
+    const out = removeNodesAndLinks([cp, target], new Set(["a", "d"]))
+    expect(out).toHaveLength(1)
+    const updated = out[0] as CheckpointNode
+    expect(updated.branches![0].nextNodeId).toBe("")
+    expect(updated.nextNodeId).toBe("")
+    expect(updated.branches![1].nextNodeId).toBe("b")
   })
 })

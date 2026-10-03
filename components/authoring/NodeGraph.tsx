@@ -27,6 +27,7 @@ import {
   getNodeHandles,
   applyConnection,
   removeConnection,
+  removeNodesAndLinks,
   validateExperienceGraph,
   makeNode,
 } from "@/lib/authoring/graph"
@@ -362,18 +363,7 @@ function NodeGraphInner({ nodes, selectedId, onSelect, onAdd, onNodesChange }: N
       const label = deleted.length === 1 ? "this node" : `${deleted.length} nodes`
       if (!window.confirm(`Delete ${label}? Links pointing here will be cleared.`)) return
 
-      const next = nodes
-        .filter((n) => !ids.has(n.id))
-        .map((n) => {
-          let updated = n
-          for (const link of getChildLinks(n)) {
-            if (link.targetId && ids.has(link.targetId)) {
-              updated = removeConnection(updated, link.handle)
-            }
-          }
-          return updated
-        })
-      replaceNodes(next)
+      replaceNodes(removeNodesAndLinks(nodes, ids))
       if (selectedId && ids.has(selectedId)) onSelect(null)
     },
     [canEdit, nodes, replaceNodes, selectedId, onSelect]
