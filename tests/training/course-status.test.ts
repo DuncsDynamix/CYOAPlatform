@@ -16,7 +16,7 @@ const session = (over: Partial<SessionSummary>): SessionSummary => ({
   lastActiveAt: new Date("2026-10-01T10:00:00Z"), completedAt: null, ...over,
 })
 
-const crit = (status: string) => ({ nodeId: "ev", rubricCriterionId: status, criterionLabel: "c", status, passed: status === "passed", evidence: "e", weight: "major" })
+const crit = (status: string) => ({ nodeId: "ev", rubricCriterionId: status, criterionLabel: "c", status, passed: status === "passed", evidence: "e", weight: "critical" })
 
 describe("deriveCourseStatus", () => {
   it("is not started with no sessions, or only abandoned ones", () => {
