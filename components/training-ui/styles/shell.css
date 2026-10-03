@@ -200,47 +200,6 @@
   margin-top: var(--tg-space-1);
   font-size: var(--tg-fs-sm);
 }
-.tg-checklist {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.tg-checklist-item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--tg-space-2);
-  margin-bottom: var(--tg-space-3);
-  font-size: var(--tg-fs-sm);
-}
-.tg-checklist-box {
-  flex: none;
-  width: 20px;
-  height: 20px;
-  margin-top: 2px;
-  border: 2px solid var(--tg-text-muted);
-  border-radius: var(--tg-radius-sm);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  color: var(--tg-brand);
-}
-.tg-checklist-item--done .tg-checklist-box {
-  background: var(--tg-brand);
-  border-color: var(--tg-brand);
-  color: var(--tg-on-brand);
-}
-.tg-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
-}
 
 .tg-demo {
   width: 100%;

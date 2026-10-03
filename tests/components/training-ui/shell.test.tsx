@@ -99,4 +99,12 @@ describe("Shell", () => {
     expect(screen.getByRole("link", { name: "Back to library" })).toHaveAttribute("href", "/scenario")
     expect(screen.queryByRole("button", { name: "View course notes" })).not.toBeInTheDocument()
   })
+
+  it("renders title and stage label as display-safe text (em-dashes become colons)", () => {
+    render(<Shell brand={brand} title="The Doorstep — Practice" stage={{ index: 1, total: 4, label: "Doorstep 1 — the chain" }} tools={tools(true)}><p /></Shell>)
+    expect(screen.getByText("The Doorstep: Practice")).toBeInTheDocument()
+    expect(screen.getByText("Doorstep 1: the chain · 2 of 4")).toBeInTheDocument()
+    const bar = screen.getByRole("progressbar")
+    expect(bar).toHaveAttribute("aria-label", "Stage 2 of 4: Doorstep 1: the chain")
+  })
 })

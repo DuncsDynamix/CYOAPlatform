@@ -6,6 +6,7 @@ import type { LearningObjective, CourseNote } from "@/types/engine"
 import type { StageProgress } from "@/lib/training/stages"
 import type { PlayerBrand } from "@/lib/training/views"
 import { CLOSED_BOOK_NOTE } from "@/lib/training/copy"
+import { toDisplayText } from "@/lib/training/display"
 import { BrandMark } from "../BrandMark"
 import { CloseIcon, ListIcon, NotesIcon } from "../icons"
 import { StageBar } from "./StageBar"
@@ -60,13 +61,13 @@ export function Shell({
           <div className="tg-header-titles">
             {shown ? (
               <>
-                <span className="tg-header-course">{title}</span>
+                <span className="tg-header-course">{toDisplayText(title)}</span>
                 <span className="tg-header-stage">
-                  {shown.label} · {shown.index + 1} of {shown.total}
+                  {toDisplayText(shown.label)} · {shown.index + 1} of {shown.total}
                 </span>
               </>
             ) : (
-              <span className="tg-header-stage">{title}</span>
+              <span className="tg-header-stage">{toDisplayText(title)}</span>
             )}
           </div>
           {tools ? (

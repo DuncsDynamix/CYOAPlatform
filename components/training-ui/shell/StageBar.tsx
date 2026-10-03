@@ -1,3 +1,4 @@
+import { toDisplayText } from "@/lib/training/display"
 import type { StageProgress } from "@/lib/training/stages"
 
 /** Earlier stages filled, the current one half-filled, later ones empty. No finer measure within a stage. */
@@ -9,7 +10,7 @@ export function StageBar({ stage }: { stage: StageProgress }) {
       aria-valuemin={1}
       aria-valuemax={stage.total}
       aria-valuenow={stage.index + 1}
-      aria-label={`Stage ${stage.index + 1} of ${stage.total}: ${stage.label}`}
+      aria-label={`Stage ${stage.index + 1} of ${stage.total}: ${toDisplayText(stage.label)}`}
     >
       {Array.from({ length: stage.total }, (_, i) => (
         <span
