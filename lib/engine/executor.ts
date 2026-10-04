@@ -26,6 +26,7 @@ import type {
 } from "@/types/experience"
 import type { ExperienceSession, NarrativeHistoryEntry, NarrativeScaffold, CompetencyResult } from "@/types/session"
 import type { ArrivalResult, ResolvedContent, OutcomeCardData } from "@/types/engine"
+import { keepAlive } from "./background"
 
 /** Stored and shown when the closing reflection cannot be generated. */
 export const FALLBACK_ENDPOINT_SUMMARY = "Your session is complete. A written reflection could not be generated."
@@ -110,13 +111,16 @@ export async function arriveAtNode(
   // of the session, so children see the scaffold this very arrival appended.
   // (Generating them against the stale pre-arrival session was the cause of
   // "the next scene doesn't follow from the previous one".)
-  getSession(sessionId)
-    .then((freshSession) =>
-      generateChildrenInParallel(node, nodes, freshSession ?? session, experience, apiKey)
-    )
-    .catch((err) => {
-      console.warn(`[pre-generation] batch failed for session ${sessionId}:`, err instanceof Error ? err.message : err)
-    })
+  // keepAlive: the host would otherwise freeze this work once the route responds.
+  keepAlive(
+    getSession(sessionId)
+      .then((freshSession) =>
+        generateChildrenInParallel(node, nodes, freshSession ?? session, experience, apiKey)
+      )
+      .catch((err) => {
+        console.warn(`[pre-generation] batch failed for session ${sessionId}:`, err instanceof Error ? err.message : err)
+      })
+  )
 
   return { node, content, session }
 }
