@@ -51,8 +51,15 @@ async function checkLimit(
   identifier: string
 ): Promise<RateLimitResult> {
   if (!limiter) return { success: true }
-  const result = await limiter.limit(identifier)
-  return { success: result.success, limit: result.limit, remaining: result.remaining }
+  try {
+    const result = await limiter.limit(identifier)
+    return { success: result.success, limit: result.limit, remaining: result.remaining }
+  } catch (err) {
+    // Fail open: an unreachable Redis (outage, deleted database) must not take
+    // every engine route down with it. Same rule as the generation cache.
+    console.warn("[ratelimit] Redis unavailable, allowing request:", err instanceof Error ? err.message : err)
+    return { success: true }
+  }
 }
 
 export async function checkEngineLimit(identifier: string): Promise<RateLimitResult> {
