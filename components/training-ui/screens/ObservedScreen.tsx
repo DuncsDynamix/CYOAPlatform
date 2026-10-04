@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { toDisplayText } from "@/lib/training/display"
 import { Avatar } from "../Avatar"
 import { Footer, Screen, ScreenBody } from "../Screen"
@@ -19,6 +19,13 @@ export function ObservedScreen({
   const [continued, setContinued] = useState(false)
   const complete = revealed >= exchanges.length
   const speakerA = exchanges[0]?.speaker ?? ""
+  const endRef = useRef<HTMLDivElement>(null)
+
+  // Bring each newly revealed line into view. The opening line is left alone,
+  // so the screen starts at its top (the context and the first speaker).
+  useEffect(() => {
+    if (revealed > 1) endRef.current?.scrollIntoView?.({ block: "end" })
+  }, [revealed])
 
   return (
     <Screen>
@@ -54,6 +61,9 @@ export function ObservedScreen({
           </button>
         )}
       </Footer>
+      {/* After the sticky footer, so "scroll to the end" reaches the true bottom
+          and the newest line sits above the footer instead of under it. */}
+      <div ref={endRef} />
     </Screen>
   )
 }

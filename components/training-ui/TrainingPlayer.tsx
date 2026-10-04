@@ -59,7 +59,7 @@ export function TrainingPlayer({
 
   if (!s.started && cover) {
     return (
-      <Shell brand={brand} title={COVER_COPY.headerTitle}>
+      <Shell brand={brand} title={COVER_COPY.headerTitle} screenKey="cover">
         <CoverScreen
           cover={cover}
           canResume={Boolean(resumeSessionId)}
@@ -73,7 +73,7 @@ export function TrainingPlayer({
 
   if (status.status === "debrief") {
     return (
-      <Shell brand={brand} title={title}>
+      <Shell brand={brand} title={title} screenKey="debrief">
         {isDemoMode() && <DemoBadge copyKey="ENDPOINT" />}
         <DebriefScreen
           learnerName={learnerName}
@@ -197,7 +197,13 @@ export function TrainingPlayer({
   }
 
   return (
-    <Shell brand={brand} title={title} stage={stage} tools={{ objectives: s.objectives, notes: s.courseNotes, open }}>
+    <Shell
+      brand={brand}
+      title={title}
+      stage={stage}
+      tools={{ objectives: s.objectives, notes: s.courseNotes, open }}
+      screenKey={`${status.status}:${nodeKey ?? ""}`}
+    >
       {!waiting && isDemoMode() && s.currentNodeKey && <DemoBadge copyKey={s.currentNodeKey} />}
       {screen()}
     </Shell>

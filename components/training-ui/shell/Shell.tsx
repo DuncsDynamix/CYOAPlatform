@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import type { LearningObjective, CourseNote } from "@/types/engine"
 import type { StageProgress } from "@/lib/training/stages"
@@ -32,6 +32,7 @@ export function Shell({
   stage = null,
   tools,
   closeHref = "/scenario",
+  screenKey,
   children,
 }: {
   brand: PlayerBrand
@@ -39,10 +40,24 @@ export function Shell({
   stage?: StageProgress | null
   tools?: ShellTools
   closeHref?: string
+  /** Identifies the screen on show; when it changes, the scroll area returns to the top. */
+  screenKey?: string
   children: ReactNode
 }) {
   const [drawer, setDrawer] = useState<"notes" | "objectives" | null>(null)
   const open = tools?.open ?? false
+  const mainRef = useRef<HTMLElement>(null)
+  const shownKey = useRef(screenKey)
+
+  // The main area outlives the screens inside it, so without this a new screen
+  // opens wherever the last one was scrolled to, with its top out of view.
+  // A layout effect, so it runs before any screen's own scrolling (a resumed
+  // conversation scrolls to its newest turn after this, not before).
+  useLayoutEffect(() => {
+    if (shownKey.current === screenKey) return
+    shownKey.current = screenKey
+    mainRef.current?.scrollTo?.({ top: 0 })
+  }, [screenKey])
 
   // A screen turning closed-book shuts any open drawer.
   useEffect(() => {
@@ -101,7 +116,7 @@ export function Shell({
         </div>
         {shown && <StageBar stage={shown} />}
       </header>
-      <main className="tg-main">{children}</main>
+      <main ref={mainRef} className="tg-main">{children}</main>
       {tools && open && drawer === "objectives" && <ObjectivesDrawer objectives={tools.objectives} onClose={() => setDrawer(null)} />}
       {tools && open && drawer === "notes" && <NotesDrawer notes={tools.notes} onClose={() => setDrawer(null)} />}
     </div>

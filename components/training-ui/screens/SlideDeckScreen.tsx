@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import type { Slide } from "@/types/experience"
 import { Footer, Screen, ScreenBody } from "../Screen"
 import { LayoutView } from "../layouts/LayoutView"
@@ -8,6 +8,15 @@ import { ArrowLeftIcon, ArrowRightIcon } from "../icons"
 
 export function SlideDeckScreen({ slides, onContinue }: { slides: Slide[]; onContinue: () => void }) {
   const [index, setIndex] = useState(0)
+  const topRef = useRef<HTMLDivElement>(null)
+  const shownIndex = useRef(index)
+
+  // A new slide starts at its top, even if the previous one was scrolled down.
+  useEffect(() => {
+    if (shownIndex.current === index) return
+    shownIndex.current = index
+    topRef.current?.scrollIntoView?.({ block: "start" })
+  }, [index])
   const [continued, setContinued] = useState(false)
   const proceed = () => {
     setContinued(true)
@@ -47,6 +56,7 @@ export function SlideDeckScreen({ slides, onContinue }: { slides: Slide[]; onCon
   return (
     <Screen>
       <ScreenBody>
+        <div ref={topRef} />
         <LayoutView layout={slide} />
         {slide.notes && <p className="tg-slide-notes">{slide.notes}</p>}
         <p className="tg-slides-count">
